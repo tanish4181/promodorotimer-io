@@ -19,7 +19,7 @@ class PomodoroOptions {
     this.elements.longBreak = document.getElementById("long-break")
     this.elements.sessionsUntilLongBreak = document.getElementById("sessions-until-long-break")
 
-    // Toggle settings
+    // Toggle settings - Fixed to properly get checkbox elements
     this.elements.autoStartBreaks = document.getElementById("auto-start-breaks")
     this.elements.autoStartPomodoros = document.getElementById("auto-start-pomodoros")
     this.elements.autoSwitchModes = document.getElementById("auto-switch-modes")
@@ -51,42 +51,89 @@ class PomodoroOptions {
     this.elements.saveStatus = document.getElementById("save-status")
 
     console.log("[v0] Elements initialized:", Object.keys(this.elements).length, "elements found")
+    
+    // Log which toggle elements were not found
+    Object.entries(this.elements).forEach(([key, element]) => {
+      if (!element && this.isToggleElement(key)) {
+        console.warn(`[v0] Toggle element not found: ${key}`)
+      }
+    })
+  }
+
+  isToggleElement(key) {
+    const toggleElements = [
+      'autoStartBreaks', 'autoStartPomodoros', 'autoSwitchModes', 'notifications',
+      'sounds', 'breakReminders', 'enforceBreaks', 'youtubeIntegration',
+      'breakOverlay', 'breakCountdown', 'nextSessionInfo', 'focusOverlay',
+      'hideDistractions', 'focusIndicator', 'websiteBlocking', 'hideYoutubeComments',
+      'hideYoutubeRecommendations', 'hideYoutubeShorts', 'pauseYoutubeBreaks', 'collectStats'
+    ]
+    return toggleElements.includes(key)
   }
 
   bindEventListeners() {
     // Timer settings
-    this.elements.focusTime.addEventListener("change", () => this.handleSettingChange())
-    this.elements.shortBreak.addEventListener("change", () => this.handleSettingChange())
-    this.elements.longBreak.addEventListener("change", () => this.handleSettingChange())
-    this.elements.sessionsUntilLongBreak.addEventListener("change", () => this.handleSettingChange())
+    if (this.elements.focusTime) {
+      this.elements.focusTime.addEventListener("change", () => this.handleSettingChange())
+    }
+    if (this.elements.shortBreak) {
+      this.elements.shortBreak.addEventListener("change", () => this.handleSettingChange())
+    }
+    if (this.elements.longBreak) {
+      this.elements.longBreak.addEventListener("change", () => this.handleSettingChange())
+    }
+    if (this.elements.sessionsUntilLongBreak) {
+      this.elements.sessionsUntilLongBreak.addEventListener("change", () => this.handleSettingChange())
+    }
 
-    // Toggle settings
-    this.elements.autoStartBreaks.addEventListener("change", () => this.handleToggleChange("autoStartBreaks"))
-    this.elements.autoStartPomodoros.addEventListener("change", () => this.handleToggleChange("autoStartPomodoros"))
-    this.elements.autoSwitchModes.addEventListener("change", () => this.handleToggleChange("autoSwitchModes"))
-    this.elements.notifications.addEventListener("change", () => this.handleToggleChange("notifications"))
-    this.elements.sounds.addEventListener("change", () => this.handleToggleChange("sounds"))
-    this.elements.breakReminders.addEventListener("change", () => this.handleToggleChange("breakReminders"))
-    this.elements.enforceBreaks.addEventListener("change", () => this.handleToggleChange("enforceBreaks"))
-    this.elements.youtubeIntegration.addEventListener("change", () => this.handleToggleChange("youtubeIntegration"))
-    this.elements.breakOverlay.addEventListener("change", () => this.handleToggleChange("breakOverlay"))
-    this.elements.breakCountdown.addEventListener("change", () => this.handleToggleChange("breakCountdown"))
-    this.elements.nextSessionInfo.addEventListener("change", () => this.handleToggleChange("nextSessionInfo"))
-    this.elements.focusOverlay.addEventListener("change", () => this.handleToggleChange("focusOverlay"))
-    this.elements.hideDistractions.addEventListener("change", () => this.handleToggleChange("hideDistractions"))
-    this.elements.focusIndicator.addEventListener("change", () => this.handleToggleChange("focusIndicator"))
-    this.elements.websiteBlocking.addEventListener("change", () => this.handleToggleChange("websiteBlocking"))
-    this.elements.hideYoutubeComments.addEventListener("change", () => this.handleToggleChange("hideYoutubeComments"))
-    this.elements.hideYoutubeRecommendations.addEventListener("change", () => this.handleToggleChange("hideYoutubeRecommendations"))
-    this.elements.hideYoutubeShorts.addEventListener("change", () => this.handleToggleChange("hideYoutubeShorts"))
-    this.elements.pauseYoutubeBreaks.addEventListener("change", () => this.handleToggleChange("pauseYoutubeBreaks"))
-    this.elements.collectStats.addEventListener("change", () => this.handleToggleChange("collectStats"))
+    // Toggle settings - Fixed event binding
+    this.bindToggleListener('autoStartBreaks')
+    this.bindToggleListener('autoStartPomodoros')
+    this.bindToggleListener('autoSwitchModes')
+    this.bindToggleListener('notifications')
+    this.bindToggleListener('sounds')
+    this.bindToggleListener('breakReminders')
+    this.bindToggleListener('enforceBreaks')
+    this.bindToggleListener('youtubeIntegration')
+    this.bindToggleListener('breakOverlay')
+    this.bindToggleListener('breakCountdown')
+    this.bindToggleListener('nextSessionInfo')
+    this.bindToggleListener('focusOverlay')
+    this.bindToggleListener('hideDistractions')
+    this.bindToggleListener('focusIndicator')
+    this.bindToggleListener('websiteBlocking')
+    this.bindToggleListener('hideYoutubeComments')
+    this.bindToggleListener('hideYoutubeRecommendations')
+    this.bindToggleListener('hideYoutubeShorts')
+    this.bindToggleListener('pauseYoutubeBreaks')
+    this.bindToggleListener('collectStats')
 
     // Buttons
-    this.elements.exportData.addEventListener("click", () => this.exportData())
-    this.elements.clearData.addEventListener("click", () => this.clearData())
-    this.elements.viewStats.addEventListener("click", () => this.viewStats())
-    this.elements.resetDefaults.addEventListener("click", () => this.resetDefaults())
+    if (this.elements.exportData) {
+      this.elements.exportData.addEventListener("click", () => this.exportData())
+    }
+    if (this.elements.clearData) {
+      this.elements.clearData.addEventListener("click", () => this.clearData())
+    }
+    if (this.elements.viewStats) {
+      this.elements.viewStats.addEventListener("click", () => this.viewStats())
+    }
+    if (this.elements.resetDefaults) {
+      this.elements.resetDefaults.addEventListener("click", () => this.resetDefaults())
+    }
+  }
+
+  bindToggleListener(settingKey) {
+    const element = this.elements[settingKey]
+    if (element) {
+      element.addEventListener("change", () => {
+        console.log(`[v0] Toggle changed: ${settingKey} = ${element.checked}`)
+        this.handleToggleChange(settingKey)
+      })
+      console.log(`[v0] Bound event listener for ${settingKey}`)
+    } else {
+      console.warn(`[v0] Could not bind event listener for ${settingKey} - element not found`)
+    }
   }
 
   async initializeOptions() {
@@ -158,6 +205,7 @@ class PomodoroOptions {
     try {
       // Save the complete settings object to storage
       await chrome.storage.local.set({ settings: this.currentSettings })
+      console.log("[v0] Settings saved to storage:", this.currentSettings)
 
       // Only try to notify background script if it's available
       if (this.backgroundAvailable) {
@@ -167,11 +215,11 @@ class PomodoroOptions {
         
         while (retryCount < maxRetries) {
           try {
-            await chrome.runtime.sendMessage({
+            const response = await chrome.runtime.sendMessage({
               type: "SETTINGS_UPDATED",
               settings: this.currentSettings,
             })
-            console.log("[v0] Setting", settingName, "updated successfully")
+            console.log("[v0] Setting", settingName, "updated successfully, response:", response)
             this.showSaveStatus("Setting updated", "success")
             break // Success, exit retry loop
           } catch (error) {
@@ -205,10 +253,18 @@ class PomodoroOptions {
     console.log("[v0] Setting changed")
     try {
       // Update current settings with new values
-      this.currentSettings.focusTime = Number.parseInt(this.elements.focusTime.value)
-      this.currentSettings.shortBreak = Number.parseInt(this.elements.shortBreak.value)
-      this.currentSettings.longBreak = Number.parseInt(this.elements.longBreak.value)
-      this.currentSettings.sessionsUntilLongBreak = Number.parseInt(this.elements.sessionsUntilLongBreak.value)
+      if (this.elements.focusTime) {
+        this.currentSettings.focusTime = Number.parseInt(this.elements.focusTime.value)
+      }
+      if (this.elements.shortBreak) {
+        this.currentSettings.shortBreak = Number.parseInt(this.elements.shortBreak.value)
+      }
+      if (this.elements.longBreak) {
+        this.currentSettings.longBreak = Number.parseInt(this.elements.longBreak.value)
+      }
+      if (this.elements.sessionsUntilLongBreak) {
+        this.currentSettings.sessionsUntilLongBreak = Number.parseInt(this.elements.sessionsUntilLongBreak.value)
+      }
 
       await chrome.storage.local.set({ settings: this.currentSettings })
       
@@ -259,40 +315,59 @@ class PomodoroOptions {
       
       // Merge existing settings with defaults
       this.currentSettings = { ...defaultSettings, ...result.settings }
+      console.log("[v0] Merged settings:", this.currentSettings)
 
       // Update form elements
-      this.elements.focusTime.value = this.currentSettings.focusTime || 25
-      this.elements.shortBreak.value = this.currentSettings.shortBreak || 5
-      this.elements.longBreak.value = this.currentSettings.longBreak || 15
-      this.elements.sessionsUntilLongBreak.value = this.currentSettings.sessionsUntilLongBreak || 4
+      if (this.elements.focusTime) {
+        this.elements.focusTime.value = this.currentSettings.focusTime || 25
+      }
+      if (this.elements.shortBreak) {
+        this.elements.shortBreak.value = this.currentSettings.shortBreak || 5
+      }
+      if (this.elements.longBreak) {
+        this.elements.longBreak.value = this.currentSettings.longBreak || 15
+      }
+      if (this.elements.sessionsUntilLongBreak) {
+        this.elements.sessionsUntilLongBreak.value = this.currentSettings.sessionsUntilLongBreak || 4
+      }
 
-      // Update toggle switches
-      this.elements.autoStartBreaks.checked = this.currentSettings.autoStartBreaks !== false
-      this.elements.autoStartPomodoros.checked = this.currentSettings.autoStartPomodoros === true
-      this.elements.autoSwitchModes.checked = this.currentSettings.autoSwitchModes !== false
-      this.elements.notifications.checked = this.currentSettings.notifications !== false
-      this.elements.sounds.checked = this.currentSettings.sounds !== false
-      this.elements.breakReminders.checked = this.currentSettings.breakReminders !== false
-      this.elements.enforceBreaks.checked = this.currentSettings.enforceBreaks !== false
-      this.elements.youtubeIntegration.checked = this.currentSettings.youtubeIntegration !== false
-      this.elements.breakOverlay.checked = this.currentSettings.breakOverlay !== false
-      this.elements.breakCountdown.checked = this.currentSettings.breakCountdown !== false
-      this.elements.nextSessionInfo.checked = this.currentSettings.nextSessionInfo !== false
-      this.elements.focusOverlay.checked = this.currentSettings.focusOverlay === true
-      this.elements.hideDistractions.checked = this.currentSettings.hideDistractions !== false
-      this.elements.focusIndicator.checked = this.currentSettings.focusIndicator !== false
-      this.elements.websiteBlocking.checked = this.currentSettings.websiteBlocking !== false
-      this.elements.hideYoutubeComments.checked = this.currentSettings.hideYoutubeComments !== false
-      this.elements.hideYoutubeRecommendations.checked = this.currentSettings.hideYoutubeRecommendations !== false
-      this.elements.hideYoutubeShorts.checked = this.currentSettings.hideYoutubeShorts !== false
-      this.elements.pauseYoutubeBreaks.checked = this.currentSettings.pauseYoutubeBreaks !== false
-      this.elements.collectStats.checked = this.currentSettings.collectStats !== false
+      // Update toggle switches with improved logic
+      this.setToggleValue('autoStartBreaks', this.currentSettings.autoStartBreaks !== false)
+      this.setToggleValue('autoStartPomodoros', this.currentSettings.autoStartPomodoros === true)
+      this.setToggleValue('autoSwitchModes', this.currentSettings.autoSwitchModes !== false)
+      this.setToggleValue('notifications', this.currentSettings.notifications !== false)
+      this.setToggleValue('sounds', this.currentSettings.sounds !== false)
+      this.setToggleValue('breakReminders', this.currentSettings.breakReminders !== false)
+      this.setToggleValue('enforceBreaks', this.currentSettings.enforceBreaks !== false)
+      this.setToggleValue('youtubeIntegration', this.currentSettings.youtubeIntegration !== false)
+      this.setToggleValue('breakOverlay', this.currentSettings.breakOverlay !== false)
+      this.setToggleValue('breakCountdown', this.currentSettings.breakCountdown !== false)
+      this.setToggleValue('nextSessionInfo', this.currentSettings.nextSessionInfo !== false)
+      this.setToggleValue('focusOverlay', this.currentSettings.focusOverlay === true)
+      this.setToggleValue('hideDistractions', this.currentSettings.hideDistractions !== false)
+      this.setToggleValue('focusIndicator', this.currentSettings.focusIndicator !== false)
+      this.setToggleValue('websiteBlocking', this.currentSettings.websiteBlocking !== false)
+      this.setToggleValue('hideYoutubeComments', this.currentSettings.hideYoutubeComments !== false)
+      this.setToggleValue('hideYoutubeRecommendations', this.currentSettings.hideYoutubeRecommendations !== false)
+      this.setToggleValue('hideYoutubeShorts', this.currentSettings.hideYoutubeShorts !== false)
+      this.setToggleValue('pauseYoutubeBreaks', this.currentSettings.pauseYoutubeBreaks !== false)
+      this.setToggleValue('collectStats', this.currentSettings.collectStats !== false)
 
       console.log("[v0] Settings loaded successfully:", this.currentSettings)
       this.showSaveStatus("Settings loaded", "success")
     } catch (error) {
       console.error("[v0] Error loading settings:", error)
       this.showSaveStatus("Error loading settings", "error")
+    }
+  }
+
+  setToggleValue(settingKey, value) {
+    const element = this.elements[settingKey]
+    if (element) {
+      element.checked = value
+      console.log(`[v0] Set toggle ${settingKey} to ${value}`)
+    } else {
+      console.warn(`[v0] Could not set toggle ${settingKey} - element not found`)
     }
   }
 
@@ -400,7 +475,7 @@ class PomodoroOptions {
           await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: this.currentSettings })
         }
         
-        this.loadSettings()
+        await this.loadSettings()
         this.showSaveStatus("Settings reset to defaults", "success")
       } catch (error) {
         console.error("[v0] Error resetting settings:", error)
