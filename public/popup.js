@@ -133,12 +133,11 @@ class PomodoroPopup {
   async loadState() {
     console.log("[v0] Loading state")
     try {
-      const chrome = window.chrome // Declare chrome variable
-      if (!chrome || !chrome.storage) {
+      if (!window.chrome || !window.chrome.storage) {
         throw new Error("Chrome storage API not available")
       }
 
-      const result = await chrome.storage.local.get([
+      const result = await window.chrome.storage.local.get([
         "timerState",
         "currentTime",
         "isRunning",
@@ -247,9 +246,12 @@ class PomodoroPopup {
 
   async saveTodos() {
     try {
-      const chrome = window.chrome // Declare chrome variable
-      await chrome.storage.local.set({ todos: this.state.todos })
-      await chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos })
+      if (!window.chrome || !window.chrome.storage) {
+        throw new Error("Chrome storage API not available")
+      }
+
+      await window.chrome.storage.local.set({ todos: this.state.todos })
+      await window.chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos })
     } catch (error) {
       console.error("[v0] Error saving todos:", error)
     }
@@ -312,8 +314,11 @@ class PomodoroPopup {
     if (!website) return
 
     try {
-      const chrome = window.chrome // Declare chrome variable
-      await chrome.runtime.sendMessage({ type: "ADD_BLOCKED_WEBSITE", website })
+      if (!window.chrome || !window.chrome.runtime) {
+        throw new Error("Chrome runtime API not available")
+      }
+
+      await window.chrome.runtime.sendMessage({ type: "ADD_BLOCKED_WEBSITE", website })
       this.websiteInput.value = ""
       await this.loadBlockedWebsites()
     } catch (error) {
@@ -323,8 +328,11 @@ class PomodoroPopup {
 
   async removeBlockedWebsite(website) {
     try {
-      const chrome = window.chrome // Declare chrome variable
-      await chrome.runtime.sendMessage({ type: "REMOVE_BLOCKED_WEBSITE", website })
+      if (!window.chrome || !window.chrome.runtime) {
+        throw new Error("Chrome runtime API not available")
+      }
+
+      await window.chrome.runtime.sendMessage({ type: "REMOVE_BLOCKED_WEBSITE", website })
       await this.loadBlockedWebsites()
     } catch (error) {
       console.error("[v0] Error removing blocked website:", error)
@@ -333,8 +341,11 @@ class PomodoroPopup {
 
   async loadBlockedWebsites() {
     try {
-      const chrome = window.chrome // Declare chrome variable
-      const response = await chrome.runtime.sendMessage({ type: "GET_BLOCKED_WEBSITES" })
+      if (!window.chrome || !window.chrome.runtime) {
+        throw new Error("Chrome runtime API not available")
+      }
+
+      const response = await window.chrome.runtime.sendMessage({ type: "GET_BLOCKED_WEBSITES" })
       if (response && response.websites) {
         this.state.blockedWebsites = response.websites
         this.renderBlockedWebsites()
@@ -369,8 +380,11 @@ class PomodoroPopup {
     const newSettings = { ...this.state.settings, websiteBlocking: newState }
 
     try {
-      const chrome = window.chrome // Declare chrome variable
-      await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
+      if (!window.chrome || !window.chrome.runtime) {
+        throw new Error("Chrome runtime API not available")
+      }
+
+      await window.chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
       this.state.settings = newSettings
 
       if (this.toggleBlockingBtn) {
@@ -433,12 +447,11 @@ class PomodoroPopup {
   async startTimer() {
     console.log("[v0] Starting timer")
     try {
-      const chrome = window.chrome // Declare chrome variable
-      if (!chrome || !chrome.runtime) {
+      if (!window.chrome || !window.chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      await chrome.runtime.sendMessage({ type: "START_TIMER" })
+      await window.chrome.runtime.sendMessage({ type: "START_TIMER" })
       await this.loadState()
     } catch (error) {
       console.error("[v0] Error starting timer:", error)
@@ -448,12 +461,11 @@ class PomodoroPopup {
   async pauseTimer() {
     console.log("[v0] Pausing timer")
     try {
-      const chrome = window.chrome // Declare chrome variable
-      if (!chrome || !chrome.runtime) {
+      if (!window.chrome || !window.chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      await chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
+      await window.chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
       await this.loadState()
     } catch (error) {
       console.error("[v0] Error pausing timer:", error)
@@ -463,12 +475,11 @@ class PomodoroPopup {
   async resetTimer() {
     console.log("[v0] Resetting timer")
     try {
-      const chrome = window.chrome // Declare chrome variable
-      if (!chrome || !chrome.runtime) {
+      if (!window.chrome || !window.chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      await chrome.runtime.sendMessage({ type: "RESET_TIMER" })
+      await window.chrome.runtime.sendMessage({ type: "RESET_TIMER" })
       await this.loadState()
     } catch (error) {
       console.error("[v0] Error resetting timer:", error)
@@ -478,15 +489,14 @@ class PomodoroPopup {
   async updateSettings() {
     console.log("[v0] Updating settings")
     try {
-      const chrome = window.chrome // Declare chrome variable
       const newSettings = {
         ...this.state.settings,
         focusTime: Number.parseInt(this.focusTimeSelect.value),
         shortBreak: Number.parseInt(this.breakTimeSelect.value),
       }
 
-      await chrome.storage.local.set({ settings: newSettings })
-      await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
+      await window.chrome.storage.local.set({ settings: newSettings })
+      await window.chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
 
       this.state.settings = newSettings
       console.log("[v0] Settings updated:", newSettings)
@@ -498,8 +508,7 @@ class PomodoroPopup {
   openSettings() {
     console.log("[v0] Opening settings")
     try {
-      const chrome = window.chrome // Declare chrome variable
-      chrome.runtime.openOptionsPage()
+      window.chrome.runtime.openOptionsPage()
     } catch (error) {
       console.error("[v0] Error opening settings:", error)
     }
@@ -508,8 +517,7 @@ class PomodoroPopup {
   openStats() {
     console.log("[v0] Opening stats")
     try {
-      const chrome = window.chrome // Declare chrome variable
-      chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") })
+      window.chrome.tabs.create({ url: window.chrome.runtime.getURL("stats.html") })
     } catch (error) {
       console.error("[v0] Error opening stats:", error)
     }
