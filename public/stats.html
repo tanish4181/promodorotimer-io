@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Statistics</title>
+  <link rel="stylesheet" href="stats.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-content">
+        <h1>Productivity Statistics</h1>
+        <p>Track your focus and productivity over time</p>
+        <div class="header-actions">
+          <button id="export-stats" class="secondary-btn">Export Data</button>
+          <button id="settings-btn" class="primary-btn">Settings</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Overview Cards -->
+      <section class="overview-section">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🍅</div>
+            <div class="stat-content">
+              <div class="stat-value" id="total-sessions">0</div>
+              <div class="stat-label">Total Sessions</div>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-content">
+              <div class="stat-value" id="total-focus-time">0h 0m</div>
+              <div class="stat-label">Total Focus Time</div>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">☕</div>
+            <div class="stat-content">
+              <div class="stat-value" id="break-adherence">0%</div>
+              <div class="stat-label">Break Adherence</div>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-content">
+              <div class="stat-value" id="productivity-score">0</div>
+              <div class="stat-label">Productivity Score</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Time Period Selector -->
+      <section class="period-selector">
+        <div class="period-tabs">
+          <button class="period-tab active" data-period="week">This Week</button>
+          <button class="period-tab" data-period="month">This Month</button>
+          <button class="period-tab" data-period="year">This Year</button>
+          <button class="period-tab" data-period="all">All Time</button>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="charts-section">
+        <div class="charts-grid">
+          
+          <!-- Daily Focus Chart -->
+          <div class="chart-container">
+            <div class="chart-header">
+              <h3>Daily Focus Time</h3>
+              <p>Your focus sessions over time</p>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="daily-focus-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Session Distribution -->
+          <div class="chart-container">
+            <div class="chart-header">
+              <h3>Session Distribution</h3>
+              <p>Breakdown of your productivity patterns</p>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="session-distribution-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Weekly Heatmap -->
+          <div class="chart-container full-width">
+            <div class="chart-header">
+              <h3>Weekly Activity Heatmap</h3>
+              <p>Your most productive days and times</p>
+            </div>
+            <div class="heatmap-wrapper" id="weekly-heatmap">
+              <!-- Heatmap will be generated here -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Insights Section -->
+      <section class="insights-section">
+        <div class="insights-header">
+          <h2>Productivity Insights</h2>
+          <p>Personalized recommendations based on your data</p>
+        </div>
+        
+        <div class="insights-grid" id="insights-container">
+          <!-- Insights will be generated dynamically -->
+        </div>
+      </section>
+
+      <!-- Detailed Stats -->
+      <section class="detailed-stats">
+        <div class="stats-header">
+          <h2>Detailed Statistics</h2>
+        </div>
+        
+        <div class="detailed-grid">
+          <div class="detail-card">
+            <h4>Focus Sessions</h4>
+            <div class="detail-stats">
+              <div class="detail-item">
+                <span class="detail-label">Completed:</span>
+                <span class="detail-value" id="completed-sessions">0</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Average Duration:</span>
+                <span class="detail-value" id="avg-session-duration">0 min</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Longest Streak:</span>
+                <span class="detail-value" id="longest-streak">0 days</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <h4>Break Patterns</h4>
+            <div class="detail-stats">
+              <div class="detail-item">
+                <span class="detail-label">Breaks Taken:</span>
+                <span class="detail-value" id="breaks-taken">0</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Breaks Skipped:</span>
+                <span class="detail-value" id="breaks-skipped">0</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Average Break:</span>
+                <span class="detail-value" id="avg-break-duration">0 min</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <h4>Time Distribution</h4>
+            <div class="detail-stats">
+              <div class="detail-item">
+                <span class="detail-label">Morning (6-12):</span>
+                <span class="detail-value" id="morning-time">0%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Afternoon (12-18):</span>
+                <span class="detail-value" id="afternoon-time">0%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Evening (18-24):</span>
+                <span class="detail-value" id="evening-time">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p>Data is stored locally on your device and never shared.</p>
+        <button id="clear-stats" class="danger-btn">Clear All Statistics</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="stats.js"></script>
+</body>
+</html>

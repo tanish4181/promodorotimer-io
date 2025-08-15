@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-content">
+        <h1>Pomodoro Timer Settings</h1>
+        <p>Customize your productivity experience</p>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="settings-grid">
+        
+        <!-- Timer Settings -->
+        <section class="settings-section">
+          <div class="section-header">
+            <h2>Timer Settings</h2>
+            <p>Configure your work and break durations</p>
+          </div>
+          
+          <div class="setting-group">
+            <label for="focus-time">Focus Time</label>
+            <div class="input-group">
+              <input type="number" id="focus-time" min="1" max="120" value="25">
+              <span class="input-suffix">minutes</span>
+            </div>
+          </div>
+          
+          <div class="setting-group">
+            <label for="short-break">Short Break</label>
+            <div class="input-group">
+              <input type="number" id="short-break" min="1" max="30" value="5">
+              <span class="input-suffix">minutes</span>
+            </div>
+          </div>
+          
+          <div class="setting-group">
+            <label for="long-break">Long Break</label>
+            <div class="input-group">
+              <input type="number" id="long-break" min="5" max="60" value="15">
+              <span class="input-suffix">minutes</span>
+            </div>
+          </div>
+          
+          <div class="setting-group">
+            <label for="sessions-until-long-break">Sessions Until Long Break</label>
+            <div class="input-group">
+              <input type="number" id="sessions-until-long-break" min="2" max="10" value="4">
+              <span class="input-suffix">sessions</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Automation Settings -->
+        <section class="settings-section">
+          <div class="section-header">
+            <h2>Automation</h2>
+            <p>Control automatic timer behavior</p>
+          </div>
+          
+          <div class="setting-group">
+            <div class="toggle-setting">
+              <label for="auto-start-breaks">Auto-start breaks</label>
+              <div class="toggle-switch">
+                <input type="checkbox" id="auto-start-breaks" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </div>
+            <p class="setting-description">Automatically start break timers when focus sessions end</p>
+          </div>
+          
+          <div class="setting-group">
+            <div class="toggle-setting">
+              <label for="auto-start-pomodoros">Auto-start focus sessions</label>
+              <div class="toggle-switch">
+                <input type="checkbox" id="auto-start-pomodoros">
+                <span class="toggle-slider"></span>
+              </div>
+            </div>
+            <p class="setting-description">Automatically start focus sessions when breaks end</p>
+          </div>
+        </section>
+
+        <!-- Notifications Settings -->
+        <section class="settings-section">
+          <div class="section-header">
+            <h2>Notifications</h2>
+            <p>Manage alerts and sounds</p>
+          </div>
+          
+          <div class="setting-group">
+            <div class="toggle-setting">
+              <label for="notifications">Desktop notifications</label>
+              <div class="toggle-switch">
+                <input type="checkbox" id="notifications" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </div>
+            <p class="setting-description">Show desktop notifications when timers complete</p>
+          </div>
+          
+          <div class="setting-group">
+            <div class="toggle-setting">
+              <label for="sounds">Sound alerts</label>
+              <div class="toggle-switch">
+                <input type="checkbox" id="sounds" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </div>
+            <p class="setting-description">Play sound alerts when timers complete</p>
+          </div>
+        </section>
+
+        <!-- Break Enforcement Settings -->
+        <section class="settings-section">
+          <div class="section-header">
+            <h2>Break Enforcement</h2>
+            <p>Control how strictly breaks are enforced</p>
+          </div>
+          
+          <div class="setting-group">
+            <div class="toggle-setting">
+              <label for="enforce-breaks">Enforce breaks</label>
+              <div class="toggle-switch">
+                <input type="checkbox" id="enforce-breaks" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </div>
+            <p class="setting-description">Show overlay and pause videos during break time</p>
+          </div>
+          
+          <div class="setting-group">
+            <div class="toggle-setting">
+              <label for="youtube-integration">YouTube integration</label>
+              <div class="toggle-switch">
+                <input type="checkbox" id="youtube-integration" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </div>
+            <p class="setting-description">Automatically pause YouTube videos during breaks</p>
+          </div>
+        </section>
+
+        <!-- Data & Privacy Settings -->
+        <section class="settings-section">
+          <div class="section-header">
+            <h2>Data & Privacy</h2>
+            <p>Manage your data and statistics</p>
+          </div>
+          
+          <div class="setting-group">
+            <div class="toggle-setting">
+              <label for="collect-stats">Collect statistics</label>
+              <div class="toggle-switch">
+                <input type="checkbox" id="collect-stats" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </div>
+            <p class="setting-description">Track your productivity statistics locally</p>
+          </div>
+          
+          <div class="setting-group">
+            <button id="export-data" class="secondary-btn">Export Data</button>
+            <button id="clear-data" class="danger-btn">Clear All Data</button>
+          </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="settings-section">
+          <div class="section-header">
+            <h2>About</h2>
+            <p>Information about this extension</p>
+          </div>
+          
+          <div class="about-content">
+            <div class="about-item">
+              <strong>Version:</strong> 1.0.0
+            </div>
+            <div class="about-item">
+              <strong>Developer:</strong> Advanced Pomodoro Timer
+            </div>
+            <div class="about-item">
+              <strong>Description:</strong> A sophisticated Pomodoro timer with break enforcement and YouTube integration for enhanced productivity.
+            </div>
+          </div>
+          
+          <div class="setting-group">
+            <button id="view-stats" class="primary-btn">View Statistics</button>
+            <button id="reset-defaults" class="secondary-btn">Reset to Defaults</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="save-status" id="save-status">
+        <span class="status-text">Settings saved automatically</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
