@@ -1,4 +1,5 @@
 // Background Service Worker for Pomodoro Timer Chrome Extension
+
 const chrome = window.chrome // Declare the chrome variable
 
 class PomodoroBackground {

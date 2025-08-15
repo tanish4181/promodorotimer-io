@@ -1,4 +1,5 @@
 // Content Script for YouTube Integration - Pomodoro Timer Chrome Extension
+
 const chrome = window.chrome // Declare the chrome variable
 
 class YouTubeIntegration {

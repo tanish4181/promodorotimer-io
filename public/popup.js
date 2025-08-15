@@ -1,6 +1,7 @@
 // Popup script for Pomodoro Timer Chrome Extension
 class PomodoroPopup {
   constructor() {
+    console.log("[v0] Initializing PomodoroPopup")
     this.timerText = document.getElementById("timer-text")
     this.timerLabel = document.getElementById("timer-label")
     this.timerCircle = document.getElementById("timer-circle")
@@ -14,23 +15,59 @@ class PomodoroPopup {
     this.settingsBtn = document.getElementById("settings-btn")
     this.statsBtn = document.getElementById("stats-btn")
 
+    console.log("[v0] Elements found:", {
+      timerText: !!this.timerText,
+      startBtn: !!this.startBtn,
+      pauseBtn: !!this.pauseBtn,
+    })
+
     this.initializeEventListeners()
     this.loadState()
-    this.updateDisplay()
   }
 
   initializeEventListeners() {
-    this.startBtn.addEventListener("click", () => this.startTimer())
-    this.pauseBtn.addEventListener("click", () => this.pauseTimer())
-    this.resetBtn.addEventListener("click", () => this.resetTimer())
-    this.settingsBtn.addEventListener("click", () => this.openSettings())
-    this.statsBtn.addEventListener("click", () => this.openStats())
+    console.log("[v0] Setting up event listeners")
 
-    this.focusTimeSelect.addEventListener("change", () => this.updateSettings())
-    this.breakTimeSelect.addEventListener("change", () => this.updateSettings())
+    this.startBtn.addEventListener("click", () => {
+      console.log("[v0] Start button clicked")
+      this.startTimer()
+    })
 
-    // Listen for background script updates
+    this.pauseBtn.addEventListener("click", () => {
+      console.log("[v0] Pause button clicked")
+      this.pauseTimer()
+    })
+
+    this.resetBtn.addEventListener("click", () => {
+      console.log("[v0] Reset button clicked")
+      this.resetTimer()
+    })
+
+    this.settingsBtn.addEventListener("click", () => {
+      console.log("[v0] Settings button clicked")
+      this.openSettings()
+    })
+
+    this.statsBtn.addEventListener("click", () => {
+      console.log("[v0] Stats button clicked")
+      this.openStats()
+    })
+
+    this.focusTimeSelect.addEventListener("change", () => {
+      console.log("[v0] Focus time changed")
+      this.updateSettings()
+    })
+
+    this.breakTimeSelect.addEventListener("change", () => {
+      console.log("[v0] Break time changed")
+      this.updateSettings()
+    })
+
+    window.chrome = window.chrome || {}
+    window.chrome.runtime = window.chrome.runtime || {}
+    window.chrome.runtime.onMessage = window.chrome.runtime.onMessage || {}
     window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log("[v0] Message received:", message)
       if (message.type === "TIMER_UPDATE") {
         this.updateDisplay()
       }
@@ -38,6 +75,7 @@ class PomodoroPopup {
   }
 
   async loadState() {
+    console.log("[v0] Loading state")
     try {
       const result = await window.chrome.storage.local.get([
         "timerState",
@@ -47,6 +85,8 @@ class PomodoroPopup {
         "sessionCount",
         "settings",
       ])
+
+      console.log("[v0] Loaded state:", result)
 
       this.state = {
         timerState: result.timerState || "focus",
@@ -69,13 +109,17 @@ class PomodoroPopup {
       // Update UI elements
       this.focusTimeSelect.value = this.state.settings.focusTime
       this.breakTimeSelect.value = this.state.settings.shortBreak
+
+      this.updateDisplay()
     } catch (error) {
-      console.error("Error loading state:", error)
+      console.error("[v0] Error loading state:", error)
       this.initializeDefaultState()
+      this.updateDisplay()
     }
   }
 
   initializeDefaultState() {
+    console.log("[v0] Initializing default state")
     this.state = {
       timerState: "focus",
       currentTime: 25 * 60,
@@ -96,6 +140,13 @@ class PomodoroPopup {
   }
 
   updateDisplay() {
+    console.log("[v0] Updating display with state:", this.state)
+
+    if (!this.state) {
+      console.log("[v0] No state available, skipping display update")
+      return
+    }
+
     const minutes = Math.floor(this.state.currentTime / 60)
     const seconds = this.state.currentTime % 60
     this.timerText.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
@@ -130,42 +181,70 @@ class PomodoroPopup {
   }
 
   async startTimer() {
-    await window.chrome.runtime.sendMessage({ type: "START_TIMER" })
-    this.loadState()
-    this.updateDisplay()
+    console.log("[v0] Starting timer")
+    try {
+      await window.chrome.runtime.sendMessage({ type: "START_TIMER" })
+      await this.loadState()
+    } catch (error) {
+      console.error("[v0] Error starting timer:", error)
+    }
   }
 
   async pauseTimer() {
-    await window.chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
-    this.loadState()
-    this.updateDisplay()
+    console.log("[v0] Pausing timer")
+    try {
+      await window.chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
+      await this.loadState()
+    } catch (error) {
+      console.error("[v0] Error pausing timer:", error)
+    }
   }
 
   async resetTimer() {
-    await window.chrome.runtime.sendMessage({ type: "RESET_TIMER" })
-    this.loadState()
-    this.updateDisplay()
+    console.log("[v0] Resetting timer")
+    try {
+      await window.chrome.runtime.sendMessage({ type: "RESET_TIMER" })
+      await this.loadState()
+    } catch (error) {
+      console.error("[v0] Error resetting timer:", error)
+    }
   }
 
   async updateSettings() {
-    const newSettings = {
-      ...this.state.settings,
-      focusTime: Number.parseInt(this.focusTimeSelect.value),
-      shortBreak: Number.parseInt(this.breakTimeSelect.value),
+    console.log("[v0] Updating settings")
+    try {
+      const newSettings = {
+        ...this.state.settings,
+        focusTime: Number.parseInt(this.focusTimeSelect.value),
+        shortBreak: Number.parseInt(this.breakTimeSelect.value),
+      }
+
+      await window.chrome.storage.local.set({ settings: newSettings })
+      await window.chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
+
+      this.state.settings = newSettings
+      console.log("[v0] Settings updated:", newSettings)
+    } catch (error) {
+      console.error("[v0] Error updating settings:", error)
     }
-
-    await window.chrome.storage.local.set({ settings: newSettings })
-    await window.chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
-
-    this.state.settings = newSettings
   }
 
   openSettings() {
-    window.chrome.runtime.openOptionsPage()
+    console.log("[v0] Opening settings")
+    try {
+      window.chrome.runtime.openOptionsPage()
+    } catch (error) {
+      console.error("[v0] Error opening settings:", error)
+    }
   }
 
   openStats() {
-    window.chrome.tabs.create({ url: window.chrome.runtime.getURL("stats.html") })
+    console.log("[v0] Opening stats")
+    try {
+      window.chrome.tabs.create({ url: window.chrome.runtime.getURL("stats.html") })
+    } catch (error) {
+      console.error("[v0] Error opening stats:", error)
+    }
   }
 
   formatTime(seconds) {
@@ -177,5 +256,6 @@ class PomodoroPopup {
 
 // Initialize popup when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("[v0] DOM loaded, initializing popup")
   new PomodoroPopup()
 })

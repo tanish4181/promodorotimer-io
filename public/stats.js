@@ -1,5 +1,4 @@
 // Statistics page script for Pomodoro Timer Chrome Extension
-const chrome = window.chrome // Declare the chrome variable
 
 class PomodoroStats {
   constructor() {
@@ -26,7 +25,7 @@ class PomodoroStats {
 
   async loadData() {
     try {
-      const result = await chrome.storage.local.get(["dailyStats", "totalSessions", "settings"])
+      const result = await window.chrome.storage.local.get(["dailyStats", "totalSessions", "settings"])
 
       this.data = {
         dailyStats: result.dailyStats || {},
@@ -107,89 +106,114 @@ class PomodoroStats {
   }
 
   renderDailyFocusChart() {
-    const ctx = document.getElementById("daily-focus-chart").getContext("2d")
+    const canvas = document.getElementById("daily-focus-chart")
+    const ctx = canvas.getContext("2d")
     const data = this.getDailyFocusData()
 
-    if (this.charts.dailyFocus) {
-      this.charts.dailyFocus.destroy()
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Set canvas size
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
+
+    if (data.values.length === 0) return
+
+    const padding = 40
+    const chartWidth = canvas.width - padding * 2
+    const chartHeight = canvas.height - padding * 2
+    const maxValue = Math.max(...data.values, 1)
+
+    // Draw grid lines
+    ctx.strokeStyle = "#e5e7eb"
+    ctx.lineWidth = 1
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight / 5) * i
+      ctx.beginPath()
+      ctx.moveTo(padding, y)
+      ctx.lineTo(canvas.width - padding, y)
+      ctx.stroke()
     }
 
-    const Chart = window.Chart // Use Chart.js from CDN
-    this.charts.dailyFocus = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: data.labels,
-        datasets: [
-          {
-            label: "Focus Time (minutes)",
-            data: data.values,
-            borderColor: "#8b5cf6",
-            backgroundColor: "rgba(139, 92, 246, 0.1)",
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false,
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: "#e5e7eb",
-            },
-          },
-          x: {
-            grid: {
-              color: "#e5e7eb",
-            },
-          },
-        },
-      },
+    // Draw line chart
+    ctx.strokeStyle = "#8b5cf6"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+
+    data.values.forEach((value, index) => {
+      const x = padding + (chartWidth / (data.values.length - 1)) * index
+      const y = padding + chartHeight - (value / maxValue) * chartHeight
+
+      if (index === 0) {
+        ctx.moveTo(x, y)
+      } else {
+        ctx.lineTo(x, y)
+      }
+    })
+
+    ctx.stroke()
+
+    // Draw points
+    ctx.fillStyle = "#8b5cf6"
+    data.values.forEach((value, index) => {
+      const x = padding + (chartWidth / (data.values.length - 1)) * index
+      const y = padding + chartHeight - (value / maxValue) * chartHeight
+
+      ctx.beginPath()
+      ctx.arc(x, y, 4, 0, 2 * Math.PI)
+      ctx.fill()
     })
   }
 
   renderSessionDistributionChart() {
-    const ctx = document.getElementById("session-distribution-chart").getContext("2d")
+    const canvas = document.getElementById("session-distribution-chart")
+    const ctx = canvas.getContext("2d")
     const data = this.getSessionDistributionData()
 
-    if (this.charts.sessionDistribution) {
-      this.charts.sessionDistribution.destroy()
-    }
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    const Chart = window.Chart // Use Chart.js from CDN
-    this.charts.sessionDistribution = new Chart(ctx, {
-      type: "doughnut",
-      data: {
-        labels: ["Completed Sessions", "Incomplete Sessions", "Breaks Taken", "Breaks Skipped"],
-        datasets: [
-          {
-            data: data.values,
-            backgroundColor: ["#8b5cf6", "#e5e7eb", "#34d399", "#fbbf24"],
-            borderWidth: 0,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: "bottom",
-            labels: {
-              padding: 20,
-              usePointStyle: true,
-            },
-          },
-        },
-      },
+    // Set canvas size
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
+
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = Math.min(centerX, centerY) - 20
+
+    const total = data.values.reduce((sum, val) => sum + val, 0)
+    if (total === 0) return
+
+    const colors = ["#8b5cf6", "#e5e7eb", "#34d399", "#fbbf24"]
+    const labels = ["Completed Sessions", "Incomplete Sessions", "Breaks Taken", "Breaks Skipped"]
+
+    let currentAngle = -Math.PI / 2
+
+    data.values.forEach((value, index) => {
+      const sliceAngle = (value / total) * 2 * Math.PI
+
+      ctx.fillStyle = colors[index]
+      ctx.beginPath()
+      ctx.moveTo(centerX, centerY)
+      ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle)
+      ctx.closePath()
+      ctx.fill()
+
+      currentAngle += sliceAngle
+    })
+
+    // Draw legend
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    labels.forEach((label, index) => {
+      const y = canvas.height - 80 + index * 20
+
+      // Color box
+      ctx.fillStyle = colors[index]
+      ctx.fillRect(20, y - 8, 12, 12)
+
+      // Label text
+      ctx.fillStyle = "#374151"
+      ctx.fillText(label, 40, y + 2)
     })
   }
 
@@ -460,7 +484,7 @@ class PomodoroStats {
   }
 
   openSettings() {
-    chrome.runtime.openOptionsPage()
+    window.chrome.runtime.openOptionsPage()
   }
 
   async clearStats() {
@@ -469,7 +493,7 @@ class PomodoroStats {
     }
 
     try {
-      await chrome.storage.local.remove(["dailyStats", "totalSessions"])
+      await window.chrome.storage.local.remove(["dailyStats", "totalSessions"])
       location.reload()
     } catch (error) {
       console.error("[v0] Error clearing stats:", error)
