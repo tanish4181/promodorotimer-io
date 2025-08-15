@@ -25,6 +25,11 @@
       <button id="pause-btn" class="secondary-btn" style="display: none;">Pause</button>
       <button id="reset-btn" class="secondary-btn">Reset</button>
     </div>
+
+    <!-- Skip Break Button (only visible during breaks) -->
+    <div id="skip-break-container" class="skip-break-container" style="display: none;">
+      <button id="skip-break-btn" class="skip-break-btn">⏭️ Skip Break & Start Focus</button>
+    </div>
     
     <div class="session-info">
       <div class="info-item">
@@ -34,6 +39,22 @@
       <div class="info-item">
         <span class="label">Mode:</span>
         <span id="current-mode">Focus</span>
+      </div>
+    </div>
+
+    <!-- Quick Settings Toggles -->
+    <div class="quick-toggles">
+      <div class="toggle-item">
+        <span class="toggle-label">Website Blocking</span>
+        <button id="toggle-blocking" class="toggle-btn">🚫</button>
+      </div>
+      <div class="toggle-item">
+        <span class="toggle-label">Break Overlay</span>
+        <button id="toggle-break-overlay" class="toggle-btn">📺</button>
+      </div>
+      <div class="toggle-item">
+        <span class="toggle-label">Focus Indicator</span>
+        <button id="toggle-focus-indicator" class="toggle-btn">👁️</button>
       </div>
     </div>
 
@@ -57,7 +78,6 @@
     <div class="blocking-section">
       <div class="section-header">
         <h3>Website Blocking</h3>
-        <button id="toggle-blocking" class="toggle-btn">🚫</button>
       </div>
       
       <div class="add-website">

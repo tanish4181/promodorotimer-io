@@ -151,6 +151,36 @@ body {
   transform: translateY(-1px);
 }
 
+/* Skip Break Button Styles */
+.skip-break-container {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.skip-break-btn {
+  background: linear-gradient(135deg, var(--warning-color), #f59e0b);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.skip-break-btn:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
+}
+
+.skip-break-btn:active {
+  transform: translateY(0);
+}
+
 .session-info {
   display: flex;
   justify-content: space-between;
@@ -176,6 +206,87 @@ body {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+/* Quick Toggles Section */
+.quick-toggles {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.toggle-item:last-child {
+  border-bottom: none;
+}
+
+.toggle-label {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  min-width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.toggle-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--primary-color);
+  border-radius: 8px;
+  transform: scale(0);
+  transition: transform 0.3s ease;
+  z-index: -1;
+}
+
+.toggle-btn:hover {
+  background: rgba(5, 150, 105, 0.1);
+  transform: scale(1.05);
+}
+
+.toggle-btn:hover::before {
+  transform: scale(1);
+}
+
+.toggle-btn.active {
+  background: var(--primary-color);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.toggle-btn.active::before {
+  transform: scale(1);
+}
+
+.toggle-btn:active {
+  transform: scale(0.95);
 }
 
 .quick-settings {
@@ -273,20 +384,6 @@ body {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
-}
-
-.toggle-btn {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.toggle-btn:hover {
-  background: var(--background);
 }
 
 .add-todo,

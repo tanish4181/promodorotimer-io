@@ -9,6 +9,8 @@ class PomodoroPopup {
     this.startBtn = document.getElementById("start-btn")
     this.pauseBtn = document.getElementById("pause-btn")
     this.resetBtn = document.getElementById("reset-btn")
+    this.skipBreakBtn = document.getElementById("skip-break-btn")
+    this.skipBreakContainer = document.getElementById("skip-break-container")
     this.sessionCount = document.getElementById("session-count")
     this.currentMode = document.getElementById("current-mode")
     this.focusTimeSelect = document.getElementById("focus-time")
@@ -16,18 +18,26 @@ class PomodoroPopup {
     this.settingsBtn = document.getElementById("settings-btn")
     this.statsBtn = document.getElementById("stats-btn")
 
+    // Quick toggle buttons
+    this.toggleBlockingBtn = document.getElementById("toggle-blocking")
+    this.toggleBreakOverlayBtn = document.getElementById("toggle-break-overlay")
+    this.toggleFocusIndicatorBtn = document.getElementById("toggle-focus-indicator")
+
     this.todoInput = document.getElementById("todo-input")
     this.addTodoBtn = document.getElementById("add-todo-btn")
     this.todoList = document.getElementById("todo-list")
     this.websiteInput = document.getElementById("website-input")
     this.addWebsiteBtn = document.getElementById("add-website-btn")
     this.blockedWebsitesList = document.getElementById("blocked-websites-list")
-    this.toggleBlockingBtn = document.getElementById("toggle-blocking")
 
     console.log("[v0] Elements found:", {
       timerText: !!this.timerText,
       startBtn: !!this.startBtn,
       pauseBtn: !!this.pauseBtn,
+      skipBreakBtn: !!this.skipBreakBtn,
+      toggleBlockingBtn: !!this.toggleBlockingBtn,
+      toggleBreakOverlayBtn: !!this.toggleBreakOverlayBtn,
+      toggleFocusIndicatorBtn: !!this.toggleFocusIndicatorBtn,
     })
 
     this.initializeEventListeners()
@@ -55,6 +65,13 @@ class PomodoroPopup {
       this.resetBtn.addEventListener("click", () => {
         console.log("[v0] Reset button clicked")
         this.resetTimer()
+      })
+    }
+
+    if (this.skipBreakBtn) {
+      this.skipBreakBtn.addEventListener("click", () => {
+        console.log("[v0] Skip break button clicked")
+        this.skipBreak()
       })
     }
 
@@ -86,6 +103,28 @@ class PomodoroPopup {
       })
     }
 
+    // Quick toggle buttons
+    if (this.toggleBlockingBtn) {
+      this.toggleBlockingBtn.addEventListener("click", () => {
+        console.log("[v0] Toggle blocking clicked")
+        this.toggleSetting("websiteBlocking", this.toggleBlockingBtn)
+      })
+    }
+
+    if (this.toggleBreakOverlayBtn) {
+      this.toggleBreakOverlayBtn.addEventListener("click", () => {
+        console.log("[v0] Toggle break overlay clicked")
+        this.toggleSetting("breakOverlay", this.toggleBreakOverlayBtn)
+      })
+    }
+
+    if (this.toggleFocusIndicatorBtn) {
+      this.toggleFocusIndicatorBtn.addEventListener("click", () => {
+        console.log("[v0] Toggle focus indicator clicked")
+        this.toggleSetting("focusIndicator", this.toggleFocusIndicatorBtn)
+      })
+    }
+
     if (this.addTodoBtn) {
       this.addTodoBtn.addEventListener("click", () => {
         this.addTodo()
@@ -114,30 +153,113 @@ class PomodoroPopup {
       })
     }
 
-    if (this.toggleBlockingBtn) {
-      this.toggleBlockingBtn.addEventListener("click", () => {
-        this.toggleWebsiteBlocking()
+    // Event delegation for todo items and website items
+    if (this.todoList) {
+      this.todoList.addEventListener("click", (e) => {
+        const target = e.target
+        const todoItem = target.closest('.todo-item')
+        
+        if (!todoItem) return
+        
+        const todoId = parseInt(todoItem.dataset.id)
+        
+        if (target.classList.contains('todo-checkbox')) {
+          this.toggleTodo(todoId)
+        } else if (target.classList.contains('todo-delete')) {
+          this.deleteTodo(todoId)
+        }
       })
     }
 
-    if (window.chrome && window.chrome.runtime && window.chrome.runtime.onMessage) {
-      window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (this.blockedWebsitesList) {
+      this.blockedWebsitesList.addEventListener("click", (e) => {
+        const target = e.target
+        
+        if (target.classList.contains('website-remove')) {
+          const websiteName = target.dataset.website
+          this.removeBlockedWebsite(websiteName)
+        }
+      })
+    }
+
+    if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.log("[v0] Message received:", message)
         if (message.type === "TIMER_UPDATE") {
+          this.state = message.state
           this.updateDisplay()
         }
       })
     }
   }
 
+  async toggleSetting(settingName, button) {
+    console.log("[v0] Toggling setting:", settingName)
+    
+    if (!this.state || !this.state.settings) {
+      console.error("[v0] No state or settings available")
+      return
+    }
+
+    const currentValue = this.state.settings[settingName]
+    const newValue = !currentValue
+    
+    console.log("[v0] Setting", settingName, "changing from", currentValue, "to", newValue)
+
+    // Update UI immediately for instant feedback
+    this.state.settings[settingName] = newValue
+    this.updateToggleButton(button, newValue)
+
+    const newSettings = { ...this.state.settings, [settingName]: newValue }
+
+    try {
+      // Save to storage
+      await chrome.storage.local.set({ settings: newSettings })
+
+      // Notify background script
+      await chrome.runtime.sendMessage({ 
+        type: "SETTINGS_UPDATED", 
+        settings: newSettings 
+      })
+
+      console.log("[v0] Setting", settingName, "successfully toggled to", newValue)
+    } catch (error) {
+      console.error("[v0] Error toggling setting:", error)
+      // Revert the change if there was an error
+      this.state.settings[settingName] = currentValue
+      this.updateToggleButton(button, currentValue)
+    }
+  }
+
+  updateToggleButton(button, isActive) {
+    if (!button) {
+      console.error("[v0] Button element not found")
+      return
+    }
+
+    console.log("[v0] Updating toggle button, isActive:", isActive)
+
+    if (isActive) {
+      button.classList.add("active")
+      button.style.background = "var(--primary-color)"
+      button.style.color = "white"
+      button.style.transform = "scale(1.1)"
+    } else {
+      button.classList.remove("active")
+      button.style.background = "none"
+      button.style.color = "inherit"
+      button.style.transform = "scale(1)"
+    }
+  }
+
   async loadState() {
     console.log("[v0] Loading state")
     try {
-      if (!window.chrome || !window.chrome.storage) {
+      if (!chrome || !chrome.storage) {
         throw new Error("Chrome storage API not available")
       }
 
-      const result = await window.chrome.storage.local.get([
+      const result = await chrome.storage.local.get([
         "timerState",
         "currentTime",
         "isRunning",
@@ -163,9 +285,24 @@ class PomodoroPopup {
           sessionsUntilLongBreak: 4,
           autoStartBreaks: true,
           autoStartPomodoros: false,
+          autoSwitchModes: true,
           notifications: true,
           sounds: true,
+          breakReminders: true,
+          enforceBreaks: true,
+          youtubeIntegration: true,
+          breakOverlay: true,
+          breakCountdown: true,
+          nextSessionInfo: true,
+          focusOverlay: false,
+          hideDistractions: true,
+          focusIndicator: true,
           websiteBlocking: true,
+          hideYoutubeComments: true,
+          hideYoutubeRecommendations: true,
+          hideYoutubeShorts: true,
+          pauseYoutubeBreaks: true,
+          collectStats: true,
         },
         todos: result.todos || [],
         blockedWebsites: result.blockedWebsites || [],
@@ -176,12 +313,33 @@ class PomodoroPopup {
       if (this.breakTimeSelect) this.breakTimeSelect.value = this.state.settings.shortBreak
 
       this.updateDisplay()
+      this.updateToggleButtons()
       this.renderTodos()
       this.renderBlockedWebsites()
     } catch (error) {
       console.error("[v0] Error loading state:", error)
       this.initializeDefaultState()
       this.updateDisplay()
+    }
+  }
+
+  updateToggleButtons() {
+    if (!this.state || !this.state.settings) {
+      console.error("[v0] No state or settings available for toggle buttons")
+      return
+    }
+
+    console.log("[v0] Updating toggle buttons with settings:", this.state.settings)
+
+    // Update each toggle button with proper null checks
+    if (this.toggleBlockingBtn) {
+      this.updateToggleButton(this.toggleBlockingBtn, this.state.settings.websiteBlocking)
+    }
+    if (this.toggleBreakOverlayBtn) {
+      this.updateToggleButton(this.toggleBreakOverlayBtn, this.state.settings.breakOverlay)
+    }
+    if (this.toggleFocusIndicatorBtn) {
+      this.updateToggleButton(this.toggleFocusIndicatorBtn, this.state.settings.focusIndicator)
     }
   }
 
@@ -200,9 +358,24 @@ class PomodoroPopup {
         sessionsUntilLongBreak: 4,
         autoStartBreaks: true,
         autoStartPomodoros: false,
+        autoSwitchModes: true,
         notifications: true,
         sounds: true,
+        breakReminders: true,
+        enforceBreaks: true,
+        youtubeIntegration: true,
+        breakOverlay: true,
+        breakCountdown: true,
+        nextSessionInfo: true,
+        focusOverlay: false,
+        hideDistractions: true,
+        focusIndicator: true,
         websiteBlocking: true,
+        hideYoutubeComments: true,
+        hideYoutubeRecommendations: true,
+        hideYoutubeShorts: true,
+        pauseYoutubeBreaks: true,
+        collectStats: true,
       },
       todos: [],
       blockedWebsites: [],
@@ -246,12 +419,12 @@ class PomodoroPopup {
 
   async saveTodos() {
     try {
-      if (!window.chrome || !window.chrome.storage) {
+      if (!chrome || !chrome.storage) {
         throw new Error("Chrome storage API not available")
       }
 
-      await window.chrome.storage.local.set({ todos: this.state.todos })
-      await window.chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos })
+      await chrome.storage.local.set({ todos: this.state.todos })
+      await chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos })
     } catch (error) {
       console.error("[v0] Error saving todos:", error)
     }
@@ -270,11 +443,11 @@ class PomodoroPopup {
           .map(
             (todo) => `
           <div class="todo-item" data-id="${todo.id}">
-            <button class="todo-checkbox" onclick="popup.toggleTodo(${todo.id})">
+            <button class="todo-checkbox">
               <span class="checkbox-icon">${todo.completed ? "✓" : ""}</span>
             </button>
             <span class="todo-text ${todo.completed ? "completed" : ""}">${todo.text}</span>
-            <button class="todo-delete" onclick="popup.deleteTodo(${todo.id})" title="Delete task">×</button>
+            <button class="todo-delete" title="Delete task">×</button>
           </div>
         `,
           )
@@ -291,11 +464,11 @@ class PomodoroPopup {
             .map(
               (todo) => `
             <div class="todo-item completed" data-id="${todo.id}">
-              <button class="todo-checkbox" onclick="popup.toggleTodo(${todo.id})">
+              <button class="todo-checkbox">
                 <span class="checkbox-icon">✓</span>
               </button>
               <span class="todo-text completed">${todo.text}</span>
-              <button class="todo-delete" onclick="popup.deleteTodo(${todo.id})" title="Delete task">×</button>
+              <button class="todo-delete" title="Delete task">×</button>
             </div>
           `,
             )
@@ -314,11 +487,11 @@ class PomodoroPopup {
     if (!website) return
 
     try {
-      if (!window.chrome || !window.chrome.runtime) {
+      if (!chrome || !chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      await window.chrome.runtime.sendMessage({ type: "ADD_BLOCKED_WEBSITE", website })
+      await chrome.runtime.sendMessage({ type: "ADD_BLOCKED_WEBSITE", website })
       this.websiteInput.value = ""
       await this.loadBlockedWebsites()
     } catch (error) {
@@ -328,11 +501,11 @@ class PomodoroPopup {
 
   async removeBlockedWebsite(website) {
     try {
-      if (!window.chrome || !window.chrome.runtime) {
+      if (!chrome || !chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      await window.chrome.runtime.sendMessage({ type: "REMOVE_BLOCKED_WEBSITE", website })
+      await chrome.runtime.sendMessage({ type: "REMOVE_BLOCKED_WEBSITE", website })
       await this.loadBlockedWebsites()
     } catch (error) {
       console.error("[v0] Error removing blocked website:", error)
@@ -341,11 +514,11 @@ class PomodoroPopup {
 
   async loadBlockedWebsites() {
     try {
-      if (!window.chrome || !window.chrome.runtime) {
+      if (!chrome || !chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      const response = await window.chrome.runtime.sendMessage({ type: "GET_BLOCKED_WEBSITES" })
+      const response = await chrome.runtime.sendMessage({ type: "GET_BLOCKED_WEBSITES" })
       if (response && response.websites) {
         this.state.blockedWebsites = response.websites
         this.renderBlockedWebsites()
@@ -368,32 +541,11 @@ class PomodoroPopup {
         (website) => `
       <div class="website-item">
         <span class="website-name">${website}</span>
-        <button class="website-remove" onclick="popup.removeBlockedWebsite('${website}')" title="Remove website">×</button>
+        <button class="website-remove" data-website="${website}" title="Remove website">×</button>
       </div>
     `,
       )
       .join("")
-  }
-
-  async toggleWebsiteBlocking() {
-    const newState = !this.state.settings.websiteBlocking
-    const newSettings = { ...this.state.settings, websiteBlocking: newState }
-
-    try {
-      if (!window.chrome || !window.chrome.runtime) {
-        throw new Error("Chrome runtime API not available")
-      }
-
-      await window.chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
-      this.state.settings = newSettings
-
-      if (this.toggleBlockingBtn) {
-        this.toggleBlockingBtn.textContent = newState ? "🚫" : "✅"
-        this.toggleBlockingBtn.title = newState ? "Disable website blocking" : "Enable website blocking"
-      }
-    } catch (error) {
-      console.error("[v0] Error toggling website blocking:", error)
-    }
   }
 
   updateDisplay() {
@@ -406,7 +558,9 @@ class PomodoroPopup {
 
     const minutes = Math.floor(this.state.currentTime / 60)
     const seconds = this.state.currentTime % 60
-    this.timerText.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+    if (this.timerText) {
+      this.timerText.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+    }
 
     // Update labels and modes
     const modeLabels = {
@@ -415,27 +569,35 @@ class PomodoroPopup {
       longBreak: "Long Break",
     }
 
-    this.timerLabel.textContent = modeLabels[this.state.currentMode] || "Focus Time"
-    this.currentMode.textContent = this.state.currentMode === "focus" ? "Focus" : "Break"
-    this.sessionCount.textContent = this.state.sessionCount
+    if (this.timerLabel) {
+      this.timerLabel.textContent = modeLabels[this.state.currentMode] || "Focus Time"
+    }
+    if (this.currentMode) {
+      this.currentMode.textContent = this.state.currentMode === "focus" ? "Focus" : "Break"
+    }
+    if (this.sessionCount) {
+      this.sessionCount.textContent = this.state.sessionCount
+    }
 
     // Update button states
     if (this.state.isRunning) {
-      this.startBtn.style.display = "none"
-      this.pauseBtn.style.display = "block"
-      this.timerCircle.classList.add("active")
+      if (this.startBtn) this.startBtn.style.display = "none"
+      if (this.pauseBtn) this.pauseBtn.style.display = "block"
+      if (this.timerCircle) this.timerCircle.classList.add("active")
     } else {
-      this.startBtn.style.display = "block"
-      this.pauseBtn.style.display = "none"
-      this.timerCircle.classList.remove("active")
+      if (this.startBtn) this.startBtn.style.display = "block"
+      if (this.pauseBtn) this.pauseBtn.style.display = "none"
+      if (this.timerCircle) this.timerCircle.classList.remove("active")
     }
 
-    if (this.toggleBlockingBtn && this.state.settings) {
-      this.toggleBlockingBtn.textContent = this.state.settings.websiteBlocking ? "🚫" : "✅"
-      this.toggleBlockingBtn.title = this.state.settings.websiteBlocking
-        ? "Disable website blocking"
-        : "Enable website blocking"
+    // Show/hide skip break button
+    if (this.skipBreakContainer) {
+      const isBreakMode = this.state.currentMode === "shortBreak" || this.state.currentMode === "longBreak"
+      this.skipBreakContainer.style.display = isBreakMode ? "flex" : "none"
     }
+
+    // Update toggle buttons
+    this.updateToggleButtons()
 
     // Update body class for styling
     document.body.className = ""
@@ -447,11 +609,11 @@ class PomodoroPopup {
   async startTimer() {
     console.log("[v0] Starting timer")
     try {
-      if (!window.chrome || !window.chrome.runtime) {
+      if (!chrome || !chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      const response = await window.chrome.runtime.sendMessage({ type: "START_TIMER" })
+      const response = await chrome.runtime.sendMessage({ type: "START_TIMER" })
       console.log("[v0] Start timer response:", response)
       await this.loadState()
     } catch (error) {
@@ -462,11 +624,11 @@ class PomodoroPopup {
   async pauseTimer() {
     console.log("[v0] Pausing timer")
     try {
-      if (!window.chrome || !window.chrome.runtime) {
+      if (!chrome || !chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      await window.chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
+      await chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
       await this.loadState()
     } catch (error) {
       console.error("[v0] Error pausing timer:", error)
@@ -476,14 +638,28 @@ class PomodoroPopup {
   async resetTimer() {
     console.log("[v0] Resetting timer")
     try {
-      if (!window.chrome || !window.chrome.runtime) {
+      if (!chrome || !chrome.runtime) {
         throw new Error("Chrome runtime API not available")
       }
 
-      await window.chrome.runtime.sendMessage({ type: "RESET_TIMER" })
+      await chrome.runtime.sendMessage({ type: "RESET_TIMER" })
       await this.loadState()
     } catch (error) {
       console.error("[v0] Error resetting timer:", error)
+    }
+  }
+
+  async skipBreak() {
+    console.log("[v0] Skipping break")
+    try {
+      if (!chrome || !chrome.runtime) {
+        throw new Error("Chrome runtime API not available")
+      }
+
+      await chrome.runtime.sendMessage({ type: "SKIP_BREAK" })
+      await this.loadState()
+    } catch (error) {
+      console.error("[v0] Error skipping break:", error)
     }
   }
 
@@ -496,12 +672,12 @@ class PomodoroPopup {
         shortBreak: Number.parseInt(this.breakTimeSelect.value),
       }
 
-      if (!window.chrome || !window.chrome.storage) {
+      if (!chrome || !chrome.storage) {
         throw new Error("Chrome storage API not available")
       }
 
-      await window.chrome.storage.local.set({ settings: newSettings })
-      await window.chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
+      await chrome.storage.local.set({ settings: newSettings })
+      await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
 
       this.state.settings = newSettings
       console.log("[v0] Settings updated:", newSettings)
@@ -513,7 +689,7 @@ class PomodoroPopup {
   openSettings() {
     console.log("[v0] Opening settings")
     try {
-      window.chrome.runtime.openOptionsPage()
+      chrome.runtime.openOptionsPage()
     } catch (error) {
       console.error("[v0] Error opening settings:", error)
     }
@@ -522,7 +698,7 @@ class PomodoroPopup {
   openStats() {
     console.log("[v0] Opening stats")
     try {
-      window.chrome.tabs.create({ url: window.chrome.runtime.getURL("stats.html") })
+      chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") })
     } catch (error) {
       console.error("[v0] Error opening stats:", error)
     }

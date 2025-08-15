@@ -7,12 +7,12 @@ class WebsiteBlocker {
 
   async checkAndBlock() {
     try {
-      if (!window.chrome || !window.chrome.runtime) {
+      if (!chrome || !chrome.runtime) {
         console.error("[v0] Chrome runtime API not available")
         return
       }
 
-      const response = await window.chrome.runtime.sendMessage({
+      const response = await chrome.runtime.sendMessage({
         type: "CHECK_WEBSITE_BLOCKED",
         url: window.location.href,
       })
@@ -129,7 +129,7 @@ class WebsiteBlocker {
 
     document.getElementById("pause-timer-btn").addEventListener("click", async () => {
       try {
-        await window.chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
+        await chrome.runtime.sendMessage({ type: "PAUSE_TIMER" })
         overlay.remove()
         style.remove()
       } catch (error) {

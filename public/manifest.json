@@ -27,7 +27,7 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["overlay.html", "overlay.css", "blocked.html"],
+      "resources": ["blocked.html"],
       "matches": ["<all_urls>"]
     }
   ]

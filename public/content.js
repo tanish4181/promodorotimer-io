@@ -1,530 +1,579 @@
-// Content Script for YouTube Integration - Pomodoro Timer Chrome Extension
+// YouTube Content Script for Pomodoro Timer Chrome Extension
 
 class YouTubeIntegration {
   constructor() {
-    this.isVideoPlaying = false
-    this.wasPlayingBeforePause = false
-    this.currentVideo = null
-    this.notificationElement = null
-    this.overlayElement = null
     this.timerState = null
+    this.overlayElement = null
+    this.breakCountdownInterval = null
     this.distractionSettings = {
-      hideComments: true,
-      hideRecommendations: true,
-      hideShorts: true,
-      hideEndScreen: true,
-      hideAutoplay: true,
-      hideLiveChat: true,
-      hideNotifications: true,
+      hideComments: "hideYoutubeComments",
+      hideRecommendations: "hideYoutubeRecommendations", 
+      hideShorts: "hideYoutubeShorts"
     }
-    this.hiddenElements = new Set()
-    this.styleElement = null
-
-    this.initializeIntegration()
+    this.shortsSelectors = [
+      // Home page shorts
+      'ytd-rich-grid-renderer ytd-rich-item-renderer:has(ytd-thumbnail[is-shorts])',
+      'ytd-rich-grid-renderer ytd-rich-item-renderer:has(a[href*="/shorts/"])',
+      // Search results shorts
+      'ytd-search ytd-video-renderer:has(a[href*="/shorts/"])',
+      'ytd-search ytd-video-renderer:has(ytd-thumbnail[is-shorts])',
+      // Channel page shorts
+      'ytd-channel-renderer ytd-grid-video-renderer:has(a[href*="/shorts/"])',
+      // Sidebar shorts
+      'ytd-guide-entry-renderer:has(a[href*="/shorts/"])',
+      // Shorts shelf
+      'ytd-reel-shelf-renderer',
+      'ytd-rich-section-renderer:has(ytd-reel-shelf-renderer)',
+      // Shorts button in sidebar
+      'ytd-guide-entry-renderer:has(a[href="/shorts"])',
+      // Shorts tab
+      'ytd-tab:has(a[href*="/shorts/"])',
+      // Any element with shorts in URL
+      '[href*="/shorts/"]',
+      // Shorts video player
+      'ytd-shorts',
+      // Shorts navigation
+      'ytd-mini-guide-entry-renderer:has(a[href="/shorts"])'
+    ]
+    
+    this.initialize()
   }
 
-  initializeIntegration() {
-    // Wait for YouTube to load
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => this.setupIntegration())
-    } else {
-      this.setupIntegration()
+  async initialize() {
+    console.log("[v0] Initializing YouTube integration")
+    
+    // Check if we're on YouTube
+    if (!this.isYouTubePage()) {
+      console.log("[v0] Not on YouTube, skipping integration")
+      return
     }
+
+    // Load timer state
+    await this.loadTimerState()
+    
+    // Set up message listener
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      this.handleMessage(message, sender, sendResponse)
+    })
+
+    // Initial setup
+    this.setupYouTubeIntegration()
+    
+    // Set up mutation observer for dynamic content
+    this.setupMutationObserver()
+    
+    // Set up periodic state refresh
+    this.setupPeriodicRefresh()
   }
 
-  setupIntegration() {
-    // Set up message listener for background script
-    if (window.chrome && window.chrome.runtime && window.chrome.runtime.onMessage) {
-      window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        this.handleMessage(message)
-        sendResponse({ success: true })
-      })
-    }
-
-    // Monitor video state changes
-    this.observeVideoChanges()
-
-    this.initializeDistractionRemoval()
-
-    // Get initial timer state
-    this.requestTimerState()
-
-    console.log("[v0] YouTube Pomodoro integration initialized")
+  isYouTubePage() {
+    return window.location.hostname.includes('youtube.com') || window.location.hostname.includes('youtu.be')
   }
 
-  initializeDistractionRemoval() {
-    // Load distraction settings
-    this.loadDistractionSettings()
-
-    // Create observer for dynamic content
-    this.observeDistractions()
-
-    // Apply initial distraction removal
-    this.applyDistractionRemoval()
-
-    // Check periodically for new distracting elements
-    setInterval(() => {
-      if (this.shouldHideDistractions()) {
-        this.applyDistractionRemoval()
-      }
-    }, 2000)
-  }
-
-  async loadDistractionSettings() {
+  async loadTimerState() {
     try {
-      if (!window.chrome || !window.chrome.runtime) {
-        console.error("[v0] Chrome runtime API not available")
-        return
+      const result = await chrome.storage.local.get(['timerState', 'currentTime', 'isRunning', 'currentMode', 'settings'])
+      this.timerState = {
+        timerState: result.timerState || 'focus',
+        currentTime: result.currentTime || 25 * 60,
+        isRunning: result.isRunning || false,
+        currentMode: result.currentMode || 'focus',
+        settings: result.settings || {}
       }
-
-      const response = await window.chrome.runtime.sendMessage({ type: "GET_STATE" })
-      if (response && response.state && response.state.settings) {
-        // Use settings from background script
-        const settings = response.state.settings
-        this.distractionSettings = {
-          hideComments: settings.hideComments !== false,
-          hideRecommendations: settings.hideRecommendations !== false,
-          hideShorts: settings.hideShorts !== false,
-          hideEndScreen: settings.hideEndScreen !== false,
-          hideAutoplay: settings.hideAutoplay !== false,
-          hideLiveChat: settings.hideLiveChat !== false,
-          hideNotifications: settings.hideNotifications !== false,
-        }
-      }
+      console.log("[v0] Timer state loaded:", this.timerState)
     } catch (error) {
-      console.error("[v0] Error loading distraction settings:", error)
+      console.error("[v0] Error loading timer state:", error)
     }
   }
 
-  observeDistractions() {
-    const observer = new MutationObserver(() => {
-      if (this.shouldHideDistractions()) {
-        this.applyDistractionRemoval()
+  setupPeriodicRefresh() {
+    // Refresh timer state every 5 seconds to stay in sync
+    setInterval(async () => {
+      await this.loadTimerState()
+      this.setupYouTubeIntegration()
+    }, 5000)
+  }
+
+  setupYouTubeIntegration() {
+    if (!this.timerState || !this.timerState.settings.youtubeIntegration) {
+      console.log("[v0] YouTube integration disabled")
+      this.showDistractions() // Show distractions if integration is disabled
+      return
+    }
+
+    console.log("[v0] Setting up YouTube integration")
+    
+    // Apply distraction hiding based on current state
+    if (this.shouldHideDistractions()) {
+      this.hideDistractions()
+    } else {
+      this.showDistractions()
+    }
+    
+    // Show focus indicator if enabled and in focus mode
+    if (this.timerState.settings.focusIndicator && this.timerState.currentMode === 'focus' && this.timerState.isRunning) {
+      this.showFocusModeIndicator()
+    } else {
+      this.hideFocusModeIndicator()
+    }
+  }
+
+  setupMutationObserver() {
+    // Watch for dynamic content changes
+    const observer = new MutationObserver((mutations) => {
+      let shouldUpdate = false
+      
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          // Check if new nodes contain distractions
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              if (this.containsDistractions(node)) {
+                shouldUpdate = true
+              }
+            }
+          })
+        }
+      })
+      
+      if (shouldUpdate) {
+        console.log("[v0] New content detected, updating distractions")
+        setTimeout(() => {
+          if (this.shouldHideDistractions()) {
+            this.hideDistractions()
+          }
+        }, 100)
       }
     })
 
     observer.observe(document.body, {
       childList: true,
-      subtree: true,
+      subtree: true
+    })
+  }
+
+  containsDistractions(node) {
+    // Check if the node or its children contain distraction elements
+    const selectors = [
+      'ytd-comments',
+      'ytd-rich-grid-renderer',
+      'ytd-reel-shelf-renderer',
+      '[href*="/shorts/"]',
+      'ytd-guide-entry-renderer'
+    ]
+    
+    return selectors.some(selector => {
+      return node.matches?.(selector) || node.querySelector?.(selector)
     })
   }
 
   shouldHideDistractions() {
-    return (
-      this.timerState &&
-      this.timerState.currentMode === "focus" &&
-      this.timerState.isRunning &&
-      this.timerState.settings &&
-      this.timerState.settings.youtubeIntegration
-    )
+    return this.timerState?.settings?.hideDistractions && 
+           this.timerState?.currentMode === 'focus' && 
+           this.timerState?.isRunning
   }
 
-  applyDistractionRemoval() {
+  hideDistractions() {
     if (!this.shouldHideDistractions()) {
-      this.restoreDistractions()
+      this.showDistractions()
       return
     }
 
-    this.createDistractionStyles()
+    console.log("[v0] Hiding YouTube distractions")
 
-    const distractionSelectors = {
-      // Comments section
-      comments: ["#comments", "ytd-comments", "#comment-teaser", "ytd-comment-thread-renderer"],
-
-      // Recommendations and related videos
-      recommendations: [
-        "#related",
-        "#secondary",
-        "ytd-watch-next-secondary-results-renderer",
-        "ytd-compact-video-renderer",
-        "#items.ytd-watch-next-secondary-results-renderer",
-      ],
-
-      // Shorts shelf
-      shorts: [
-        "ytd-reel-shelf-renderer",
-        "ytd-rich-shelf-renderer[is-shorts]",
-        '[aria-label*="Shorts"]',
-        "ytd-shorts-shelf-renderer",
-      ],
-
-      // End screen suggestions
-      endScreen: [".ytp-ce-element", ".ytp-cards-teaser", ".ytp-endscreen-element"],
-
-      // Autoplay toggle
-      autoplay: [".ytp-autonav-toggle-button", "ytd-compact-autoplay-renderer"],
-
-      // Live chat
-      liveChat: ["#chat", "ytd-live-chat-frame", 'iframe[src*="live_chat"]'],
-
-      // Notification bell and other distractions
-      notifications: ["#notification-count", "ytd-notification-topbar-button-renderer", ".ytd-masthead #guide-button"],
+    // Hide comments
+    if (this.timerState.settings.hideYoutubeComments) {
+      this.hideComments()
     }
 
-    // Apply hiding based on settings
-    Object.keys(distractionSelectors).forEach((key) => {
-      if (this.distractionSettings[`hide${key.charAt(0).toUpperCase() + key.slice(1)}`]) {
-        distractionSelectors[key].forEach((selector) => {
-          this.hideElements(selector)
-        })
-      }
-    })
+    // Hide recommendations
+    if (this.timerState.settings.hideYoutubeRecommendations) {
+      this.hideRecommendations()
+    }
 
-    // Add focus mode indicator
-    this.showFocusModeIndicator()
+    // Hide Shorts completely
+    if (this.timerState.settings.hideYoutubeShorts) {
+      this.hideShorts()
+    }
   }
 
-  createDistractionStyles() {
-    if (this.styleElement) return
+  showDistractions() {
+    console.log("[v0] Showing YouTube distractions")
+    
+    // Remove all distraction hiding styles
+    const existingStyles = document.getElementById('pomodoro-youtube-styles')
+    if (existingStyles) {
+      existingStyles.remove()
+    }
+    
+    // Show comments
+    const commentsSection = document.querySelector('ytd-comments')
+    if (commentsSection) {
+      commentsSection.style.display = ''
+    }
+    
+    // Show sidebar
+    const sidebar = document.querySelector('#secondary')
+    if (sidebar) {
+      sidebar.style.display = ''
+    }
+  }
 
-    this.styleElement = document.createElement("style")
-    this.styleElement.id = "pomodoro-distraction-styles"
-    this.styleElement.textContent = `
-      .pomodoro-hidden {
+  hideComments() {
+    const commentsSection = document.querySelector('ytd-comments')
+    if (commentsSection) {
+      commentsSection.style.display = 'none'
+    }
+    
+    // Also hide comment sections in video descriptions
+    const commentElements = document.querySelectorAll('ytd-comments, ytd-engagement-panel-section-list-renderer')
+    commentElements.forEach(el => {
+      el.style.display = 'none'
+    })
+  }
+
+  hideRecommendations() {
+    // Hide sidebar recommendations
+    const sidebar = document.querySelector('#secondary')
+    if (sidebar) {
+      sidebar.style.display = 'none'
+    }
+    
+    // Hide end screen recommendations
+    const endScreen = document.querySelector('ytd-player ytd-player-end-slot-renderer')
+    if (endScreen) {
+      endScreen.style.display = 'none'
+    }
+    
+    // Hide related videos
+    const relatedVideos = document.querySelector('ytd-watch-next-secondary-results-renderer')
+    if (relatedVideos) {
+      relatedVideos.style.display = 'none'
+    }
+  }
+
+  hideShorts() {
+    console.log("[v0] Hiding all YouTube Shorts")
+    
+    // Create comprehensive CSS to hide all Shorts
+    const style = document.createElement('style')
+    style.id = 'pomodoro-youtube-styles'
+    style.textContent = `
+      /* Hide all Shorts content */
+      ytd-reel-shelf-renderer,
+      ytd-rich-section-renderer:has(ytd-reel-shelf-renderer),
+      ytd-guide-entry-renderer:has(a[href="/shorts"]),
+      ytd-mini-guide-entry-renderer:has(a[href="/shorts"]),
+      ytd-tab:has(a[href*="/shorts/"]),
+      ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+      ytd-video-renderer:has(a[href*="/shorts/"]),
+      ytd-grid-video-renderer:has(a[href*="/shorts/"]),
+      ytd-thumbnail[is-shorts],
+      [href*="/shorts/"] {
         display: none !important;
-        visibility: hidden !important;
       }
       
-      .pomodoro-focus-indicator {
-        position: fixed;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, #059669, #10b981);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        z-index: 999999;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        animation: pomodoroFocusPulse 2s infinite;
+      /* Hide Shorts button in navigation */
+      ytd-guide-entry-renderer:has(a[href="/shorts"]),
+      ytd-mini-guide-entry-renderer:has(a[href="/shorts"]) {
+        display: none !important;
       }
       
-      @keyframes pomodoroFocusPulse {
-        0%, 100% { opacity: 0.8; }
-        50% { opacity: 1; }
+      /* Hide Shorts shelf */
+      ytd-reel-shelf-renderer,
+      ytd-rich-section-renderer:has(ytd-reel-shelf-renderer) {
+        display: none !important;
       }
       
-      /* Blur remaining distracting elements */
-      .pomodoro-blur {
-        filter: blur(4px) !important;
-        pointer-events: none !important;
-        opacity: 0.3 !important;
+      /* Hide Shorts in search results */
+      ytd-search ytd-video-renderer:has(a[href*="/shorts/"]) {
+        display: none !important;
+      }
+      
+      /* Hide Shorts tab */
+      ytd-tab:has(a[href*="/shorts/"]) {
+        display: none !important;
       }
     `
-
-    document.head.appendChild(this.styleElement)
-  }
-
-  hideElements(selector) {
-    const elements = document.querySelectorAll(selector)
-    elements.forEach((element) => {
-      if (!element.classList.contains("pomodoro-hidden")) {
-        element.classList.add("pomodoro-hidden")
-        this.hiddenElements.add(element)
-      }
-    })
+    
+    // Remove existing styles and add new ones
+    const existingStyles = document.getElementById('pomodoro-youtube-styles')
+    if (existingStyles) {
+      existingStyles.remove()
+    }
+    document.head.appendChild(style)
   }
 
   showFocusModeIndicator() {
-    // Remove existing indicator
-    const existing = document.getElementById("pomodoro-focus-indicator")
-    if (existing) existing.remove()
-
-    // Create new indicator
-    const indicator = document.createElement("div")
-    indicator.id = "pomodoro-focus-indicator"
-    indicator.className = "pomodoro-focus-indicator"
-    indicator.innerHTML = "🍅 Focus Mode Active"
-
+    // Create focus mode indicator
+    const indicator = document.createElement('div')
+    indicator.id = 'pomodoro-focus-indicator'
+    indicator.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #059669;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      ">
+        <span>🍅</span>
+        <span>Focus Mode</span>
+      </div>
+    `
+    
+    // Remove existing indicator and add new one
+    const existingIndicator = document.getElementById('pomodoro-focus-indicator')
+    if (existingIndicator) {
+      existingIndicator.remove()
+    }
     document.body.appendChild(indicator)
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      if (indicator.parentNode) {
-        indicator.style.animation = "pomodoroSlideOut 0.3s ease-in"
-        setTimeout(() => indicator.remove(), 300)
-      }
-    }, 3000)
   }
 
-  restoreDistractions() {
-    // Remove hidden class from all elements
-    this.hiddenElements.forEach((element) => {
-      if (element.parentNode) {
-        element.classList.remove("pomodoro-hidden", "pomodoro-blur")
-      }
-    })
-    this.hiddenElements.clear()
-
-    // Remove focus indicator
-    const indicator = document.getElementById("pomodoro-focus-indicator")
-    if (indicator) indicator.remove()
-
-    // Remove styles
-    if (this.styleElement) {
-      this.styleElement.remove()
-      this.styleElement = null
+  hideFocusModeIndicator() {
+    const indicator = document.getElementById('pomodoro-focus-indicator')
+    if (indicator) {
+      indicator.remove()
     }
   }
 
-  async requestTimerState() {
-    try {
-      if (!window.chrome || !window.chrome.runtime) {
-        console.error("[v0] Chrome runtime API not available")
-        return
-      }
-
-      const response = await window.chrome.runtime.sendMessage({ type: "GET_STATE" })
-      if (response && response.state) {
-        this.timerState = response.state
-        this.handleTimerStateChange()
-      }
-    } catch (error) {
-      console.error("[v0] Error requesting timer state:", error)
-    }
-  }
-
-  handleMessage(message) {
-    console.log("[v0] Received message:", message.type)
-
+  async handleMessage(message, sender, sendResponse) {
+    console.log("[v0] YouTube content script received message:", message.type)
+    
     switch (message.type) {
       case "TIMER_STARTED":
-        this.handleTimerStart()
+        await this.loadTimerState()
+        this.setupYouTubeIntegration()
         break
-
+        
       case "TIMER_PAUSED":
-        this.handleTimerPause()
+        await this.loadTimerState()
+        this.hideFocusModeIndicator()
+        this.showDistractions()
         break
-
+        
       case "ENFORCE_BREAK":
-        this.enforceBreak(message.mode)
+        await this.loadTimerState()
+        this.enforceBreak(message.mode, message.settings, message.nextSessionInfo)
         break
-
+        
       case "BREAK_SKIPPED":
         this.removeBreakOverlay()
         break
-
-      case "TIMER_UPDATE":
-        this.timerState = message.state
-        this.handleTimerStateChange()
+        
+      case "SETTINGS_UPDATED":
+        console.log("[v0] Settings updated, reloading timer state")
+        await this.loadTimerState()
+        this.setupYouTubeIntegration()
         break
+        
+      case "TIMER_UPDATE":
+        // Update local state with new timer state
+        if (message.state) {
+          this.timerState = message.state
+          this.setupYouTubeIntegration()
+        }
+        break
+        
+      default:
+        console.log("[v0] Unknown message type:", message.type)
     }
   }
 
-  observeVideoChanges() {
-    // Use MutationObserver to detect when videos change
-    const observer = new MutationObserver(() => {
-      this.findCurrentVideo()
-    })
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    })
-
-    // Also check periodically
-    setInterval(() => {
-      this.findCurrentVideo()
-      this.checkVideoPlayState()
-    }, 2000)
-
-    // Initial check
-    this.findCurrentVideo()
-  }
-
-  findCurrentVideo() {
-    const video = document.querySelector("video")
-    if (video && video !== this.currentVideo) {
-      this.currentVideo = video
-      this.setupVideoListeners()
-      console.log("[v0] Found new video element")
-    }
-  }
-
-  setupVideoListeners() {
-    if (!this.currentVideo) return
-
-    this.currentVideo.addEventListener("play", () => {
-      this.isVideoPlaying = true
-      console.log("[v0] Video started playing")
-    })
-
-    this.currentVideo.addEventListener("pause", () => {
-      this.isVideoPlaying = false
-      console.log("[v0] Video paused")
-    })
-
-    this.currentVideo.addEventListener("ended", () => {
-      this.isVideoPlaying = false
-      console.log("[v0] Video ended")
-    })
-  }
-
-  checkVideoPlayState() {
-    if (this.currentVideo) {
-      this.isVideoPlaying = !this.currentVideo.paused
-    }
-  }
-
-  handleTimerStart() {
-    if (this.timerState && this.timerState.currentMode === "focus") {
-      this.showNotification("🍅 Focus time started! Distractions hidden.", "info")
-      this.applyDistractionRemoval()
-
-      // If we're in a break and starting focus, resume video if it was playing
-      if (this.wasPlayingBeforePause && this.currentVideo) {
-        this.currentVideo.play().catch((e) => console.log("[v0] Could not resume video:", e))
-        this.wasPlayingBeforePause = false
-      }
-    }
-  }
-
-  handleTimerPause() {
-    this.showNotification("⏸️ Timer paused", "info")
-    this.restoreDistractions()
-  }
-
-  handleTimerStateChange() {
-    if (!this.timerState) return
-
-    if (this.timerState.currentMode === "focus" && this.timerState.isRunning) {
-      this.applyDistractionRemoval()
-    } else {
-      this.restoreDistractions()
+  enforceBreak(mode, settings, nextSessionInfo) {
+    console.log("[v0] Enforcing break:", mode)
+    
+    if (!settings.breakOverlay) {
+      console.log("[v0] Break overlay disabled")
+      return
     }
 
-    // Handle break modes
-    if (this.timerState.currentMode === "shortBreak" || this.timerState.currentMode === "longBreak") {
-      if (this.timerState.settings && this.timerState.settings.enforceBreaks) {
-        // Don't pause immediately, let the break enforcement overlay handle it
-        return
-      } else {
-        // Gentle break suggestion without pausing
-        this.showNotification("☕ Break time! Consider taking a short break.", "break")
-      }
-    }
-  }
-
-  enforceBreak(mode) {
-    console.log("[v0] Enforcing break mode:", mode)
-
-    this.restoreDistractions()
-
-    // Pause video if playing
-    if (this.currentVideo && this.isVideoPlaying) {
-      this.wasPlayingBeforePause = true
-      this.currentVideo.pause()
-      console.log("[v0] Paused video for break enforcement")
+    // Pause YouTube video if enabled
+    if (settings.pauseYoutubeBreaks) {
+      this.pauseYouTubeVideo()
     }
 
     // Show break overlay
-    this.showBreakOverlay(mode)
-
-    // Show notification
-    const message =
-      mode === "longBreak"
-        ? "🌟 Long break time! Step away from the screen."
-        : "☕ Short break time! Rest your eyes and mind."
-    this.showNotification(message, "break")
+    this.showBreakOverlay(mode, settings, nextSessionInfo)
   }
 
-  showBreakOverlay(mode) {
+  pauseYouTubeVideo() {
+    const video = document.querySelector('video')
+    if (video && !video.paused) {
+      video.pause()
+      console.log("[v0] YouTube video paused")
+    }
+  }
+
+  showBreakOverlay(mode, settings, nextSessionInfo) {
     // Remove existing overlay
     this.removeBreakOverlay()
 
-    // Create overlay element
-    this.overlayElement = document.createElement("div")
-    this.overlayElement.id = "pomodoro-break-overlay"
-    this.overlayElement.innerHTML = `
+    // Create overlay
+    this.overlayElement = document.createElement('div')
+    this.overlayElement.id = 'pomodoro-break-overlay'
+    
+    let overlayContent = `
       <div class="pomodoro-overlay-content">
         <div class="pomodoro-overlay-icon">
-          ${mode === "longBreak" ? "🌟" : "☕"}
+          ${mode === "shortBreak" ? "☕" : "🏖️"}
         </div>
-        <h2 class="pomodoro-overlay-title">
-          ${mode === "longBreak" ? "Long Break Time!" : "Break Time!"}
-        </h2>
-        <p class="pomodoro-overlay-message">
-          ${
-            mode === "longBreak"
-              ? "Take a longer break to recharge. Walk around, stretch, or grab a snack!"
-              : "Take a short break to rest your eyes and mind."
-          }
+        <h1>${mode === "shortBreak" ? "Short Break" : "Long Break"}</h1>
+        <p>
+          It's time to relax and recharge. Take a moment away from your screen.
         </p>
+    `
+    
+    if (settings.breakCountdown) {
+      overlayContent += `
+        <div class="pomodoro-countdown">
+          <div class="countdown-label">Break ends in:</div>
+          <div class="countdown-timer" id="break-countdown-timer">--:--</div>
+        </div>
+      `
+    }
+    
+    if (settings.nextSessionInfo && nextSessionInfo) {
+      overlayContent += `
+        <div class="pomodoro-next-session">
+          <div class="next-session-label">Next Focus Session:</div>
+          <div class="next-session-info">
+            <span class="next-duration">${nextSessionInfo.nextDuration} minutes</span>
+            <span class="next-sessions-until-long">(${nextSessionInfo.sessionsUntilLongBreak} sessions until long break)</span>
+          </div>
+        </div>
+      `
+    }
+    
+    overlayContent += `
         <div class="pomodoro-overlay-actions">
           <button id="pomodoro-skip-break" class="pomodoro-btn pomodoro-btn-secondary">
             Skip Break
           </button>
-          <button id="pomodoro-start-break" class="pomodoro-btn pomodoro-btn-primary">
-            Start Break
+          <button id="pomodoro-start-focus" class="pomodoro-btn pomodoro-btn-primary">
+            Start Focus Now
           </button>
         </div>
       </div>
     `
+    
+    this.overlayElement.innerHTML = overlayContent
 
     // Add styles
-    this.overlayElement.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(31, 41, 55, 0.95);
-      backdrop-filter: blur(8px);
-      z-index: 999999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: white;
-    `
-
-    // Add content styles
-    const style = document.createElement("style")
+    const style = document.createElement('style')
     style.textContent = `
+      #pomodoro-break-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      
       .pomodoro-overlay-content {
         text-align: center;
-        max-width: 400px;
+        color: white;
+        max-width: 500px;
         padding: 40px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
       }
       
       .pomodoro-overlay-icon {
-        font-size: 64px;
+        font-size: 4rem;
         margin-bottom: 20px;
       }
       
-      .pomodoro-overlay-title {
-        font-size: 28px;
-        font-weight: 600;
+      .pomodoro-overlay-content h1 {
+        font-size: 2.5rem;
         margin-bottom: 16px;
-        color: white;
+        color: #059669;
       }
       
-      .pomodoro-overlay-message {
-        font-size: 16px;
-        line-height: 1.5;
-        margin-bottom: 32px;
-        color: rgba(255, 255, 255, 0.8);
+      .pomodoro-overlay-content p {
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+        line-height: 1.6;
+        color: #d1d5db;
+      }
+      
+      .pomodoro-countdown {
+        margin: 30px 0;
+        padding: 20px;
+        background: rgba(5, 150, 105, 0.1);
+        border-radius: 12px;
+        border: 1px solid rgba(5, 150, 105, 0.3);
+      }
+      
+      .countdown-label {
+        font-size: 1rem;
+        color: #9ca3af;
+        margin-bottom: 8px;
+      }
+      
+      .countdown-timer {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #059669;
+        font-family: monospace;
+      }
+      
+      .pomodoro-next-session {
+        margin: 20px 0;
+        padding: 16px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      
+      .next-session-label {
+        font-size: 0.9rem;
+        color: #9ca3af;
+        margin-bottom: 4px;
+      }
+      
+      .next-session-info {
+        font-size: 1.1rem;
+        color: #3b82f6;
+      }
+      
+      .next-duration {
+        font-weight: 600;
+      }
+      
+      .next-sessions-until-long {
+        font-size: 0.9rem;
+        opacity: 0.8;
       }
       
       .pomodoro-overlay-actions {
         display: flex;
-        gap: 12px;
+        gap: 16px;
         justify-content: center;
+        margin-top: 30px;
       }
       
       .pomodoro-btn {
         padding: 12px 24px;
         border: none;
         border-radius: 8px;
-        font-size: 14px;
+        font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
+        min-width: 120px;
       }
       
       .pomodoro-btn-primary {
@@ -548,177 +597,75 @@ class YouTubeIntegration {
         transform: translateY(-1px);
       }
     `
-
+    
     document.head.appendChild(style)
     document.body.appendChild(this.overlayElement)
 
-    // Add event listeners
-    document.getElementById("pomodoro-skip-break").addEventListener("click", () => {
-      this.skipBreak()
+    // Add event listeners using event delegation
+    this.overlayElement.addEventListener('click', (e) => {
+      const target = e.target
+      
+      if (target.id === 'pomodoro-skip-break' || target.id === 'pomodoro-start-focus') {
+        chrome.runtime.sendMessage({ type: "SKIP_BREAK" })
+      }
     })
 
-    document.getElementById("pomodoro-start-break").addEventListener("click", () => {
-      this.startBreak()
-    })
-
+    // Start countdown if enabled
+    if (settings.breakCountdown) {
+      this.startBreakCountdown()
+    }
+    
     console.log("[v0] Break overlay displayed")
+  }
+
+  startBreakCountdown() {
+    if (this.breakCountdownInterval) {
+      clearInterval(this.breakCountdownInterval)
+    }
+    
+    const countdownElement = document.getElementById("break-countdown-timer")
+    if (!countdownElement) return
+    
+    const breakDuration = this.timerState.currentMode === "longBreak" 
+      ? this.timerState.settings.longBreak * 60 
+      : this.timerState.settings.shortBreak * 60
+    
+    let timeLeft = breakDuration
+    
+    const updateCountdown = () => {
+      const minutes = Math.floor(timeLeft / 60)
+      const seconds = timeLeft % 60
+      countdownElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+      timeLeft--
+      
+      if (timeLeft < 0) {
+        clearInterval(this.breakCountdownInterval)
+        countdownElement.textContent = "00:00"
+      }
+    }
+    
+    updateCountdown()
+    this.breakCountdownInterval = setInterval(updateCountdown, 1000)
   }
 
   removeBreakOverlay() {
     if (this.overlayElement) {
       this.overlayElement.remove()
       this.overlayElement = null
-      console.log("[v0] Break overlay removed")
     }
-  }
-
-  async skipBreak() {
-    try {
-      if (!window.chrome || !window.chrome.runtime) {
-        console.error("[v0] Chrome runtime API not available")
-        return
-      }
-
-      await window.chrome.runtime.sendMessage({ type: "SKIP_BREAK" })
-      this.removeBreakOverlay()
-
-      // Resume video if it was playing
-      if (this.wasPlayingBeforePause && this.currentVideo) {
-        this.currentVideo.play().catch((e) => console.log("[v0] Could not resume video:", e))
-        this.wasPlayingBeforePause = false
-      }
-
-      this.showNotification("⏭️ Break skipped. Back to focus!", "info")
-    } catch (error) {
-      console.error("[v0] Error skipping break:", error)
+    
+    if (this.breakCountdownInterval) {
+      clearInterval(this.breakCountdownInterval)
+      this.breakCountdownInterval = null
     }
-  }
-
-  async startBreak() {
-    this.removeBreakOverlay()
-    this.showNotification("☕ Break started. Enjoy your rest!", "break")
-
-    // Start the break timer
-    try {
-      if (!window.chrome || !window.chrome.runtime) {
-        console.error("[v0] Chrome runtime API not available")
-        return
-      }
-
-      await window.chrome.runtime.sendMessage({ type: "START_TIMER" })
-    } catch (error) {
-      console.error("[v0] Error starting break timer:", error)
+    
+    // Remove overlay styles
+    const overlayStyles = document.querySelector('style')
+    if (overlayStyles && overlayStyles.textContent.includes('#pomodoro-break-overlay')) {
+      overlayStyles.remove()
     }
-  }
-
-  showNotification(message, type = "info") {
-    // Remove existing notification
-    this.removeNotification()
-
-    // Create notification element
-    this.notificationElement = document.createElement("div")
-    this.notificationElement.id = "pomodoro-notification"
-    this.notificationElement.textContent = message
-
-    // Style the notification
-    const bgColors = {
-      info: "rgba(5, 150, 105, 0.9)",
-      break: "rgba(16, 185, 129, 0.9)",
-      warning: "rgba(251, 191, 36, 0.9)",
-    }
-
-    this.notificationElement.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${bgColors[type] || bgColors.info};
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      z-index: 999998;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(8px);
-      max-width: 300px;
-      animation: pomodoroSlideIn 0.3s ease-out;
-    `
-
-    // Add animation keyframes
-    if (!document.getElementById("pomodoro-notification-styles")) {
-      const style = document.createElement("style")
-      style.id = "pomodoro-notification-styles"
-      style.textContent = `
-        @keyframes pomodoroSlideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes pomodoroSlideOut {
-          from {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          to {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-        }
-      `
-      document.head.appendChild(style)
-    }
-
-    document.body.appendChild(this.notificationElement)
-
-    // Auto-remove after 4 seconds
-    setTimeout(() => {
-      this.removeNotification()
-    }, 4000)
-
-    console.log("[v0] Notification shown:", message)
-  }
-
-  removeNotification() {
-    if (this.notificationElement) {
-      this.notificationElement.style.animation = "pomodoroSlideOut 0.3s ease-in"
-      setTimeout(() => {
-        if (this.notificationElement) {
-          this.notificationElement.remove()
-          this.notificationElement = null
-        }
-      }, 300)
-    }
-  }
-
-  // Utility method to check if we're on a YouTube video page
-  isOnVideoPage() {
-    return window.location.pathname.includes("/watch") && window.location.search.includes("v=")
-  }
-
-  // Method to get current video title for analytics
-  getCurrentVideoTitle() {
-    const titleElement = document.querySelector("h1.ytd-video-primary-info-renderer")
-    return titleElement ? titleElement.textContent.trim() : "Unknown Video"
-  }
-
-  // Method to get current channel name
-  getCurrentChannelName() {
-    const channelElement = document.querySelector("#channel-name a")
-    return channelElement ? channelElement.textContent.trim() : "Unknown Channel"
   }
 }
 
-// Initialize YouTube integration when script loads
-if (window.location.hostname.includes("youtube.com")) {
-  console.log("[v0] Initializing YouTube Pomodoro integration")
-  new YouTubeIntegration()
-} else {
-  console.log("[v0] Not on YouTube, skipping integration")
-}
+// Initialize YouTube integration
+new YouTubeIntegration()

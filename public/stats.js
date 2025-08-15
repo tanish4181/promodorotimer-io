@@ -1,522 +1,391 @@
-// Statistics page script for Pomodoro Timer Chrome Extension
+// Stats page script for Pomodoro Timer Chrome Extension
 
 class PomodoroStats {
   constructor() {
-    this.currentPeriod = "week"
-    this.charts = {}
-    this.data = {
-      dailyStats: {},
+    this.stats = {
       totalSessions: 0,
-      settings: {},
+      totalFocusTime: 0,
+      totalBreakTime: 0,
+      averageSessionLength: 0,
+      longestStreak: 0,
+      currentStreak: 0,
+      dailyStats: {},
+      weeklyStats: {},
+      monthlyStats: {}
     }
-
+    
     this.initializeStats()
   }
 
   async initializeStats() {
-    await this.loadData()
-    this.bindEventListeners()
-    this.renderOverviewStats()
-    this.renderCharts()
-    this.renderHeatmap()
-    this.renderInsights()
-    this.renderDetailedStats()
-  }
-
-  async loadData() {
+    console.log("[v0] Initializing stats page")
+    
     try {
-      const chrome = window.chrome // Declare the chrome variable
-      if (!chrome || !chrome.storage) {
-        console.error("[v0] Chrome storage API not available")
-        return
-      }
-
-      const result = await chrome.storage.local.get(["dailyStats", "totalSessions", "settings"])
-
-      this.data = {
-        dailyStats: result.dailyStats || {},
-        totalSessions: result.totalSessions || 0,
-        settings: result.settings || {},
-      }
-
-      console.log("[v0] Stats data loaded:", this.data)
+      await this.loadStats()
+      this.renderStats()
+      this.setupEventListeners()
     } catch (error) {
-      console.error("[v0] Error loading stats data:", error)
+      console.error("[v0] Error initializing stats:", error)
+      this.showError("Failed to load statistics")
     }
   }
 
-  bindEventListeners() {
-    // Period selector
-    document.querySelectorAll(".period-tab").forEach((tab) => {
-      tab.addEventListener("click", (e) => {
-        document.querySelectorAll(".period-tab").forEach((t) => t.classList.remove("active"))
-        e.target.classList.add("active")
-        this.currentPeriod = e.target.dataset.period
-        this.updateChartsForPeriod()
-      })
-    })
-
-    // Action buttons
-    document.getElementById("export-stats").addEventListener("click", () => this.exportStats())
-    document.getElementById("settings-btn").addEventListener("click", () => this.openSettings())
-    document.getElementById("clear-stats").addEventListener("click", () => this.clearStats())
+  async loadStats() {
+    try {
+      const result = await chrome.storage.local.get(['dailyStats', 'totalSessions', 'settings'])
+      
+      this.stats.dailyStats = result.dailyStats || {}
+      this.stats.totalSessions = result.totalSessions || 0
+      
+      // Calculate additional stats
+      this.calculateStats()
+      
+      console.log("[v0] Stats loaded:", this.stats)
+    } catch (error) {
+      console.error("[v0] Error loading stats:", error)
+      throw error
+    }
   }
 
-  renderOverviewStats() {
-    const stats = this.calculateOverviewStats()
-
-    document.getElementById("total-sessions").textContent = stats.totalSessions
-    document.getElementById("total-focus-time").textContent = this.formatTime(stats.totalFocusTime)
-    document.getElementById("break-adherence").textContent = `${stats.breakAdherence}%`
-    document.getElementById("productivity-score").textContent = stats.productivityScore
-  }
-
-  calculateOverviewStats() {
-    const dailyStats = this.data.dailyStats
-    let totalSessions = 0
+  calculateStats() {
+    // Calculate totals from daily stats
     let totalFocusTime = 0
-    let totalBreaks = 0
-    let breaksSkipped = 0
-
-    Object.values(dailyStats).forEach((day) => {
-      totalSessions += day.focusSessions || 0
-      totalFocusTime += day.totalFocusTime || 0
-      totalBreaks += day.breaks || 0
-      breaksSkipped += day.breaksSkipped || 0
-    })
-
-    const breakAdherence = totalBreaks > 0 ? Math.round(((totalBreaks - breaksSkipped) / totalBreaks) * 100) : 0
-
-    const productivityScore = this.calculateProductivityScore(totalSessions, totalFocusTime, breakAdherence)
-
-    return {
-      totalSessions,
-      totalFocusTime,
-      breakAdherence,
-      productivityScore,
-    }
-  }
-
-  calculateProductivityScore(sessions, focusTime, breakAdherence) {
-    // Simple scoring algorithm
-    const sessionScore = Math.min(sessions * 2, 40) // Max 40 points for sessions
-    const timeScore = Math.min(focusTime / 60, 30) // Max 30 points for hours
-    const breakScore = (breakAdherence / 100) * 30 // Max 30 points for break adherence
-
-    return Math.round(sessionScore + timeScore + breakScore)
-  }
-
-  renderCharts() {
-    this.renderDailyFocusChart()
-    this.renderSessionDistributionChart()
-  }
-
-  renderDailyFocusChart() {
-    const canvas = document.getElementById("daily-focus-chart")
-    const ctx = canvas.getContext("2d")
-    const data = this.getDailyFocusData()
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Set canvas size
-    canvas.width = canvas.offsetWidth
-    canvas.height = canvas.offsetHeight
-
-    if (data.values.length === 0) return
-
-    const padding = 40
-    const chartWidth = canvas.width - padding * 2
-    const chartHeight = canvas.height - padding * 2
-    const maxValue = Math.max(...data.values, 1)
-
-    // Draw grid lines
-    ctx.strokeStyle = "#e5e7eb"
-    ctx.lineWidth = 1
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (chartHeight / 5) * i
-      ctx.beginPath()
-      ctx.moveTo(padding, y)
-      ctx.lineTo(canvas.width - padding, y)
-      ctx.stroke()
-    }
-
-    // Draw line chart
-    ctx.strokeStyle = "#8b5cf6"
-    ctx.lineWidth = 2
-    ctx.beginPath()
-
-    data.values.forEach((value, index) => {
-      const x = padding + (chartWidth / (data.values.length - 1)) * index
-      const y = padding + chartHeight - (value / maxValue) * chartHeight
-
-      if (index === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
-      }
-    })
-
-    ctx.stroke()
-
-    // Draw points
-    ctx.fillStyle = "#8b5cf6"
-    data.values.forEach((value, index) => {
-      const x = padding + (chartWidth / (data.values.length - 1)) * index
-      const y = padding + chartHeight - (value / maxValue) * chartHeight
-
-      ctx.beginPath()
-      ctx.arc(x, y, 4, 0, 2 * Math.PI)
-      ctx.fill()
-    })
-  }
-
-  renderSessionDistributionChart() {
-    const canvas = document.getElementById("session-distribution-chart")
-    const ctx = canvas.getContext("2d")
-    const data = this.getSessionDistributionData()
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Set canvas size
-    canvas.width = canvas.offsetWidth
-    canvas.height = canvas.offsetHeight
-
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = Math.min(centerX, centerY) - 20
-
-    const total = data.values.reduce((sum, val) => sum + val, 0)
-    if (total === 0) return
-
-    const colors = ["#8b5cf6", "#e5e7eb", "#34d399", "#fbbf24"]
-    const labels = ["Completed Sessions", "Incomplete Sessions", "Breaks Taken", "Breaks Skipped"]
-
-    let currentAngle = -Math.PI / 2
-
-    data.values.forEach((value, index) => {
-      const sliceAngle = (value / total) * 2 * Math.PI
-
-      ctx.fillStyle = colors[index]
-      ctx.beginPath()
-      ctx.moveTo(centerX, centerY)
-      ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle)
-      ctx.closePath()
-      ctx.fill()
-
-      currentAngle += sliceAngle
-    })
-
-    // Draw legend
-    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    labels.forEach((label, index) => {
-      const y = canvas.height - 80 + index * 20
-
-      // Color box
-      ctx.fillStyle = colors[index]
-      ctx.fillRect(20, y - 8, 12, 12)
-
-      // Label text
-      ctx.fillStyle = "#374151"
-      ctx.fillText(label, 40, y + 2)
-    })
-  }
-
-  getDailyFocusData() {
-    const days = this.getDateRange()
-    const labels = []
-    const values = []
-
-    days.forEach((date) => {
-      const dateStr = date.toDateString()
-      const dayData = this.data.dailyStats[dateStr]
-
-      labels.push(date.toLocaleDateString("en-US", { month: "short", day: "numeric" }))
-      values.push(dayData ? dayData.totalFocusTime || 0 : 0)
-    })
-
-    return { labels, values }
-  }
-
-  getSessionDistributionData() {
-    const stats = this.calculateOverviewStats()
-    return {
-      values: [
-        stats.totalSessions,
-        Math.max(0, stats.totalSessions * 0.1), // Estimated incomplete
-        stats.totalSessions * 0.8, // Estimated breaks taken
-        stats.totalSessions * 0.2, // Estimated breaks skipped
-      ],
-    }
-  }
-
-  getDateRange() {
-    const today = new Date()
-    const days = []
-
-    let daysBack = 7
-    if (this.currentPeriod === "month") daysBack = 30
-    if (this.currentPeriod === "year") daysBack = 365
-    if (this.currentPeriod === "all") daysBack = 365 // Max 1 year for performance
-
-    for (let i = daysBack - 1; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      days.push(date)
-    }
-
-    return days
-  }
-
-  renderHeatmap() {
-    const heatmapContainer = document.getElementById("weekly-heatmap")
-    heatmapContainer.innerHTML = ""
-
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-    const hours = Array.from({ length: 24 }, (_, i) => i)
-
-    // Create header row
-    const headerRow = document.createElement("div")
-    headerRow.style.gridColumn = "1 / -1"
-    headerRow.style.display = "grid"
-    headerRow.style.gridTemplateColumns = "repeat(25, 1fr)"
-    headerRow.style.gap = "2px"
-    headerRow.style.marginBottom = "8px"
-
-    // Empty cell for day labels
-    const emptyCell = document.createElement("div")
-    headerRow.appendChild(emptyCell)
-
-    // Hour labels
-    for (let hour = 0; hour < 24; hour++) {
-      const hourLabel = document.createElement("div")
-      hourLabel.textContent = hour % 6 === 0 ? `${hour}h` : ""
-      hourLabel.style.fontSize = "10px"
-      hourLabel.style.textAlign = "center"
-      hourLabel.style.color = "var(--text-muted)"
-      headerRow.appendChild(hourLabel)
-    }
-
-    heatmapContainer.appendChild(headerRow)
-
-    // Create heatmap grid
-    days.forEach((day, dayIndex) => {
-      const dayRow = document.createElement("div")
-      dayRow.style.display = "grid"
-      dayRow.style.gridTemplateColumns = "repeat(25, 1fr)"
-      dayRow.style.gap = "2px"
-      dayRow.style.marginBottom = "2px"
-
-      // Day label
-      const dayLabel = document.createElement("div")
-      dayLabel.textContent = day
-      dayLabel.style.fontSize = "12px"
-      dayLabel.style.fontWeight = "500"
-      dayLabel.style.display = "flex"
-      dayLabel.style.alignItems = "center"
-      dayLabel.style.color = "var(--text-primary)"
-      dayRow.appendChild(dayLabel)
-
-      // Hour cells
-      hours.forEach((hour) => {
-        const cell = document.createElement("div")
-        cell.className = "heatmap-day"
-
-        // Calculate activity level (mock data for now)
-        const activity = Math.random() * 4
-        const intensity = Math.floor(activity)
-
-        const colors = [
-          "#f1f5f9", // No activity
-          "rgba(139, 92, 246, 0.2)", // Low
-          "rgba(139, 92, 246, 0.5)", // Medium
-          "rgba(139, 92, 246, 0.8)", // High
-          "#8b5cf6", // Very high
-        ]
-
-        cell.style.backgroundColor = colors[intensity]
-        cell.title = `${day} ${hour}:00 - ${activity.toFixed(1)} sessions`
-
-        dayRow.appendChild(cell)
-      })
-
-      heatmapContainer.appendChild(dayRow)
-    })
-  }
-
-  renderInsights() {
-    const insights = this.generateInsights()
-    const container = document.getElementById("insights-container")
-    container.innerHTML = ""
-
-    insights.forEach((insight) => {
-      const card = document.createElement("div")
-      card.className = "insight-card"
-      card.innerHTML = `
-        <h4>${insight.title}</h4>
-        <p>${insight.description}</p>
-      `
-      container.appendChild(card)
-    })
-  }
-
-  generateInsights() {
-    const stats = this.calculateOverviewStats()
-    const insights = []
-
-    // Productivity insights
-    if (stats.productivityScore >= 80) {
-      insights.push({
-        title: "Excellent Productivity!",
-        description: "You're maintaining great focus habits. Keep up the excellent work!",
-      })
-    } else if (stats.productivityScore >= 60) {
-      insights.push({
-        title: "Good Progress",
-        description: "You're building solid productivity habits. Consider increasing your daily focus sessions.",
-      })
-    } else {
-      insights.push({
-        title: "Room for Improvement",
-        description: "Try to complete more focus sessions and take regular breaks to boost your productivity score.",
-      })
-    }
-
-    // Break adherence insights
-    if (stats.breakAdherence < 70) {
-      insights.push({
-        title: "Take More Breaks",
-        description: "You're skipping too many breaks. Regular breaks help maintain focus and prevent burnout.",
-      })
-    }
-
-    // Session insights
-    if (stats.totalSessions > 50) {
-      insights.push({
-        title: "Consistency Champion",
-        description: "You've completed many focus sessions! This consistency will lead to great results.",
-      })
-    }
-
-    return insights
-  }
-
-  renderDetailedStats() {
-    const stats = this.calculateDetailedStats()
-
-    document.getElementById("completed-sessions").textContent = stats.completedSessions
-    document.getElementById("avg-session-duration").textContent = `${stats.avgSessionDuration} min`
-    document.getElementById("longest-streak").textContent = `${stats.longestStreak} days`
-    document.getElementById("breaks-taken").textContent = stats.breaksTaken
-    document.getElementById("breaks-skipped").textContent = stats.breaksSkipped
-    document.getElementById("avg-break-duration").textContent = `${stats.avgBreakDuration} min`
-    document.getElementById("morning-time").textContent = `${stats.morningTime}%`
-    document.getElementById("afternoon-time").textContent = `${stats.afternoonTime}%`
-    document.getElementById("evening-time").textContent = `${stats.eveningTime}%`
-  }
-
-  calculateDetailedStats() {
-    const dailyStats = this.data.dailyStats
-    let completedSessions = 0
-    let totalFocusTime = 0
-    let breaksTaken = 0
-    let breaksSkipped = 0
     let totalBreakTime = 0
+    let totalSessions = 0
+    let maxSessionsInDay = 0
 
-    Object.values(dailyStats).forEach((day) => {
-      completedSessions += day.focusSessions || 0
-      totalFocusTime += day.totalFocusTime || 0
-      breaksTaken += day.breaks || 0
-      breaksSkipped += day.breaksSkipped || 0
-      totalBreakTime += day.totalBreakTime || 0
+    Object.values(this.stats.dailyStats).forEach(day => {
+      totalFocusTime += day.focusTime || 0
+      totalBreakTime += day.breakTime || 0
+      totalSessions += day.focusSessions || 0
+      maxSessionsInDay = Math.max(maxSessionsInDay, day.focusSessions || 0)
     })
 
-    const avgSessionDuration = completedSessions > 0 ? Math.round(totalFocusTime / completedSessions) : 0
-    const avgBreakDuration = breaksTaken > 0 ? Math.round(totalBreakTime / breaksTaken) : 0
+    this.stats.totalFocusTime = totalFocusTime
+    this.stats.totalBreakTime = totalBreakTime
+    this.stats.totalSessions = totalSessions
+    this.stats.averageSessionLength = totalSessions > 0 ? Math.round(totalFocusTime / totalSessions) : 0
+    this.stats.longestStreak = this.calculateLongestStreak()
+    this.stats.currentStreak = this.calculateCurrentStreak()
 
-    // Mock data for time distribution and streak
-    const morningTime = 35
-    const afternoonTime = 45
-    const eveningTime = 20
-    const longestStreak = 7
-
-    return {
-      completedSessions,
-      avgSessionDuration,
-      longestStreak,
-      breaksTaken,
-      breaksSkipped,
-      avgBreakDuration,
-      morningTime,
-      afternoonTime,
-      eveningTime,
-    }
+    // Calculate weekly and monthly stats
+    this.calculateWeeklyStats()
+    this.calculateMonthlyStats()
   }
 
-  updateChartsForPeriod() {
-    this.renderCharts()
-  }
+  calculateLongestStreak() {
+    const dates = Object.keys(this.stats.dailyStats).sort()
+    let longestStreak = 0
+    let currentStreak = 0
 
-  formatTime(minutes) {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return `${hours}h ${mins}m`
-  }
-
-  async exportStats() {
-    try {
-      const exportData = {
-        ...this.data,
-        exportDate: new Date().toISOString(),
-        summary: this.calculateOverviewStats(),
+    for (let i = 0; i < dates.length; i++) {
+      const day = this.stats.dailyStats[dates[i]]
+      if (day.focusSessions > 0) {
+        currentStreak++
+        longestStreak = Math.max(longestStreak, currentStreak)
+      } else {
+        currentStreak = 0
       }
+    }
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: "application/json",
-      })
+    return longestStreak
+  }
 
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `pomodoro-stats-${new Date().toISOString().split("T")[0]}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error("[v0] Error exporting stats:", error)
+  calculateCurrentStreak() {
+    const dates = Object.keys(this.stats.dailyStats).sort()
+    let currentStreak = 0
+
+    for (let i = dates.length - 1; i >= 0; i--) {
+      const day = this.stats.dailyStats[dates[i]]
+      if (day.focusSessions > 0) {
+        currentStreak++
+      } else {
+        break
+      }
+    }
+
+    return currentStreak
+  }
+
+  calculateWeeklyStats() {
+    const now = new Date()
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
+    
+    this.stats.weeklyStats = {
+      focusSessions: 0,
+      focusTime: 0,
+      breakTime: 0
+    }
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart)
+      date.setDate(date.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      if (this.stats.dailyStats[dateStr]) {
+        const day = this.stats.dailyStats[dateStr]
+        this.stats.weeklyStats.focusSessions += day.focusSessions || 0
+        this.stats.weeklyStats.focusTime += day.focusTime || 0
+        this.stats.weeklyStats.breakTime += day.breakTime || 0
+      }
     }
   }
 
-  openSettings() {
-    const chrome = window.chrome // Declare the chrome variable
-    if (chrome && chrome.runtime) {
-      chrome.runtime.openOptionsPage()
+  calculateMonthlyStats() {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    
+    this.stats.monthlyStats = {
+      focusSessions: 0,
+      focusTime: 0,
+      breakTime: 0
+    }
+
+    for (let i = 0; i < now.getDate(); i++) {
+      const date = new Date(monthStart)
+      date.setDate(date.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      if (this.stats.dailyStats[dateStr]) {
+        const day = this.stats.dailyStats[dateStr]
+        this.stats.monthlyStats.focusSessions += day.focusSessions || 0
+        this.stats.monthlyStats.focusTime += day.focusTime || 0
+        this.stats.monthlyStats.breakTime += day.breakTime || 0
+      }
     }
   }
 
-  async clearStats() {
-    if (!confirm("Are you sure you want to clear all statistics? This action cannot be undone.")) {
+  setupEventListeners() {
+    // Add any event listeners if needed
+  }
+
+  renderStats() {
+    if (this.stats.totalSessions === 0 && Object.keys(this.stats.dailyStats).length === 0) {
+      this.showEmptyState()
       return
     }
 
-    try {
-      const chrome = window.chrome // Declare the chrome variable
-      if (!chrome || !chrome.storage) {
-        console.error("[v0] Chrome storage API not available")
-        return
-      }
+    this.renderOverviewStats()
+    this.renderHeatmap()
+    this.renderTimeline()
+  }
 
-      await chrome.storage.local.remove(["dailyStats", "totalSessions"])
-      location.reload()
-    } catch (error) {
-      console.error("[v0] Error clearing stats:", error)
+  renderOverviewStats() {
+    const container = document.querySelector('.stats-grid')
+    if (!container) return
+
+    container.innerHTML = `
+      <div class="stat-card">
+        <h3>Total Sessions</h3>
+        <div class="stat-value">${this.stats.totalSessions}</div>
+        <div class="stat-label">Focus sessions completed</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Focus Time</h3>
+        <div class="stat-value">${Math.round(this.stats.totalFocusTime / 60)}h</div>
+        <div class="stat-label">Total hours focused</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Current Streak</h3>
+        <div class="stat-value">${this.stats.currentStreak}</div>
+        <div class="stat-label">Days in a row</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Longest Streak</h3>
+        <div class="stat-value">${this.stats.longestStreak}</div>
+        <div class="stat-label">Best streak</div>
+      </div>
+    `
+  }
+
+  renderHeatmap() {
+    const container = document.querySelector('.heatmap-container')
+    if (!container) return
+
+    const heatmapData = this.generateHeatmapData()
+    
+    container.innerHTML = `
+      <h2>Activity Heatmap</h2>
+      <div class="heatmap">
+        ${this.generateHeatmapHTML(heatmapData)}
+      </div>
+    `
+  }
+
+  generateHeatmapData() {
+    const data = {}
+    const today = new Date()
+    
+    // Generate data for the last 365 days
+    for (let i = 364; i >= 0; i--) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      const dayData = this.stats.dailyStats[dateStr] || { focusSessions: 0, focusTime: 0 }
+      data[dateStr] = {
+        sessions: dayData.focusSessions || 0,
+        time: dayData.focusTime || 0,
+        level: this.getActivityLevel(dayData.focusSessions || 0)
+      }
     }
+    
+    return data
+  }
+
+  getActivityLevel(sessions) {
+    if (sessions === 0) return 0
+    if (sessions <= 2) return 1
+    if (sessions <= 4) return 2
+    if (sessions <= 6) return 3
+    return 4
+  }
+
+  generateHeatmapHTML(data) {
+    const dates = Object.keys(data).sort()
+    const weeks = []
+    let currentWeek = []
+    
+    // Group dates into weeks (7 days per week)
+    for (let i = 0; i < dates.length; i++) {
+      currentWeek.push({ date: dates[i], ...data[dates[i]] })
+      
+      if (currentWeek.length === 7 || i === dates.length - 1) {
+        // Pad the last week if it's not complete
+        while (currentWeek.length < 7) {
+          currentWeek.push({ date: '', sessions: 0, time: 0, level: 0 })
+        }
+        weeks.push([...currentWeek])
+        currentWeek = []
+      }
+    }
+    
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    
+    return `
+      <div class="heatmap-row">
+        <div class="heatmap-day-label"></div>
+        ${dayLabels.map(day => `<div class="heatmap-day-label">${day}</div>`).join('')}
+      </div>
+      ${weeks.map(week => `
+        <div class="heatmap-row">
+          <div class="heatmap-day-label">${this.getWeekLabel(week[0]?.date)}</div>
+          <div class="heatmap-week">
+            ${week.map(day => `
+              <div class="heatmap-cell" 
+                   data-level="${day.level}" 
+                   data-date="${day.date}"
+                   data-sessions="${day.sessions}"
+                   data-time="${day.time}"
+                   title="${this.getTooltipText(day)}">
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    `
+  }
+
+  getWeekLabel(dateStr) {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  getTooltipText(day) {
+    if (!day.date || day.sessions === 0) {
+      return "No activity"
+    }
+    return `${day.date}: ${day.sessions} sessions (${Math.round(day.time / 60)}h)`
+  }
+
+  renderTimeline() {
+    const container = document.querySelector('.timeline-container')
+    if (!container) return
+
+    const recentActivity = this.getRecentActivity()
+    
+    if (recentActivity.length === 0) {
+      container.innerHTML = `
+        <h2>Recent Activity</h2>
+        <div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <h3>No activity yet</h3>
+          <p>Start your first focus session to see your activity timeline here.</p>
+        </div>
+      `
+      return
+    }
+
+    container.innerHTML = `
+      <h2>Recent Activity</h2>
+      <div class="timeline">
+        ${recentActivity.map(activity => `
+          <div class="timeline-item">
+            <div class="timeline-icon focus">🍅</div>
+            <div class="timeline-content">
+              <div class="timeline-title">${activity.sessions} focus session${activity.sessions > 1 ? 's' : ''}</div>
+              <div class="timeline-time">${activity.date}</div>
+              <div class="timeline-duration">${Math.round(activity.time / 60)} hours focused</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `
+  }
+
+  getRecentActivity() {
+    const dates = Object.keys(this.stats.dailyStats)
+      .sort()
+      .reverse()
+      .slice(0, 10)
+    
+    return dates.map(date => {
+      const day = this.stats.dailyStats[date]
+      return {
+        date: new Date(date).toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric' 
+        }),
+        sessions: day.focusSessions || 0,
+        time: day.focusTime || 0
+      }
+    }).filter(activity => activity.sessions > 0)
+  }
+
+  showEmptyState() {
+    const container = document.querySelector('.container')
+    if (!container) return
+
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <h3>No Statistics Available</h3>
+        <p>Start using the Pomodoro timer to see your productivity statistics here.</p>
+      </div>
+    `
+  }
+
+  showError(message) {
+    const container = document.querySelector('.container')
+    if (!container) return
+
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">❌</div>
+        <h3>Error Loading Statistics</h3>
+        <p>${message}</p>
+      </div>
+    `
   }
 }
 
 // Initialize stats page when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("[v0] DOM loaded, initializing stats")
   new PomodoroStats()
 })
