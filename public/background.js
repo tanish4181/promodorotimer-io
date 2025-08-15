@@ -1,7 +1,5 @@
 // Background Service Worker for Pomodoro Timer Chrome Extension
 
-const chrome = window.chrome // Declare the chrome variable
-
 class PomodoroBackground {
   constructor() {
     this.state = {
@@ -37,36 +35,38 @@ class PomodoroBackground {
   }
 
   async initializeBackground() {
+    console.log("[v0] Initializing background script")
+
     // Load saved state
     await this.loadState()
 
     // Set up message listeners
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message, sender, sendResponse)
       return true // Keep message channel open for async responses
     })
 
     // Set up alarm listeners
-    chrome.alarms.onAlarm.addListener((alarm) => {
+    window.chrome.alarms.onAlarm.addListener((alarm) => {
       if (alarm.name === this.alarmName) {
         this.handleTimerTick()
       }
     })
 
     // Handle extension startup
-    chrome.runtime.onStartup.addListener(() => {
+    window.chrome.runtime.onStartup.addListener(() => {
       this.loadState()
     })
 
     // Handle extension install
-    chrome.runtime.onInstalled.addListener(() => {
+    window.chrome.runtime.onInstalled.addListener(() => {
       this.initializeDefaultState()
     })
   }
 
   async loadState() {
     try {
-      const result = await chrome.storage.local.get([
+      const result = await window.chrome.storage.local.get([
         "timerState",
         "currentTime",
         "isRunning",
@@ -100,7 +100,7 @@ class PomodoroBackground {
 
   async saveState() {
     try {
-      await chrome.storage.local.set({
+      await window.chrome.storage.local.set({
         ...this.state,
         lastActiveTime: Date.now(),
       })
@@ -140,6 +140,8 @@ class PomodoroBackground {
   }
 
   async handleMessage(message, sender, sendResponse) {
+    console.log("[v0] Background received message:", message.type)
+
     switch (message.type) {
       case "START_TIMER":
         await this.startTimer()
@@ -205,10 +207,11 @@ class PomodoroBackground {
   }
 
   async startTimer() {
+    console.log("[v0] Starting timer in background")
     this.state.isRunning = true
 
     // Set up alarm for next tick
-    chrome.alarms.create(this.alarmName, { delayInMinutes: 1 / 60 }) // 1 second
+    window.chrome.alarms.create(this.alarmName, { delayInMinutes: 1 / 60 }) // 1 second
 
     // Notify content scripts if YouTube integration is enabled
     if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
@@ -220,8 +223,9 @@ class PomodoroBackground {
   }
 
   async pauseTimer() {
+    console.log("[v0] Pausing timer in background")
     this.state.isRunning = false
-    chrome.alarms.clear(this.alarmName)
+    window.chrome.alarms.clear(this.alarmName)
 
     // Notify content scripts
     if (this.state.settings.youtubeIntegration) {
@@ -234,7 +238,7 @@ class PomodoroBackground {
 
   async resetTimer() {
     this.state.isRunning = false
-    chrome.alarms.clear(this.alarmName)
+    window.chrome.alarms.clear(this.alarmName)
 
     // Reset to appropriate time based on current mode
     const timeMap = {
@@ -258,7 +262,7 @@ class PomodoroBackground {
       await this.handleTimerComplete()
     } else {
       // Schedule next tick
-      chrome.alarms.create(this.alarmName, { delayInMinutes: 1 / 60 })
+      window.chrome.alarms.create(this.alarmName, { delayInMinutes: 1 / 60 })
       await this.saveState()
       this.broadcastUpdate()
     }
@@ -266,7 +270,7 @@ class PomodoroBackground {
 
   async handleTimerComplete() {
     this.state.isRunning = false
-    chrome.alarms.clear(this.alarmName)
+    window.chrome.alarms.clear(this.alarmName)
 
     // Show notification
     if (this.state.settings.notifications) {
@@ -327,7 +331,7 @@ class PomodoroBackground {
       longBreak: "Long break complete! Time to get back to work.",
     }
 
-    chrome.notifications.create({
+    window.chrome.notifications.create({
       type: "basic",
       iconUrl: "icons/icon48.png",
       title: "Pomodoro Timer",
@@ -337,7 +341,7 @@ class PomodoroBackground {
 
   async recordSession() {
     const today = new Date().toDateString()
-    const result = await chrome.storage.local.get(["dailyStats"])
+    const result = await window.chrome.storage.local.get(["dailyStats"])
     const dailyStats = result.dailyStats || {}
 
     if (!dailyStats[today]) {
@@ -352,7 +356,7 @@ class PomodoroBackground {
     dailyStats[today].focusSessions++
     dailyStats[today].totalFocusTime += this.state.settings.focusTime
 
-    await chrome.storage.local.set({ dailyStats })
+    await window.chrome.storage.local.set({ dailyStats })
   }
 
   async updateSettings(newSettings) {
@@ -424,17 +428,17 @@ class PomodoroBackground {
 
   broadcastUpdate() {
     // Send update to popup
-    chrome.runtime.sendMessage({ type: "TIMER_UPDATE", state: this.state }).catch(() => {
+    window.chrome.runtime.sendMessage({ type: "TIMER_UPDATE", state: this.state }).catch(() => {
       // Popup might not be open, ignore error
     })
   }
 
   async notifyContentScripts(message) {
     try {
-      const tabs = await chrome.tabs.query({ url: ["https://www.youtube.com/*", "https://youtube.com/*"] })
+      const tabs = await window.chrome.tabs.query({ url: ["https://www.youtube.com/*", "https://youtube.com/*"] })
 
       for (const tab of tabs) {
-        chrome.tabs.sendMessage(tab.id, message).catch(() => {
+        window.chrome.tabs.sendMessage(tab.id, message).catch(() => {
           // Content script might not be loaded, ignore error
         })
       }
