@@ -1,17 +1,17 @@
 /* Pomodoro Timer Options Page Styles */
 :root {
-  --primary-color: #1f2937;
-  --accent-color: #8b5cf6;
-  --background: #ffffff;
-  --card-bg: #f1f5f9;
-  --text-primary: #1f2937;
-  --text-muted: #6b7280;
-  --border-color: #e5e7eb;
-  --success-color: #34d399;
+  --primary-color: #059669;
+  --accent-color: #10b981;
+  --background: #1f2937;
+  --card-bg: #374151;
+  --text-primary: #ffffff;
+  --text-muted: #d1d5db;
+  --border-color: #475569;
+  --success-color: #10b981;
   --warning-color: #fbbf24;
   --danger-color: #ef4444;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -36,7 +36,7 @@ body {
 }
 
 .header {
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: white;
   padding: 32px 24px;
   text-align: center;
@@ -82,7 +82,7 @@ body {
 .section-header h2 {
   font-size: 20px;
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
@@ -126,8 +126,8 @@ body {
 
 .input-group input[type="number"]:focus {
   outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.3);
 }
 
 .input-suffix {
@@ -186,7 +186,7 @@ body {
 }
 
 input:checked + .toggle-slider {
-  background: var(--accent-color);
+  background: var(--primary-color);
 }
 
 input:checked + .toggle-slider:before {
@@ -200,7 +200,7 @@ input:checked + .toggle-slider:before {
 }
 
 .primary-btn {
-  background: var(--accent-color);
+  background: var(--primary-color);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -213,7 +213,7 @@ input:checked + .toggle-slider:before {
 }
 
 .primary-btn:hover {
-  background: #7c3aed;
+  background: #047857;
   transform: translateY(-1px);
 }
 
@@ -263,7 +263,7 @@ input:checked + .toggle-slider:before {
 }
 
 .about-item strong {
-  color: var(--primary-color);
+  color: var(--text-primary);
   font-weight: 600;
 }
 

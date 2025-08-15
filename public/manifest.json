@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "A sophisticated Pomodoro timer with break enforcement and YouTube integration for enhanced productivity.",
   "permissions": ["storage", "activeTab", "tabs", "scripting", "alarms", "notifications"],
-  "host_permissions": ["https://www.youtube.com/*", "https://youtube.com/*"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
   },
@@ -13,6 +13,11 @@
       "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["blocker.js"],
+      "run_at": "document_start"
     }
   ],
   "action": {
@@ -22,7 +27,7 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["overlay.html", "overlay.css"],
+      "resources": ["overlay.html", "overlay.css", "blocked.html"],
       "matches": ["<all_urls>"]
     }
   ]

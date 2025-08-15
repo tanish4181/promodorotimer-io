@@ -1,14 +1,15 @@
 /* Pomodoro Timer Popup Styles */
 :root {
-  --primary-color: #1f2937;
-  --accent-color: #8b5cf6;
-  --background: #ffffff;
-  --card-bg: #f1f5f9;
-  --text-primary: #1f2937;
-  --text-muted: #6b7280;
-  --border-color: #e5e7eb;
-  --success-color: #34d399;
+  --primary-color: #059669;
+  --accent-color: #10b981;
+  --background: #1f2937;
+  --card-bg: #374151;
+  --text-primary: #ffffff;
+  --text-muted: #d1d5db;
+  --border-color: #475569;
+  --success-color: #10b981;
   --warning-color: #fbbf24;
+  --destructive-color: #ef4444;
 }
 
 * {
@@ -19,7 +20,7 @@
 
 body {
   width: 350px;
-  min-height: 500px;
+  min-height: 600px;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: var(--background);
   color: var(--text-primary);
@@ -41,7 +42,7 @@ body {
 .header h1 {
   font-size: 20px;
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .icon-btn {
@@ -67,38 +68,38 @@ body {
 #timer-circle {
   width: 180px;
   height: 180px;
-  border: 6px solid var(--card-bg);
+  border: 6px solid var(--border-color);
   border-radius: 50%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   position: relative;
-  background: var(--background);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 #timer-circle.active {
-  border-color: var(--accent-color);
+  border-color: var(--primary-color);
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
   0% {
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
   }
   50% {
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 4px 20px rgba(5, 150, 105, 0.5);
   }
   100% {
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
   }
 }
 
 #timer-text {
   font-size: 32px;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
@@ -115,7 +116,7 @@ body {
 }
 
 .primary-btn {
-  background: var(--accent-color);
+  background: var(--primary-color);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -129,7 +130,7 @@ body {
 }
 
 .primary-btn:hover {
-  background: #7c3aed;
+  background: #047857;
   transform: translateY(-1px);
 }
 
@@ -146,7 +147,7 @@ body {
 }
 
 .secondary-btn:hover {
-  background: #e2e8f0;
+  background: #4b5563;
   transform: translateY(-1px);
 }
 
@@ -174,7 +175,7 @@ body {
 .info-item span:last-child {
   font-size: 16px;
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .quick-settings {
@@ -196,7 +197,7 @@ body {
 }
 
 .setting-group select {
-  background: var(--background);
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
   padding: 6px 12px;
   border-radius: 6px;
@@ -207,8 +208,8 @@ body {
 
 .setting-group select:focus {
   outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.3);
 }
 
 .footer {
@@ -231,7 +232,7 @@ body {
 }
 
 .text-btn:hover {
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 /* Break mode styles */
@@ -250,4 +251,210 @@ body {
 
 .long-break-mode #timer-text {
   color: var(--warning-color);
+}
+
+/* Added todo list styles */
+.todo-section,
+.blocking-section {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.toggle-btn:hover {
+  background: var(--background);
+}
+
+.add-todo,
+.add-website {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.add-todo input,
+.add-website input {
+  flex: 1;
+  background: var(--background);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.add-todo input:focus,
+.add-website input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+}
+
+.add-todo input::placeholder,
+.add-website input::placeholder {
+  color: var(--text-muted);
+}
+
+.add-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 40px;
+}
+
+.add-btn:hover {
+  background: #047857;
+}
+
+.todo-list,
+.websites-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.todo-item,
+.website-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.todo-item:last-child,
+.website-item:last-child {
+  border-bottom: none;
+}
+
+.todo-checkbox {
+  background: none;
+  border: 2px solid var(--border-color);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.todo-checkbox:hover {
+  border-color: var(--primary-color);
+}
+
+.checkbox-icon {
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.todo-text.completed {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.todo-delete,
+.website-remove {
+  background: none;
+  border: none;
+  color: var(--destructive-color);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.todo-delete:hover,
+.website-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.todo-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.todo-empty,
+.websites-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 16px;
+  font-style: italic;
+}
+
+.website-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.todo-item.completed {
+  opacity: 0.7;
+}
+
+/* Scrollbar styling for dark mode */
+.todo-list::-webkit-scrollbar,
+.websites-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.todo-list::-webkit-scrollbar-track,
+.websites-list::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 3px;
+}
+
+.todo-list::-webkit-scrollbar-thumb,
+.websites-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.todo-list::-webkit-scrollbar-thumb:hover,
+.websites-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }

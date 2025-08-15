@@ -1,7 +1,5 @@
 // Content Script for YouTube Integration - Pomodoro Timer Chrome Extension
 
-const chrome = window.chrome // Declare the chrome variable
-
 class YouTubeIntegration {
   constructor() {
     this.isVideoPlaying = false
@@ -10,6 +8,17 @@ class YouTubeIntegration {
     this.notificationElement = null
     this.overlayElement = null
     this.timerState = null
+    this.distractionSettings = {
+      hideComments: true,
+      hideRecommendations: true,
+      hideShorts: true,
+      hideEndScreen: true,
+      hideAutoplay: true,
+      hideLiveChat: true,
+      hideNotifications: true,
+    }
+    this.hiddenElements = new Set()
+    this.styleElement = null
 
     this.initializeIntegration()
   }
@@ -25,7 +34,7 @@ class YouTubeIntegration {
 
   setupIntegration() {
     // Set up message listener for background script
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message)
       sendResponse({ success: true })
     })
@@ -33,15 +42,229 @@ class YouTubeIntegration {
     // Monitor video state changes
     this.observeVideoChanges()
 
+    this.initializeDistractionRemoval()
+
     // Get initial timer state
     this.requestTimerState()
 
     console.log("[v0] YouTube Pomodoro integration initialized")
   }
 
+  initializeDistractionRemoval() {
+    // Load distraction settings
+    this.loadDistractionSettings()
+
+    // Create observer for dynamic content
+    this.observeDistractions()
+
+    // Apply initial distraction removal
+    this.applyDistractionRemoval()
+
+    // Check periodically for new distracting elements
+    setInterval(() => {
+      if (this.shouldHideDistractions()) {
+        this.applyDistractionRemoval()
+      }
+    }, 2000)
+  }
+
+  async loadDistractionSettings() {
+    try {
+      const response = await window.chrome.runtime.sendMessage({ type: "GET_STATE" })
+      if (response && response.state && response.state.settings) {
+        // Use settings from background script
+        const settings = response.state.settings
+        this.distractionSettings = {
+          hideComments: settings.hideComments !== false,
+          hideRecommendations: settings.hideRecommendations !== false,
+          hideShorts: settings.hideShorts !== false,
+          hideEndScreen: settings.hideEndScreen !== false,
+          hideAutoplay: settings.hideAutoplay !== false,
+          hideLiveChat: settings.hideLiveChat !== false,
+          hideNotifications: settings.hideNotifications !== false,
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Error loading distraction settings:", error)
+    }
+  }
+
+  observeDistractions() {
+    const observer = new MutationObserver(() => {
+      if (this.shouldHideDistractions()) {
+        this.applyDistractionRemoval()
+      }
+    })
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    })
+  }
+
+  shouldHideDistractions() {
+    return (
+      this.timerState &&
+      this.timerState.currentMode === "focus" &&
+      this.timerState.isRunning &&
+      this.timerState.settings &&
+      this.timerState.settings.youtubeIntegration
+    )
+  }
+
+  applyDistractionRemoval() {
+    if (!this.shouldHideDistractions()) {
+      this.restoreDistractions()
+      return
+    }
+
+    this.createDistractionStyles()
+
+    const distractionSelectors = {
+      // Comments section
+      comments: ["#comments", "ytd-comments", "#comment-teaser", "ytd-comment-thread-renderer"],
+
+      // Recommendations and related videos
+      recommendations: [
+        "#related",
+        "#secondary",
+        "ytd-watch-next-secondary-results-renderer",
+        "ytd-compact-video-renderer",
+        "#items.ytd-watch-next-secondary-results-renderer",
+      ],
+
+      // Shorts shelf
+      shorts: [
+        "ytd-reel-shelf-renderer",
+        "ytd-rich-shelf-renderer[is-shorts]",
+        '[aria-label*="Shorts"]',
+        "ytd-shorts-shelf-renderer",
+      ],
+
+      // End screen suggestions
+      endScreen: [".ytp-ce-element", ".ytp-cards-teaser", ".ytp-endscreen-element"],
+
+      // Autoplay toggle
+      autoplay: [".ytp-autonav-toggle-button", "ytd-compact-autoplay-renderer"],
+
+      // Live chat
+      liveChat: ["#chat", "ytd-live-chat-frame", 'iframe[src*="live_chat"]'],
+
+      // Notification bell and other distractions
+      notifications: ["#notification-count", "ytd-notification-topbar-button-renderer", ".ytd-masthead #guide-button"],
+    }
+
+    // Apply hiding based on settings
+    Object.keys(distractionSelectors).forEach((key) => {
+      if (this.distractionSettings[`hide${key.charAt(0).toUpperCase() + key.slice(1)}`]) {
+        distractionSelectors[key].forEach((selector) => {
+          this.hideElements(selector)
+        })
+      }
+    })
+
+    // Add focus mode indicator
+    this.showFocusModeIndicator()
+  }
+
+  createDistractionStyles() {
+    if (this.styleElement) return
+
+    this.styleElement = document.createElement("style")
+    this.styleElement.id = "pomodoro-distraction-styles"
+    this.styleElement.textContent = `
+      .pomodoro-hidden {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      
+      .pomodoro-focus-indicator {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #059669, #10b981);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 999999;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        animation: pomodoroFocusPulse 2s infinite;
+      }
+      
+      @keyframes pomodoroFocusPulse {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
+      }
+      
+      /* Blur remaining distracting elements */
+      .pomodoro-blur {
+        filter: blur(4px) !important;
+        pointer-events: none !important;
+        opacity: 0.3 !important;
+      }
+    `
+
+    document.head.appendChild(this.styleElement)
+  }
+
+  hideElements(selector) {
+    const elements = document.querySelectorAll(selector)
+    elements.forEach((element) => {
+      if (!element.classList.contains("pomodoro-hidden")) {
+        element.classList.add("pomodoro-hidden")
+        this.hiddenElements.add(element)
+      }
+    })
+  }
+
+  showFocusModeIndicator() {
+    // Remove existing indicator
+    const existing = document.getElementById("pomodoro-focus-indicator")
+    if (existing) existing.remove()
+
+    // Create new indicator
+    const indicator = document.createElement("div")
+    indicator.id = "pomodoro-focus-indicator"
+    indicator.className = "pomodoro-focus-indicator"
+    indicator.innerHTML = "🍅 Focus Mode Active"
+
+    document.body.appendChild(indicator)
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      if (indicator.parentNode) {
+        indicator.style.animation = "pomodoroSlideOut 0.3s ease-in"
+        setTimeout(() => indicator.remove(), 300)
+      }
+    }, 3000)
+  }
+
+  restoreDistractions() {
+    // Remove hidden class from all elements
+    this.hiddenElements.forEach((element) => {
+      if (element.parentNode) {
+        element.classList.remove("pomodoro-hidden", "pomodoro-blur")
+      }
+    })
+    this.hiddenElements.clear()
+
+    // Remove focus indicator
+    const indicator = document.getElementById("pomodoro-focus-indicator")
+    if (indicator) indicator.remove()
+
+    // Remove styles
+    if (this.styleElement) {
+      this.styleElement.remove()
+      this.styleElement = null
+    }
+  }
+
   async requestTimerState() {
     try {
-      const response = await chrome.runtime.sendMessage({ type: "GET_STATE" })
+      const response = await window.chrome.runtime.sendMessage({ type: "GET_STATE" })
       if (response && response.state) {
         this.timerState = response.state
         this.handleTimerStateChange()
@@ -135,7 +358,8 @@ class YouTubeIntegration {
 
   handleTimerStart() {
     if (this.timerState && this.timerState.currentMode === "focus") {
-      this.showNotification("🍅 Focus time started! YouTube will pause during breaks.", "info")
+      this.showNotification("🍅 Focus time started! Distractions hidden.", "info")
+      this.applyDistractionRemoval()
 
       // If we're in a break and starting focus, resume video if it was playing
       if (this.wasPlayingBeforePause && this.currentVideo) {
@@ -147,10 +371,17 @@ class YouTubeIntegration {
 
   handleTimerPause() {
     this.showNotification("⏸️ Timer paused", "info")
+    this.restoreDistractions()
   }
 
   handleTimerStateChange() {
     if (!this.timerState) return
+
+    if (this.timerState.currentMode === "focus" && this.timerState.isRunning) {
+      this.applyDistractionRemoval()
+    } else {
+      this.restoreDistractions()
+    }
 
     // Handle break modes
     if (this.timerState.currentMode === "shortBreak" || this.timerState.currentMode === "longBreak") {
@@ -166,6 +397,8 @@ class YouTubeIntegration {
 
   enforceBreak(mode) {
     console.log("[v0] Enforcing break mode:", mode)
+
+    this.restoreDistractions()
 
     // Pause video if playing
     if (this.currentVideo && this.isVideoPlaying) {
@@ -283,12 +516,12 @@ class YouTubeIntegration {
       }
       
       .pomodoro-btn-primary {
-        background: #8b5cf6;
+        background: #059669;
         color: white;
       }
       
       .pomodoro-btn-primary:hover {
-        background: #7c3aed;
+        background: #047857;
         transform: translateY(-1px);
       }
       
@@ -329,7 +562,7 @@ class YouTubeIntegration {
 
   async skipBreak() {
     try {
-      await chrome.runtime.sendMessage({ type: "SKIP_BREAK" })
+      await window.chrome.runtime.sendMessage({ type: "SKIP_BREAK" })
       this.removeBreakOverlay()
 
       // Resume video if it was playing
@@ -350,7 +583,7 @@ class YouTubeIntegration {
 
     // Start the break timer
     try {
-      await chrome.runtime.sendMessage({ type: "START_TIMER" })
+      await window.chrome.runtime.sendMessage({ type: "START_TIMER" })
     } catch (error) {
       console.error("[v0] Error starting break timer:", error)
     }
@@ -367,8 +600,8 @@ class YouTubeIntegration {
 
     // Style the notification
     const bgColors = {
-      info: "rgba(139, 92, 246, 0.9)",
-      break: "rgba(52, 211, 153, 0.9)",
+      info: "rgba(5, 150, 105, 0.9)",
+      break: "rgba(16, 185, 129, 0.9)",
       warning: "rgba(251, 191, 36, 0.9)",
     }
 

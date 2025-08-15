@@ -22,7 +22,12 @@ class PomodoroBackground {
         sounds: true,
         enforceBreaks: true,
         youtubeIntegration: true,
+        websiteBlocking: true,
+        blockDuringFocus: true,
+        blockDuringBreaks: false,
       },
+      blockedWebsites: [],
+      todos: [],
     }
 
     this.alarmName = "pomodoroTimer"
@@ -70,6 +75,8 @@ class PomodoroBackground {
         "totalSessions",
         "settings",
         "lastActiveTime",
+        "blockedWebsites",
+        "todos",
       ])
 
       if (result.timerState) {
@@ -121,7 +128,12 @@ class PomodoroBackground {
         sounds: true,
         enforceBreaks: true,
         youtubeIntegration: true,
+        websiteBlocking: true,
+        blockDuringFocus: true,
+        blockDuringBreaks: false,
       },
+      blockedWebsites: [],
+      todos: [],
     }
 
     await this.saveState()
@@ -156,6 +168,35 @@ class PomodoroBackground {
       case "SKIP_BREAK":
         await this.skipBreak()
         sendResponse({ success: true })
+        break
+
+      case "ADD_BLOCKED_WEBSITE":
+        await this.addBlockedWebsite(message.website)
+        sendResponse({ success: true })
+        break
+
+      case "REMOVE_BLOCKED_WEBSITE":
+        await this.removeBlockedWebsite(message.website)
+        sendResponse({ success: true })
+        break
+
+      case "GET_BLOCKED_WEBSITES":
+        sendResponse({ websites: this.state.blockedWebsites })
+        break
+
+      case "CHECK_WEBSITE_BLOCKED":
+        const isBlocked = await this.isWebsiteBlocked(message.url)
+        sendResponse({ blocked: isBlocked })
+        break
+
+      case "TODOS_UPDATED":
+        this.state.todos = message.todos
+        await this.saveState()
+        sendResponse({ success: true })
+        break
+
+      case "GET_TODOS":
+        sendResponse({ todos: this.state.todos })
         break
 
       default:
@@ -338,6 +379,47 @@ class PomodoroBackground {
       await this.saveState()
       this.broadcastUpdate()
     }
+  }
+
+  async addBlockedWebsite(website) {
+    const cleanUrl = this.cleanUrl(website)
+    if (!this.state.blockedWebsites.includes(cleanUrl)) {
+      this.state.blockedWebsites.push(cleanUrl)
+      await this.saveState()
+      this.broadcastUpdate()
+    }
+  }
+
+  async removeBlockedWebsite(website) {
+    const cleanUrl = this.cleanUrl(website)
+    this.state.blockedWebsites = this.state.blockedWebsites.filter((url) => url !== cleanUrl)
+    await this.saveState()
+    this.broadcastUpdate()
+  }
+
+  cleanUrl(url) {
+    // Remove protocol and www, keep just domain
+    return url
+      .replace(/^https?:\/\/(www\.)?/, "")
+      .split("/")[0]
+      .toLowerCase()
+  }
+
+  async isWebsiteBlocked(currentUrl) {
+    if (!this.state.settings.websiteBlocking) return false
+
+    const shouldBlock =
+      (this.state.settings.blockDuringFocus && this.state.currentMode === "focus" && this.state.isRunning) ||
+      (this.state.settings.blockDuringBreaks &&
+        (this.state.currentMode === "shortBreak" || this.state.currentMode === "longBreak") &&
+        this.state.isRunning)
+
+    if (!shouldBlock) return false
+
+    const cleanCurrentUrl = this.cleanUrl(currentUrl)
+    return this.state.blockedWebsites.some(
+      (blockedUrl) => cleanCurrentUrl.includes(blockedUrl) || blockedUrl.includes(cleanCurrentUrl),
+    )
   }
 
   broadcastUpdate() {

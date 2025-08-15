@@ -15,6 +15,14 @@ class PomodoroPopup {
     this.settingsBtn = document.getElementById("settings-btn")
     this.statsBtn = document.getElementById("stats-btn")
 
+    this.todoInput = document.getElementById("todo-input")
+    this.addTodoBtn = document.getElementById("add-todo-btn")
+    this.todoList = document.getElementById("todo-list")
+    this.websiteInput = document.getElementById("website-input")
+    this.addWebsiteBtn = document.getElementById("add-website-btn")
+    this.blockedWebsitesList = document.getElementById("blocked-websites-list")
+    this.toggleBlockingBtn = document.getElementById("toggle-blocking")
+
     console.log("[v0] Elements found:", {
       timerText: !!this.timerText,
       startBtn: !!this.startBtn,
@@ -63,6 +71,40 @@ class PomodoroPopup {
       this.updateSettings()
     })
 
+    if (this.addTodoBtn) {
+      this.addTodoBtn.addEventListener("click", () => {
+        this.addTodo()
+      })
+    }
+
+    if (this.todoInput) {
+      this.todoInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          this.addTodo()
+        }
+      })
+    }
+
+    if (this.addWebsiteBtn) {
+      this.addWebsiteBtn.addEventListener("click", () => {
+        this.addBlockedWebsite()
+      })
+    }
+
+    if (this.websiteInput) {
+      this.websiteInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          this.addBlockedWebsite()
+        }
+      })
+    }
+
+    if (this.toggleBlockingBtn) {
+      this.toggleBlockingBtn.addEventListener("click", () => {
+        this.toggleWebsiteBlocking()
+      })
+    }
+
     window.chrome = window.chrome || {}
     window.chrome.runtime = window.chrome.runtime || {}
     window.chrome.runtime.onMessage = window.chrome.runtime.onMessage || {}
@@ -84,6 +126,8 @@ class PomodoroPopup {
         "currentMode",
         "sessionCount",
         "settings",
+        "todos",
+        "blockedWebsites",
       ])
 
       console.log("[v0] Loaded state:", result)
@@ -103,7 +147,10 @@ class PomodoroPopup {
           autoStartPomodoros: false,
           notifications: true,
           sounds: true,
+          websiteBlocking: true,
         },
+        todos: result.todos || [],
+        blockedWebsites: result.blockedWebsites || [],
       }
 
       // Update UI elements
@@ -111,6 +158,8 @@ class PomodoroPopup {
       this.breakTimeSelect.value = this.state.settings.shortBreak
 
       this.updateDisplay()
+      this.renderTodos()
+      this.renderBlockedWebsites()
     } catch (error) {
       console.error("[v0] Error loading state:", error)
       this.initializeDefaultState()
@@ -135,7 +184,177 @@ class PomodoroPopup {
         autoStartPomodoros: false,
         notifications: true,
         sounds: true,
+        websiteBlocking: true,
       },
+      todos: [],
+      blockedWebsites: [],
+    }
+  }
+
+  async addTodo() {
+    if (!this.todoInput) return
+
+    const todoText = this.todoInput.value.trim()
+    if (!todoText) return
+
+    const newTodo = {
+      id: Date.now(),
+      text: todoText,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    }
+
+    this.state.todos.push(newTodo)
+    await this.saveTodos()
+    this.todoInput.value = ""
+    this.renderTodos()
+  }
+
+  async toggleTodo(todoId) {
+    const todo = this.state.todos.find((t) => t.id === todoId)
+    if (todo) {
+      todo.completed = !todo.completed
+      todo.completedAt = todo.completed ? new Date().toISOString() : null
+      await this.saveTodos()
+      this.renderTodos()
+    }
+  }
+
+  async deleteTodo(todoId) {
+    this.state.todos = this.state.todos.filter((t) => t.id !== todoId)
+    await this.saveTodos()
+    this.renderTodos()
+  }
+
+  async saveTodos() {
+    try {
+      await window.chrome.storage.local.set({ todos: this.state.todos })
+      await window.chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos })
+    } catch (error) {
+      console.error("[v0] Error saving todos:", error)
+    }
+  }
+
+  renderTodos() {
+    if (!this.todoList) return
+
+    const activeTodos = this.state.todos.filter((todo) => !todo.completed)
+    const completedTodos = this.state.todos.filter((todo) => todo.completed)
+
+    this.todoList.innerHTML = `
+      <div class="todo-section">
+        <h4 class="todo-section-title">Active Tasks (${activeTodos.length})</h4>
+        ${activeTodos
+          .map(
+            (todo) => `
+          <div class="todo-item" data-id="${todo.id}">
+            <button class="todo-checkbox" onclick="popup.toggleTodo(${todo.id})">
+              <span class="checkbox-icon">${todo.completed ? "✓" : ""}</span>
+            </button>
+            <span class="todo-text ${todo.completed ? "completed" : ""}">${todo.text}</span>
+            <button class="todo-delete" onclick="popup.deleteTodo(${todo.id})" title="Delete task">×</button>
+          </div>
+        `,
+          )
+          .join("")}
+        ${activeTodos.length === 0 ? '<div class="todo-empty">No active tasks. Add one above!</div>' : ""}
+      </div>
+      
+      ${
+        completedTodos.length > 0
+          ? `
+        <div class="todo-section">
+          <h4 class="todo-section-title">Completed (${completedTodos.length})</h4>
+          ${completedTodos
+            .map(
+              (todo) => `
+            <div class="todo-item completed" data-id="${todo.id}">
+              <button class="todo-checkbox" onclick="popup.toggleTodo(${todo.id})">
+                <span class="checkbox-icon">✓</span>
+              </button>
+              <span class="todo-text completed">${todo.text}</span>
+              <button class="todo-delete" onclick="popup.deleteTodo(${todo.id})" title="Delete task">×</button>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+      `
+          : ""
+      }
+    `
+  }
+
+  async addBlockedWebsite() {
+    if (!this.websiteInput) return
+
+    const website = this.websiteInput.value.trim()
+    if (!website) return
+
+    try {
+      await window.chrome.runtime.sendMessage({ type: "ADD_BLOCKED_WEBSITE", website })
+      this.websiteInput.value = ""
+      await this.loadBlockedWebsites()
+    } catch (error) {
+      console.error("[v0] Error adding blocked website:", error)
+    }
+  }
+
+  async removeBlockedWebsite(website) {
+    try {
+      await window.chrome.runtime.sendMessage({ type: "REMOVE_BLOCKED_WEBSITE", website })
+      await this.loadBlockedWebsites()
+    } catch (error) {
+      console.error("[v0] Error removing blocked website:", error)
+    }
+  }
+
+  async loadBlockedWebsites() {
+    try {
+      const response = await window.chrome.runtime.sendMessage({ type: "GET_BLOCKED_WEBSITES" })
+      if (response && response.websites) {
+        this.state.blockedWebsites = response.websites
+        this.renderBlockedWebsites()
+      }
+    } catch (error) {
+      console.error("[v0] Error loading blocked websites:", error)
+    }
+  }
+
+  renderBlockedWebsites() {
+    if (!this.blockedWebsitesList) return
+
+    if (this.state.blockedWebsites.length === 0) {
+      this.blockedWebsitesList.innerHTML = '<div class="websites-empty">No blocked websites</div>'
+      return
+    }
+
+    this.blockedWebsitesList.innerHTML = this.state.blockedWebsites
+      .map(
+        (website) => `
+      <div class="website-item">
+        <span class="website-name">${website}</span>
+        <button class="website-remove" onclick="popup.removeBlockedWebsite('${website}')" title="Remove website">×</button>
+      </div>
+    `,
+      )
+      .join("")
+  }
+
+  async toggleWebsiteBlocking() {
+    const newState = !this.state.settings.websiteBlocking
+    const newSettings = { ...this.state.settings, websiteBlocking: newState }
+
+    try {
+      await window.chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings })
+      this.state.settings = newSettings
+
+      if (this.toggleBlockingBtn) {
+        this.toggleBlockingBtn.textContent = newState ? "🚫" : "✅"
+        this.toggleBlockingBtn.title = newState ? "Disable website blocking" : "Enable website blocking"
+      }
+    } catch (error) {
+      console.error("[v0] Error toggling website blocking:", error)
     }
   }
 
@@ -171,6 +390,13 @@ class PomodoroPopup {
       this.startBtn.style.display = "block"
       this.pauseBtn.style.display = "none"
       this.timerCircle.classList.remove("active")
+    }
+
+    if (this.toggleBlockingBtn && this.state.settings) {
+      this.toggleBlockingBtn.textContent = this.state.settings.websiteBlocking ? "🚫" : "✅"
+      this.toggleBlockingBtn.title = this.state.settings.websiteBlocking
+        ? "Disable website blocking"
+        : "Enable website blocking"
     }
 
     // Update body class for styling
@@ -254,8 +480,10 @@ class PomodoroPopup {
   }
 }
 
+let popup
+
 // Initialize popup when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[v0] DOM loaded, initializing popup")
-  new PomodoroPopup()
+  popup = new PomodoroPopup()
 })
