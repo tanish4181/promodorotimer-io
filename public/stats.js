@@ -25,7 +25,13 @@ class PomodoroStats {
 
   async loadData() {
     try {
-      const result = await window.chrome.storage.local.get(["dailyStats", "totalSessions", "settings"])
+      const chrome = window.chrome // Declare the chrome variable
+      if (!chrome || !chrome.storage) {
+        console.error("[v0] Chrome storage API not available")
+        return
+      }
+
+      const result = await chrome.storage.local.get(["dailyStats", "totalSessions", "settings"])
 
       this.data = {
         dailyStats: result.dailyStats || {},
@@ -484,7 +490,10 @@ class PomodoroStats {
   }
 
   openSettings() {
-    window.chrome.runtime.openOptionsPage()
+    const chrome = window.chrome // Declare the chrome variable
+    if (chrome && chrome.runtime) {
+      chrome.runtime.openOptionsPage()
+    }
   }
 
   async clearStats() {
@@ -493,7 +502,13 @@ class PomodoroStats {
     }
 
     try {
-      await window.chrome.storage.local.remove(["dailyStats", "totalSessions"])
+      const chrome = window.chrome // Declare the chrome variable
+      if (!chrome || !chrome.storage) {
+        console.error("[v0] Chrome storage API not available")
+        return
+      }
+
+      await chrome.storage.local.remove(["dailyStats", "totalSessions"])
       location.reload()
     } catch (error) {
       console.error("[v0] Error clearing stats:", error)

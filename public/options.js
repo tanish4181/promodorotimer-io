@@ -1,5 +1,4 @@
 // Options page script for Pomodoro Timer Chrome Extension
-const chrome = window.chrome // Declare the chrome variable
 
 class PomodoroOptions {
   constructor() {
@@ -87,7 +86,7 @@ class PomodoroOptions {
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.local.get(["settings"])
+      const result = await window.chrome.storage.local.get(["settings"])
       const settings = result.settings || this.defaultSettings
 
       // Update UI elements
@@ -147,10 +146,10 @@ class PomodoroOptions {
       }
 
       // Save to storage
-      await chrome.storage.local.set({ settings })
+      await window.chrome.storage.local.set({ settings })
 
       // Notify background script
-      await chrome.runtime.sendMessage({
+      await window.chrome.runtime.sendMessage({
         type: "SETTINGS_UPDATED",
         settings,
       })
@@ -190,7 +189,7 @@ class PomodoroOptions {
 
   async exportData() {
     try {
-      const data = await chrome.storage.local.get(null)
+      const data = await window.chrome.storage.local.get(null)
       const exportData = {
         settings: data.settings,
         dailyStats: data.dailyStats,
@@ -224,7 +223,7 @@ class PomodoroOptions {
     }
 
     try {
-      await chrome.storage.local.clear()
+      await window.chrome.storage.local.clear()
       await this.loadSettings() // Reload default settings
       this.showSaveStatus("All data cleared successfully", "success")
     } catch (error) {
@@ -234,7 +233,7 @@ class PomodoroOptions {
   }
 
   viewStats() {
-    chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") })
+    window.chrome.tabs.create({ url: window.chrome.runtime.getURL("stats.html") })
   }
 
   async resetDefaults() {
@@ -243,7 +242,7 @@ class PomodoroOptions {
     }
 
     try {
-      await chrome.storage.local.set({ settings: this.defaultSettings })
+      await window.chrome.storage.local.set({ settings: this.defaultSettings })
       await this.loadSettings()
       this.showSaveStatus("Settings reset to defaults", "success")
     } catch (error) {

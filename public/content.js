@@ -34,10 +34,12 @@ class YouTubeIntegration {
 
   setupIntegration() {
     // Set up message listener for background script
-    window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      this.handleMessage(message)
-      sendResponse({ success: true })
-    })
+    if (window.chrome && window.chrome.runtime && window.chrome.runtime.onMessage) {
+      window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        this.handleMessage(message)
+        sendResponse({ success: true })
+      })
+    }
 
     // Monitor video state changes
     this.observeVideoChanges()
@@ -70,6 +72,11 @@ class YouTubeIntegration {
 
   async loadDistractionSettings() {
     try {
+      if (!window.chrome || !window.chrome.runtime) {
+        console.error("[v0] Chrome runtime API not available")
+        return
+      }
+
       const response = await window.chrome.runtime.sendMessage({ type: "GET_STATE" })
       if (response && response.state && response.state.settings) {
         // Use settings from background script
@@ -264,6 +271,11 @@ class YouTubeIntegration {
 
   async requestTimerState() {
     try {
+      if (!window.chrome || !window.chrome.runtime) {
+        console.error("[v0] Chrome runtime API not available")
+        return
+      }
+
       const response = await window.chrome.runtime.sendMessage({ type: "GET_STATE" })
       if (response && response.state) {
         this.timerState = response.state
@@ -562,6 +574,11 @@ class YouTubeIntegration {
 
   async skipBreak() {
     try {
+      if (!window.chrome || !window.chrome.runtime) {
+        console.error("[v0] Chrome runtime API not available")
+        return
+      }
+
       await window.chrome.runtime.sendMessage({ type: "SKIP_BREAK" })
       this.removeBreakOverlay()
 
@@ -583,6 +600,11 @@ class YouTubeIntegration {
 
     // Start the break timer
     try {
+      if (!window.chrome || !window.chrome.runtime) {
+        console.error("[v0] Chrome runtime API not available")
+        return
+      }
+
       await window.chrome.runtime.sendMessage({ type: "START_TIMER" })
     } catch (error) {
       console.error("[v0] Error starting break timer:", error)

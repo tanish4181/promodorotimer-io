@@ -1,7 +1,6 @@
 // Website Blocker Content Script
 
-// Declare chrome variable to avoid undeclared variable error
-const chrome = window.chrome
+const chrome = window.chrome // Declare the chrome variable
 
 class WebsiteBlocker {
   constructor() {
@@ -10,6 +9,11 @@ class WebsiteBlocker {
 
   async checkAndBlock() {
     try {
+      if (!chrome || !chrome.runtime) {
+        console.error("[v0] Chrome runtime API not available")
+        return
+      }
+
       const response = await chrome.runtime.sendMessage({
         type: "CHECK_WEBSITE_BLOCKED",
         url: window.location.href,
