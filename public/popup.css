@@ -141,13 +141,19 @@ body {
   align-items: center;
   padding: 0 24px 32px;
   position: relative;
+  position: relative;
 }
+
+
 
 #timer-circle {
   width: 200px;
   height: 200px;
   position: relative;
   display: flex;
+  position: absolute;
+  top: 50%;
+  left: 50%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -155,6 +161,7 @@ body {
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: 50%;
+  transform: translate(-50%, -50%);
   transition: all var(--transition-normal);
   backdrop-filter: var(--blur);
 }
@@ -191,11 +198,11 @@ body {
 /* Progress Ring */
 .progress-ring {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: -2px;
+  left: -2px;
   width: 204px;
   height: 204px;
-  transform: translate(-50%, -50%) rotate(-90deg);
+  transform: rotate(-90deg);
 }
 
 .progress-svg {
