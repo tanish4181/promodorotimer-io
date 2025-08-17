@@ -46,7 +46,7 @@
           <span>☕</span> Breaks
         </button>
         <button class="nav-tab" data-tab="blocking">
-          <span>🚫</span> Website Blocking
+          <span>🚫</span> Blocking
         </button>
         <button class="nav-tab" data-tab="youtube">
           <span>📺</span> YouTube
@@ -284,40 +284,6 @@
               </label>
             </div>
           </div>
-
-          <!-- Break Website Blocking Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>🌐 Break Mode Blocking</h3>
-              <p>Control website access during breaks</p>
-            </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-block-all">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Block all websites during breaks</div>
-                  <div class="toggle-description">Completely block browser access during break time for complete rest</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-block-all">
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-use-allowlist">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Use allowlist during breaks</div>
-                  <div class="toggle-description">Only allow whitelisted websites during break time</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-use-allowlist" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -326,18 +292,18 @@
     <div class="tab-content" id="blocking">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
-          <!-- Website Blocking Control Card -->
+          <!-- Website Blocking Settings Card -->
           <div class="settings-card">
             <div class="card-header">
-              <h3>🚫 Website Blocking Control</h3>
-              <p>Master switch for all website blocking features</p>
+              <h3>🚫 Website Blocking Settings</h3>
+              <p>Control which websites are blocked during different modes</p>
             </div>
             
             <div class="setting-group">
               <label class="toggle-setting" for="website-blocking">
                 <div class="toggle-text-content">
                   <div class="toggle-text">Enable website blocking</div>
-                  <div class="toggle-description">Enable or disable all website blocking functionality</div>
+                  <div class="toggle-description">Block distracting websites based on timer state</div>
                 </div>
                 <div class="toggle-switch">
                   <input type="checkbox" id="website-blocking" checked>
@@ -347,62 +313,83 @@
             </div>
           </div>
 
-          <!-- Blocking Logic Explanation Card -->
+          <!-- Focus Mode Blocking Card -->
           <div class="settings-card">
             <div class="card-header">
-              <h3>📚 How Website Blocking Works</h3>
-              <p>Understanding the blocking logic for different timer states</p>
+              <h3>🎯 Focus Mode Blocking</h3>
+              <p>During focus sessions, only allowlist websites are accessible</p>
             </div>
             
-            <div class="blocking-logic-info">
-              <div class="logic-item">
-                <div class="logic-icon">🎯</div>
-                <div class="logic-content">
-                  <h4>Focus Mode ON</h4>
-                  <p>Only <strong>allowlist</strong> websites are accessible. Everything else is blocked to maintain focus.</p>
+            <div class="setting-group">
+              <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+                <strong>Focus Mode Logic:</strong> When the timer is running in focus mode, 
+                only websites in your allowlist will be accessible. All other websites will be blocked.
+              </p>
+            </div>
+          </div>
+
+          <!-- Break Mode Options Card -->
+          <div class="settings-card">
+            <div class="card-header">
+              <h3>☕ Break Mode Options</h3>
+              <p>Choose how to handle website blocking during breaks</p>
+            </div>
+            
+            <div class="setting-group">
+              <label class="toggle-setting" for="break-block-all">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Block all websites during breaks</div>
+                  <div class="toggle-description">Force complete break from browser - all websites blocked</div>
                 </div>
-              </div>
-              
-              <div class="logic-item">
-                <div class="logic-icon">☕</div>
-                <div class="logic-content">
-                  <h4>Break Mode ON</h4>
-                  <p>Choose between: <strong>Block all</strong> (complete break) or <strong>Use allowlist</strong> (restricted access).</p>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-block-all">
+                  <span class="toggle-slider"></span>
                 </div>
-              </div>
-              
-              <div class="logic-item">
-                <div class="logic-icon">⏸️</div>
-                <div class="logic-content">
-                  <h4>Timer OFF (Idle)</h4>
-                  <p>Only <strong>blocklist</strong> websites are blocked. Everything else is accessible for normal browsing.</p>
+              </label>
+            </div>
+            
+            <div class="setting-group">
+              <label class="toggle-setting" for="break-use-allowlist">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Use allowlist during breaks</div>
+                  <div class="toggle-description">Same as focus mode - only allowlist websites accessible</div>
                 </div>
-              </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-use-allowlist" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+            
+            <div class="break-mode-warning">
+              <p style="font-size: 13px; color: var(--text-secondary);">
+                <strong>Note:</strong> If neither option is selected, break mode will use the blocklist (same as idle mode).
+                If both are selected, "Block all websites" takes priority.
+              </p>
             </div>
           </div>
 
           <!-- Allowlist Management Card -->
           <div class="settings-card">
             <div class="card-header">
-              <h3>✅ Allowlist (Whitelist)</h3>
-              <p>Websites that are ALWAYS accessible during focus mode and optionally during breaks</p>
+              <h3>✅ Allowlist (Always Accessible)</h3>
+              <p>These websites are accessible during focus mode and optionally during breaks</p>
             </div>
             
-            <div class="website-input-group">
-              <input type="text" id="allowlist-input" placeholder="Enter website (e.g., wikipedia.org)" class="website-input">
-              <button id="add-allowlist-btn" class="add-website-btn">Add</button>
-            </div>
-            
-            <div class="website-list-container">
-              <div id="allowlist-container" class="website-list">
-                <!-- Allowlist items will be populated here -->
+            <div class="setting-group">
+              <div class="website-input-group">
+                <input type="text" id="allowlist-input" class="website-input" 
+                       placeholder="Enter website (e.g., github.com, docs.google.com)">
+                <button id="add-allowlist-btn" class="add-website-btn">Add</button>
               </div>
-              <div id="allowlist-empty" class="website-list-empty">
-                <div class="empty-icon">📝</div>
-                <h4>No allowed websites yet</h4>
-                <p>Add websites that should remain accessible during focus sessions.</p>
-                <div class="example-websites">
-                  <strong>Examples:</strong> wikipedia.org, github.com, docs.google.com
+              
+              <div class="website-list-container">
+                <div id="allowlist-container" class="website-list">
+                  <!-- Allowlist items will be populated here -->
+                </div>
+                <div id="allowlist-empty" class="website-list-empty" style="display: none;">
+                  <p>No websites in allowlist</p>
+                  <p style="font-size: 12px; margin-top: 8px;">Add websites that should always be accessible during focus sessions</p>
                 </div>
               </div>
             </div>
@@ -411,69 +398,64 @@
           <!-- Blocklist Management Card -->
           <div class="settings-card">
             <div class="card-header">
-              <h3>❌ Blocklist (Blacklist)</h3>
-              <p>Websites that are blocked when the timer is OFF (idle state) for general distraction management</p>
+              <h3>❌ Blocklist (Block When Idle)</h3>
+              <p>These websites are blocked when the timer is not running</p>
             </div>
             
-            <div class="website-input-group">
-              <input type="text" id="blocklist-input" placeholder="Enter website (e.g., facebook.com)" class="website-input">
-              <button id="add-blocklist-btn" class="add-website-btn">Add</button>
-            </div>
-            
-            <div class="website-list-container">
-              <div id="blocklist-container" class="website-list">
-                <!-- Blocklist items will be populated here -->
+            <div class="setting-group">
+              <div class="website-input-group">
+                <input type="text" id="blocklist-input" class="website-input" 
+                       placeholder="Enter website (e.g., facebook.com, twitter.com)">
+                <button id="add-blocklist-btn" class="add-website-btn">Add</button>
               </div>
-              <div id="blocklist-empty" class="website-list-empty">
-                <div class="empty-icon">🚫</div>
-                <h4>No blocked websites yet</h4>
-                <p>Add distracting websites that should be blocked during idle time.</p>
-                <div class="example-websites">
-                  <strong>Examples:</strong> facebook.com, twitter.com, reddit.com, youtube.com
+              
+              <div class="website-list-container">
+                <div id="blocklist-container" class="website-list">
+                  <!-- Blocklist items will be populated here -->
+                </div>
+                <div id="blocklist-empty" class="website-list-empty" style="display: none;">
+                  <p>No websites in blocklist</p>
+                  <p style="font-size: 12px; margin-top: 8px;">Add websites that should be blocked when the timer is idle</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Quick Actions Card -->
+          <!-- Blocking Logic Explanation Card -->
           <div class="settings-card">
             <div class="card-header">
-              <h3>⚡ Quick Actions</h3>
-              <p>Preset configurations for common scenarios</p>
+              <h3>ℹ️ How Website Blocking Works</h3>
             </div>
             
-            <div class="quick-actions-grid">
-              <button id="preset-social-media" class="quick-action-btn">
-                <div class="quick-action-icon">📱</div>
-                <div class="quick-action-content">
-                  <h4>Block Social Media</h4>
-                  <p>Add common social media sites to blocklist</p>
+            <div class="logic-explanation">
+              <div class="logic-step">
+                <div class="logic-step-icon">🎯</div>
+                <div class="logic-step-content">
+                  <strong>Focus Mode (Timer Running):</strong><br>
+                  Only allowlist websites are accessible. Everything else is blocked.
                 </div>
-              </button>
+              </div>
               
-              <button id="preset-news-sites" class="quick-action-btn">
-                <div class="quick-action-icon">📰</div>
-                <div class="quick-action-content">
-                  <h4>Block News Sites</h4>
-                  <p>Add major news websites to blocklist</p>
+              <div class="logic-step">
+                <div class="logic-step-icon">☕</div>
+                <div class="logic-step-content">
+                  <strong>Break Mode (Timer Running):</strong><br>
+                  Behavior depends on your settings above:
+                  <ul>
+                    <li>Block all websites → Complete browser break</li>
+                    <li>Use allowlist → Same as focus mode</li>
+                    <li>Neither → Use blocklist (same as idle mode)</li>
+                  </ul>
                 </div>
-              </button>
+              </div>
               
-              <button id="preset-work-essentials" class="quick-action-btn">
-                <div class="quick-action-icon">💼</div>
-                <div class="quick-action-content">
-                  <h4>Allow Work Essentials</h4>
-                  <p>Add common work sites to allowlist</p>
+              <div class="logic-step">
+                <div class="logic-step-icon">⏸️</div>
+                <div class="logic-step-content">
+                  <strong>Idle Mode (Timer Off):</strong><br>
+                  Only blocklist websites are blocked. Everything else is accessible.
                 </div>
-              </button>
-              
-              <button id="preset-educational" class="quick-action-btn">
-                <div class="quick-action-icon">📚</div>
-                <div class="quick-action-content">
-                  <h4>Allow Educational</h4>
-                  <p>Add educational websites to allowlist</p>
-                </div>
-              </button>
+              </div>
             </div>
           </div>
         </div>
