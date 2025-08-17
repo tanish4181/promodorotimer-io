@@ -1,4 +1,4 @@
-// Enhanced popup.js with website blocking removed (moved to options)
+// Enhanced popup.js with dynamic timer updates
 
 class PomodoroPopup {
     constructor() {
@@ -27,7 +27,10 @@ class PomodoroPopup {
 
             todoInput: document.getElementById("todo-input"),
             addTodoBtn: document.getElementById("add-todo-btn"),
-            todoList: document.getElementById("todo-list")
+            todoList: document.getElementById("todo-list"),
+            websiteInput: document.getElementById("website-input"),
+            addWebsiteBtn: document.getElementById("add-website-btn"),
+            blockedWebsitesList: document.getElementById("blocked-websites-list")
         };
 
         this.state = {};
@@ -190,6 +193,12 @@ class PomodoroPopup {
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
 
+        this.elements.addWebsiteBtn?.addEventListener("click", () => this.addBlockedWebsite());
+        this.elements.websiteInput?.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") this.addBlockedWebsite();
+        });
+        this.elements.blockedWebsitesList?.addEventListener("click", (e) => this.handleWebsiteAction(e));
+
         console.log("[v0] All event listeners initialized.");
     }
     
@@ -229,6 +238,7 @@ class PomodoroPopup {
                 this.state = response.state;
                 this.updateDisplay();
                 this.renderTodos();
+                this.renderBlockedWebsites();
                 console.log("[v0] State loaded and rendered successfully.");
             }
         } catch (error) {
@@ -236,6 +246,7 @@ class PomodoroPopup {
             this.initializeDefaultState();
             this.updateDisplay();
             this.renderTodos();
+            this.renderBlockedWebsites();
         }
     }
 
@@ -273,6 +284,7 @@ class PomodoroPopup {
           collectStats: true,
         },
         todos: [],
+        blockedWebsites: [],
       };
     }
 
@@ -417,6 +429,44 @@ class PomodoroPopup {
         this.deleteTodo(todoId);
       }
     }
+  
+    async addBlockedWebsite() {
+      const website = this.elements.websiteInput.value.trim();
+      if (!website) return;
+      try {
+        await chrome.runtime.sendMessage({ type: "ADD_BLOCKED_WEBSITE", website });
+        this.elements.websiteInput.value = "";
+        await this.loadState();
+      } catch (error) {
+        console.error("Error adding blocked website:", error);
+      }
+    }
+  
+    async removeBlockedWebsite(website) {
+      try {
+        await chrome.runtime.sendMessage({ type: "REMOVE_BLOCKED_WEBSITE", website });
+        await this.loadState();
+      } catch (error) {
+        console.error("Error removing blocked website:", error);
+      }
+    }
+  
+    renderBlockedWebsites() {
+      if (!this.elements.blockedWebsitesList) return;
+      
+      let websitesHtml = this.state.blockedWebsites.length > 0 ? "" : `<div class="websites-empty">No blocked websites.</div>`;
+      this.state.blockedWebsites.forEach(website => {
+        websitesHtml += `<div class="website-item"><span class="website-name">${website}</span><button class="website-remove" data-website="${website}">×</button></div>`;
+      });
+      this.elements.blockedWebsitesList.innerHTML = websitesHtml;
+    }
+    
+    handleWebsiteAction(e) {
+      const target = e.target;
+      if (target.classList.contains("website-remove")) {
+        this.removeBlockedWebsite(target.dataset.website);
+      }
+    }
     
     sendMessageToBackground(type, payload = {}) {
         try {
@@ -454,3 +504,5 @@ window.addEventListener("beforeunload", () => {
         pomodoroPopup.destroy();
     }
 });
+
+

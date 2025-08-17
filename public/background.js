@@ -1,4 +1,4 @@
-// Background script for Pomodoro Timer Chrome Extension with Enhanced Website Blocking
+// Background script for Pomodoro Timer Chrome Extension
 
 class PomodoroBackground {
   constructor() {
@@ -31,15 +31,12 @@ class PomodoroBackground {
         hideDistractions: true,
         focusIndicator: true,
         websiteBlocking: true,
-        breakBlockAll: false,
-        breakUseAllowlist: true,
         hideYoutubeComments: true,
         hideYoutubeRecommendations: true,
         hideYoutubeShorts: true,
         pauseYoutubeBreaks: true,
         collectStats: true,
       },
-      allowedWebsites: [],
       blockedWebsites: [],
       todos: [],
     };
@@ -63,7 +60,6 @@ class PomodoroBackground {
         this.handleMessage(message, sender, sendResponse);
         return true; // Keep message channel open
       });
-
       chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "local" && changes.settings) {
           console.log("Background detected settings change, updating state.");
@@ -71,17 +67,6 @@ class PomodoroBackground {
           if (!this.state.isRunning) {
             this.resetTimer(); // Update timer if it's not running
           }
-        }
-        
-        // Handle website list changes
-        if (namespace === "local" && (changes.allowedWebsites || changes.blockedWebsites)) {
-          if (changes.allowedWebsites) {
-            this.state.allowedWebsites = changes.allowedWebsites.newValue || [];
-          }
-          if (changes.blockedWebsites) {
-            this.state.blockedWebsites = changes.blockedWebsites.newValue || [];
-          }
-          console.log("[v0] Website lists updated in background");
         }
       });
 
@@ -125,7 +110,6 @@ class PomodoroBackground {
         "totalSessions",
         "settings",
         "lastActiveTime",
-        "allowedWebsites",
         "blockedWebsites",
         "todos",
       ]);
@@ -148,10 +132,6 @@ class PomodoroBackground {
           }
         }
       }
-
-      // Ensure website lists are loaded
-      this.state.allowedWebsites = result.allowedWebsites || [];
-      this.state.blockedWebsites = result.blockedWebsites || [];
 
       console.log("[v0] State loaded:", this.state);
     } catch (error) {
@@ -199,15 +179,12 @@ class PomodoroBackground {
         hideDistractions: true,
         focusIndicator: true,
         websiteBlocking: true,
-        breakBlockAll: false,
-        breakUseAllowlist: true,
         hideYoutubeComments: true,
         hideYoutubeRecommendations: true,
         hideYoutubeShorts: true,
         pauseYoutubeBreaks: true,
         collectStats: true,
       },
-      allowedWebsites: [],
       blockedWebsites: [],
       todos: [],
     };
@@ -227,18 +204,6 @@ class PomodoroBackground {
           console.log("[v0] Updating settings:", message.settings);
           await this.updateSettings(message.settings);
           sendResponse({ success: true });
-          break;
-
-        case "WEBSITE_LISTS_UPDATED":
-          this.state.allowedWebsites = message.allowlist || [];
-          this.state.blockedWebsites = message.blocklist || [];
-          await this.saveState();
-          sendResponse({ success: true });
-          break;
-
-        case "CHECK_WEBSITE_BLOCKED":
-          const isBlocked = this.isWebsiteBlocked(message.url);
-          sendResponse({ blocked: isBlocked });
           break;
 
         case "START_TIMER":
@@ -261,6 +226,20 @@ class PomodoroBackground {
           sendResponse({ success: true });
           break;
 
+        case "ADD_BLOCKED_WEBSITE":
+          await this.addBlockedWebsite(message.website);
+          sendResponse({ success: true });
+          break;
+
+        case "REMOVE_BLOCKED_WEBSITE":
+          await this.removeBlockedWebsite(message.website);
+          sendResponse({ success: true });
+          break;
+
+        case "GET_BLOCKED_WEBSITES":
+          sendResponse({ websites: this.state.blockedWebsites });
+          break;
+
         case "TODOS_UPDATED":
           this.state.todos = message.todos;
           await this.saveState();
@@ -279,62 +258,6 @@ class PomodoroBackground {
       console.error("[v0] Error handling message:", error);
       sendResponse({ error: error.message });
     }
-  }
-
-  // Website blocking logic
-  isWebsiteBlocked(url) {
-    // If website blocking is disabled, allow everything
-    if (!this.state.settings.websiteBlocking) {
-      return false;
-    }
-
-    const hostname = this.extractHostname(url);
-    if (!hostname) return false;
-
-    // Check blocking logic based on timer state
-    if (this.state.currentMode === "focus" && this.state.isRunning) {
-      // Focus mode: Only allowlist websites are allowed
-      return !this.isInAllowlist(hostname);
-    }
-
-    if ((this.state.currentMode === "shortBreak" || this.state.currentMode === "longBreak") && this.state.isRunning) {
-      // Break mode logic
-      if (this.state.settings.breakBlockAll) {
-        // Block everything during breaks
-        return true;
-      } else if (this.state.settings.breakUseAllowlist) {
-        // Use allowlist during breaks
-        return !this.isInAllowlist(hostname);
-      } else {
-        // Default break behavior - use blocklist
-        return this.isInBlocklist(hostname);
-      }
-    }
-
-    // Timer is off (idle state): Use blocklist only
-    return this.isInBlocklist(hostname);
-  }
-
-  extractHostname(url) {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.hostname.replace(/^www\./, "");
-    } catch (error) {
-      console.error("[v0] Error extracting hostname:", error);
-      return null;
-    }
-  }
-
-  isInAllowlist(hostname) {
-    return this.state.allowedWebsites.some(allowed => {
-      return hostname === allowed || hostname.endsWith("." + allowed);
-    });
-  }
-
-  isInBlocklist(hostname) {
-    return this.state.blockedWebsites.some(blocked => {
-      return hostname === blocked || hostname.endsWith("." + blocked);
-    });
   }
 
   async updateSettings(newSettings) {
@@ -554,6 +477,22 @@ class PomodoroBackground {
     } catch (error) {
       console.error("[v0] Error recording session:", error);
     }
+  }
+
+  async addBlockedWebsite(website) {
+    if (!this.state.blockedWebsites.includes(website)) {
+      this.state.blockedWebsites.push(website);
+      await this.saveState();
+      console.log("[v0] Website blocked:", website);
+    }
+  }
+
+  async removeBlockedWebsite(website) {
+    this.state.blockedWebsites = this.state.blockedWebsites.filter(
+      (w) => w !== website
+    );
+    await this.saveState();
+    console.log("[v0] Website unblocked:", website);
   }
 
   broadcastUpdate() {

@@ -737,3 +737,471 @@ input[type="number"]:focus,
 .website-list-container::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
 }
+/* Website Blocking Specific Styles - Add these to options.css */
+
+.website-input-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.website-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.website-input::placeholder {
+  color: var(--text-muted);
+}
+
+.website-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.add-website-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 80px;
+}
+
+.add-website-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.add-website-btn:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.website-list-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+
+.website-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 8px;
+}
+
+.website-list-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 32px 16px;
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  margin: 8px;
+}
+
+.website-list-empty p:first-child {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.website-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+  transition: var(--transition);
+}
+
+.website-item:last-child {
+  margin-bottom: 0;
+}
+
+.website-item:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+  transform: translateX(4px);
+}
+
+.website-name {
+  font-size: 14px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  color: var(--text-primary);
+  flex: 1;
+  background: var(--surface);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-right: 12px;
+}
+
+.website-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.website-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.website-remove-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.1);
+}
+
+/* Enhanced styling for blocking logic explanation */
+.settings-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mutual exclusion visual feedback */
+.setting-group.exclusive .toggle-switch input:checked + .toggle-slider {
+  background-color: var(--accent-warning);
+}
+
+.setting-group.exclusive .toggle-switch input:checked + .toggle-slider::after {
+  content: "!";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+/* Warning for break mode conflicts */
+.break-mode-warning {
+  background: rgba(255, 176, 32, 0.1);
+  border: 1px solid rgba(255, 176, 32, 0.2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.break-mode-warning strong {
+  color: var(--accent-warning);
+}
+
+/* Scrollbar styling for website lists */
+.website-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.website-list-container::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+.website-list-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.website-list-container::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* Mobile responsive adjustments for website blocking */
+@media (max-width: 768px) {
+  .website-input-group {
+    flex-direction: column;
+  }
+  
+  .add-website-btn {
+    width: 100%;
+  }
+  
+  .website-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .website-name {
+    margin-right: 0;
+    text-align: center;
+  }
+  
+  .website-actions {
+    justify-content: center;
+  }
+}
+
+/* Enhanced focus states for website blocking elements */
+.website-input:focus,
+.add-website-btn:focus,
+.website-remove-btn:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Animation for adding/removing websites */
+.website-item {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Empty state styling improvements */
+.website-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+.website-list-empty p:first-child {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+/* Status indicators for website lists */
+.list-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.list-count {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Import/Export for website lists */
+.list-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+.list-action-btn {
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.list-action-btn:hover {
+  background: var(--surface-elevated);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+
+/* Enhanced card styling for blocking tab */
+.blocking-tab .settings-card {
+  position: relative;
+  overflow: visible;
+}
+
+.blocking-tab .settings-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+  border-radius: var(--radius) var(--radius) 0 0;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.blocking-tab .settings-card:hover::before {
+  opacity: 1;
+}
+
+/* Special styling for break mode options */
+.break-mode-options {
+  background: linear-gradient(135deg, var(--break-primary), rgba(255, 107, 53, 0.1));
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.break-mode-options .toggle-setting {
+  margin-bottom: 12px;
+}
+
+.break-mode-options .toggle-setting:last-child {
+  margin-bottom: 0;
+}
+
+/* Logic explanation styling */
+.logic-explanation {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.logic-explanation h4 {
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logic-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary);
+}
+
+.logic-step:last-child {
+  margin-bottom: 0;
+}
+
+.logic-step-icon {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.logic-step-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.logic-step-content {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.logic-step-content ul {
+  margin: 8px 0 0 16px;
+  color: var(--text-secondary);
+}
+
+.logic-step-content li {
+  margin-bottom: 4px;
+}
+
+/* Website validation feedback */
+.website-input.invalid {
+  border-color: var(--accent-danger);
+  box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+}
+
+.website-input.valid {
+  border-color: var(--accent-success);
+  box-shadow: 0 0 0 3px rgba(0, 208, 132, 0.1);
+}
+
+.validation-message {
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 0 4px;
+  transition: var(--transition);
+}
+
+.validation-message.error {
+  color: var(--accent-danger);
+}
+
+.validation-message.success {
+  color: var(--accent-success);
+}
+
+/* Bulk actions for website lists */
+.bulk-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.bulk-action-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.bulk-action-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.bulk-action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-danger);
+  border-color: var(--accent-danger);
+}

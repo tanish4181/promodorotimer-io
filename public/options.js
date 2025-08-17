@@ -177,7 +177,7 @@ class ModernPomodoroOptions {
   }
 
   setupWebsiteBlockingListeners() {
-    // Allowlist management
+    // Allowlist management with real-time validation
     if (this.elements.addAllowlistBtn) {
       this.elements.addAllowlistBtn.addEventListener("click", () => {
         this.addWebsiteToList("allowlist");
@@ -185,14 +185,20 @@ class ModernPomodoroOptions {
     }
 
     if (this.elements.allowlistInput) {
+      // Real-time validation
+      this.elements.allowlistInput.addEventListener("input", (e) => {
+        this.validateInputRealTime(e.target, "allowlist");
+      });
+      
       this.elements.allowlistInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
+          e.preventDefault();
           this.addWebsiteToList("allowlist");
         }
       });
     }
 
-    // Blocklist management
+    // Blocklist management with real-time validation
     if (this.elements.addBlocklistBtn) {
       this.elements.addBlocklistBtn.addEventListener("click", () => {
         this.addWebsiteToList("blocklist");
@@ -200,8 +206,14 @@ class ModernPomodoroOptions {
     }
 
     if (this.elements.blocklistInput) {
+      // Real-time validation
+      this.elements.blocklistInput.addEventListener("input", (e) => {
+        this.validateInputRealTime(e.target, "blocklist");
+      });
+      
       this.elements.blocklistInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
+          e.preventDefault();
           this.addWebsiteToList("blocklist");
         }
       });
@@ -378,6 +390,7 @@ class ModernPomodoroOptions {
     }
   }
 
+  // Enhanced website addition with validation
   addWebsiteToList(listType) {
     const inputElement = listType === "allowlist" ? 
       this.elements.allowlistInput : this.elements.blocklistInput;
@@ -385,32 +398,51 @@ class ModernPomodoroOptions {
     if (!inputElement) return;
     
     const website = inputElement.value.trim();
-    if (!website) return;
-    
-    // Clean and validate URL
-    const cleanedWebsite = this.cleanWebsiteUrl(website);
-    if (!cleanedWebsite) {
-      this.showStatus("Please enter a valid website URL", "error");
+    if (!website) {
+      this.showValidationError(inputElement, "Please enter a website URL");
       return;
     }
     
+    // Enhanced validation
+    const validationResult = this.validateWebsiteUrl(website);
+    if (!validationResult.isValid) {
+      this.showValidationError(inputElement, validationResult.error);
+      return;
+    }
+    
+    const cleanedWebsite = validationResult.cleaned;
     const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
+    const oppositeList = listType === "allowlist" ? this.blocklist : this.allowlist;
     
-    // Check if already exists
+    // Check if already exists in current list
     if (targetList.includes(cleanedWebsite)) {
-      this.showStatus(`Website already in ${listType}`, "error");
+      this.showValidationError(inputElement, `Website already in ${listType}`);
       return;
     }
     
-    // Add to list
+    // Check if exists in opposite list and ask for confirmation
+    if (oppositeList.includes(cleanedWebsite)) {
+      const confirmed = confirm(
+        `"${cleanedWebsite}" is already in the ${listType === "allowlist" ? "blocklist" : "allowlist"}. ` +
+        `Do you want to move it to the ${listType}?`
+      );
+      if (confirmed) {
+        this.removeWebsiteFromList(listType === "allowlist" ? "blocklist" : "allowlist", cleanedWebsite);
+      } else {
+        return;
+      }
+    }
+    
+    // Add to list with animation
     targetList.push(cleanedWebsite);
     inputElement.value = "";
+    this.clearValidationState(inputElement);
     
-    // Save and render
+    // Save and render with success feedback
     this.saveWebsiteLists();
     this.renderWebsiteList(listType);
     
-    this.showStatus(`Website added to ${listType}`, "success");
+    this.showStatus(`✅ "${cleanedWebsite}" added to ${listType}`, "success");
     console.log(`[v0] Website added to ${listType}:`, cleanedWebsite);
   }
 
@@ -427,19 +459,162 @@ class ModernPomodoroOptions {
     }
   }
 
-  cleanWebsiteUrl(url) {
-    // Remove protocol and www
-    let cleaned = url.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  // Enhanced URL validation
+  validateWebsiteUrl(url) {
+    // Remove common prefixes
+    let cleaned = url.toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .replace(/^m\./, "")  // mobile subdomain
+      .replace(/\/$/, "");  // trailing slash
     
-    // Remove trailing slash
-    cleaned = cleaned.replace(/\/$/, "");
+    // Remove path, query, and fragment
+    cleaned = cleaned.split('/')[0].split('?')[0].split('#')[0];
     
-    // Basic validation
-    if (!cleaned || !cleaned.includes(".")) {
-      return null;
+    // Basic format validation
+    if (!cleaned) {
+      return { isValid: false, error: "URL cannot be empty" };
     }
     
-    return cleaned;
+    // Must contain at least one dot for domain
+    if (!cleaned.includes('.')) {
+      return { isValid: false, error: "Please enter a valid domain (e.g., example.com)" };
+    }
+    
+    // Check for invalid characters
+    const invalidChars = /[^a-z0-9.-]/;
+    if (invalidChars.test(cleaned)) {
+      return { isValid: false, error: "Domain contains invalid characters" };
+    }
+    
+    // Must not start or end with dot or dash
+    if (cleaned.startsWith('.') || cleaned.endsWith('.') || 
+        cleaned.startsWith('-') || cleaned.endsWith('-')) {
+      return { isValid: false, error: "Invalid domain format" };
+    }
+    
+    // Must have valid TLD (at least 2 chars after last dot)
+    const parts = cleaned.split('.');
+    if (parts.length < 2 || parts[parts.length - 1].length < 2) {
+      return { isValid: false, error: "Invalid domain extension" };
+    }
+    
+    return { 
+      isValid: true, 
+      cleaned: cleaned
+    };
+  }
+
+  // Enhanced website list rendering with validation and status
+  renderWebsiteList(listType) {
+    const container = listType === "allowlist" ? 
+      this.elements.allowlistContainer : this.elements.blocklistContainer;
+    const emptyElement = listType === "allowlist" ? 
+      this.elements.allowlistEmpty : this.elements.blocklistEmpty;
+    const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
+    
+    if (!container) return;
+    
+    // Clear existing content
+    container.innerHTML = "";
+    
+    if (targetList.length === 0) {
+      if (emptyElement) {
+        emptyElement.style.display = "block";
+        container.appendChild(emptyElement.cloneNode(true));
+      }
+      return;
+    }
+    
+    // Hide empty state
+    if (emptyElement) {
+      emptyElement.style.display = "none";
+    }
+    
+    // Create website items with enhanced styling
+    targetList.forEach((website, index) => {
+      const item = document.createElement("div");
+      item.className = "website-item";
+      item.setAttribute("data-index", index);
+      item.innerHTML = `
+        <div class="website-name" title="${website}">${website}</div>
+        <div class="website-actions">
+          <button class="website-remove-btn" title="Remove ${website}" data-website="${website}">×</button>
+        </div>
+      `;
+      
+      // Add remove functionality with confirmation
+      const removeBtn = item.querySelector(".website-remove-btn");
+      removeBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const website = e.currentTarget.dataset.website;
+        if (confirm(`Remove "${website}" from ${listType}?`)) {
+          this.removeWebsiteFromList(listType, website);
+        }
+      });
+      
+      container.appendChild(item);
+    });
+  }
+
+  // Validation UI helpers
+  showValidationError(inputElement, message) {
+    inputElement.classList.add("invalid");
+    inputElement.classList.remove("valid");
+    
+    // Remove existing validation message
+    const existingMessage = inputElement.parentNode.querySelector(".validation-message");
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+    
+    // Add new validation message
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "validation-message error";
+    messageDiv.textContent = message;
+    inputElement.parentNode.appendChild(messageDiv);
+    
+    // Auto-clear after 5 seconds
+    setTimeout(() => {
+      this.clearValidationState(inputElement);
+    }, 5000);
+  }
+
+  clearValidationState(inputElement) {
+    inputElement.classList.remove("invalid", "valid");
+    const message = inputElement.parentNode.querySelector(".validation-message");
+    if (message) {
+      message.remove();
+    }
+  }
+
+  // Real-time input validation
+  validateInputRealTime(inputElement, listType) {
+    const value = inputElement.value.trim();
+    
+    if (!value) {
+      this.clearValidationState(inputElement);
+      return;
+    }
+    
+    const validationResult = this.validateWebsiteUrl(value);
+    
+    if (validationResult.isValid) {
+      inputElement.classList.remove("invalid");
+      inputElement.classList.add("valid");
+      
+      // Check for duplicates
+      const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
+      if (targetList.includes(validationResult.cleaned)) {
+        this.showValidationError(inputElement, "Website already exists in list");
+      } else {
+        this.clearValidationState(inputElement);
+      }
+    } else {
+      this.showValidationError(inputElement, validationResult.error);
+    }
   }
 
   async saveWebsiteLists() {
@@ -462,46 +637,6 @@ class ModernPomodoroOptions {
     } catch (error) {
       console.error("[v0] Error saving website lists:", error);
     }
-  }
-
-  renderWebsiteList(listType) {
-    const container = listType === "allowlist" ? 
-      this.elements.allowlistContainer : this.elements.blocklistContainer;
-    const emptyElement = listType === "allowlist" ? 
-      this.elements.allowlistEmpty : this.elements.blocklistEmpty;
-    const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
-    
-    if (!container) return;
-    
-    // Clear existing content
-    container.innerHTML = "";
-    
-    if (targetList.length === 0) {
-      if (emptyElement) {
-        container.appendChild(emptyElement);
-      }
-      return;
-    }
-    
-    // Create website items
-    targetList.forEach(website => {
-      const item = document.createElement("div");
-      item.className = "website-item";
-      item.innerHTML = `
-        <span class="website-name">${website}</span>
-        <div class="website-actions">
-          <button class="website-remove-btn" title="Remove website">×</button>
-        </div>
-      `;
-      
-      // Add remove functionality
-      const removeBtn = item.querySelector(".website-remove-btn");
-      removeBtn.addEventListener("click", () => {
-        this.removeWebsiteFromList(listType, website);
-      });
-      
-      container.appendChild(item);
-    });
   }
 
   updateHeaderStats() {
