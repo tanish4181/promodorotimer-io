@@ -156,11 +156,14 @@ class ModernPomodoroOptions {
       this.elements.clearDataBtn.addEventListener("click", () => this.clearAllData());
     }
 
-    // Break mode mutual exclusion
+    // Break mode mutual exclusion - ensures at least one is always checked
     if (this.elements.breakBlockAll && this.elements.breakUseAllowlist) {
       this.elements.breakBlockAll.addEventListener("change", (e) => {
         if (e.target.checked) {
           this.elements.breakUseAllowlist.checked = false;
+        } else {
+          // Prevent unchecking both; if this is unchecked, check the other one.
+          this.elements.breakUseAllowlist.checked = true;
         }
         this.saveSettings();
       });
@@ -168,6 +171,9 @@ class ModernPomodoroOptions {
       this.elements.breakUseAllowlist.addEventListener("change", (e) => {
         if (e.target.checked) {
           this.elements.breakBlockAll.checked = false;
+        } else {
+          // Prevent unchecking both; if this is unchecked, check the other one.
+          this.elements.breakBlockAll.checked = true;
         }
         this.saveSettings();
       });
