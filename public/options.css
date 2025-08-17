@@ -1,20 +1,30 @@
 /* Modern Pomodoro Settings Page - Dashboard Style */
 :root {
-  --primary-color: #4ade80;
-  --primary-hover: #22c55e;
-  --accent-color: #10b981;
-  --background: #000000;
-  --surface: #1f2937;
-  --surface-hover: #374151;
-  --border: #374151;
-  --text-primary: #ffffff;
-  --text-secondary: #d1d5db;
-  --text-muted: #9ca3af;
-  --success-color: #22c55e;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
+  /* Dark theme colors from stats.css */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --surface: #1c2128;
+  --surface-hover: #262c36;
+  --border: #30363d;
+  --border-hover: #484f58;
+  
+  /* Text colors from stats.css */
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  
+  /* Primary colors from stats.css (GitHub green) */
+  --primary: #238636;
+  --primary-hover: #2ea043;
+  --primary-light: rgba(35, 134, 54, 0.15);
+  
+  /* General */
+  --radius: 12px;
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
-
 * {
   box-sizing: border-box;
   margin: 0;
@@ -23,9 +33,9 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--background);
+  background: var(--bg-primary);
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.5;
   min-height: 100vh;
 }
 
@@ -38,11 +48,10 @@ body {
 /* Header - Dashboard Style */
 .header {
   background: var(--surface);
-  border-radius: 20px;
-  padding: 40px;
+  border-radius: var(--radius);
+  padding: 32px;
   margin-bottom: 32px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
   border: 1px solid var(--border);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -59,7 +68,7 @@ body {
 }
 
 .header-text h1 {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 8px;
@@ -72,7 +81,7 @@ body {
 
 .header-stats {
   display: flex;
-  gap: 48px;
+  gap: 32px;
   text-align: right;
 }
 
@@ -84,7 +93,7 @@ body {
 
 .stat-value {
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--primary-color);
   line-height: 1;
 }
@@ -108,9 +117,9 @@ body {
   display: flex;
   gap: 8px;
   background: var(--surface);
-  padding: 8px;
+  padding: 6px;
   border-radius: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hover);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -120,19 +129,20 @@ body {
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
   display: flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+  position: relative; /* For active indicator */
 }
 
 .nav-tab:hover {
   background: var(--surface-hover);
-  color: var(--text-primary);
+  color: var(--text-primary); /* Highlight text on hover */
 }
 
 .nav-tab.active {
@@ -140,7 +150,15 @@ body {
   color: var(--background);
   font-weight: 600;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+  box-shadow: 0 4px 12px var(--primary-light);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; /* Position indicator below the tab */
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Tab Content */
@@ -154,8 +172,8 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+ from { opacity: 0; transform: translateY(20px); }
+ to { opacity: 1; transform: translateY(0); }
 }
 
 /* Centered Content Layout */
@@ -169,8 +187,8 @@ body {
 /* Settings Cards Grid */
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjusted for better fit */
+  gap: 24px;
   width: 100%;
   max-width: 1000px;
 }
@@ -183,15 +201,15 @@ body {
 /* Settings Card - Dashboard Style */
 .settings-card {
   background: var(--surface);
-  border-radius: 20px;
-  padding: 32px;
+  border-radius: var(--radius);
+  padding: 24px;
   border: 1px solid var(--border);
-  transition: all 0.2s ease;
+  transition: var(--transition);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .settings-card:hover {
-  border-color: var(--primary-color);
+  border-color: var(--border-hover); /* Use border-hover */
   box-shadow: 0 8px 32px rgba(74, 222, 128, 0.1);
   transform: translateY(-2px);
 }
@@ -199,11 +217,11 @@ body {
 /* Card Header */
 .card-header {
   margin-bottom: 32px;
-  text-align: center;
+  text-align: left; /* Align text left */
 }
 
 .card-header h3 {
-  font-size: 24px;
+  font-size: 20px; /* Smaller heading */
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
@@ -215,7 +233,7 @@ body {
 
 .card-header p {
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: 14px;
 }
 
 /* Setting Groups */
@@ -223,8 +241,8 @@ body {
   margin-bottom: 24px;
   padding: 20px;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius); /* Use variable */
+  border: 1px solid var(--border); /* Use variable */
 }
 
 .setting-group:last-child {
@@ -244,15 +262,15 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--background);
+  background: var(--bg-tertiary); /* Use bg-tertiary */
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 4px;
+  border-radius: var(--radius); /* Use variable */
+  padding: 12px 16px; /* Adjust padding */
   transition: all 0.2s;
 }
 
 .input-group:focus-within {
-  border-color: var(--primary-color);
+  border-color: var(--primary); /* Use primary */
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
 }
 
@@ -262,7 +280,7 @@ body {
   border: none;
   background: transparent;
   font-size: 16px;
-  color: var(--text-primary);
+  color: var(--text-primary); /* Keep primary text */
   font-weight: 600;
   text-align: center;
 }
@@ -284,13 +302,13 @@ body {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  gap: 20px;
+  gap: 16px; /* Adjusted gap */
 }
 
 .toggle-text-content {
   flex: 1;
 }
-
+/* Adjusted font size for better hierarchy */
 .toggle-text {
   font-weight: 600;
   color: var(--text-primary);
@@ -299,7 +317,7 @@ body {
 }
 
 .toggle-description {
-  font-size: 14px;
+  font-size: 13px; /* Slightly smaller description */
   color: var(--text-muted);
   line-height: 1.4;
 }
@@ -308,8 +326,8 @@ body {
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 56px;
-  height: 30px;
+  width: 48px; /* Smaller toggle */
+  height: 24px; /* Smaller toggle */
   flex-shrink: 0;
 }
 
@@ -333,34 +351,34 @@ body {
 
 .toggle-slider:before {
   position: absolute;
-  content: "";
-  height: 24px;
-  width: 24px;
-  left: 3px;
-  bottom: 3px;
+  content: ""; /* empty content */
+  height: 20px; /* Smaller circle */
+  width: 20px; /* Smaller circle */
+  left: 2px; /* Adjusted position */
+  bottom: 2px; /* Adjusted position */
   background-color: white;
   transition: 0.3s;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.toggle-switch input:checked + .toggle-slider {
-  background-color: var(--primary-color);
+.toggle-switch input:checked + .toggle-slider { /* Use primary */
+  background-color: var(--primary);
 }
 
-.toggle-switch input:focus + .toggle-slider {
+.toggle-switch input:focus + .toggle-slider { /* Use primary-light */
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(26px);
+ transform: translateX(24px); /* Adjusted translation */
 }
 
 /* Buttons */
 .btn {
-  padding: 16px 24px;
+  padding: 12px 20px; /* Adjusted padding */
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius); /* Use variable */
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -371,19 +389,19 @@ body {
   gap: 8px;
   justify-content: center;
   min-width: 140px;
+  transition: var(--transition); /* Use variable */
 }
 
 .btn-primary {
-  background: var(--primary-color);
-  color: var(--background);
+  background: var(--primary); /* Use primary */
+  color: var(--bg-primary); /* Use bg-primary for contrast */
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
 }
-
+/* New Secondary Button Style */
 .btn-secondary {
   background: var(--surface-hover);
   color: var(--text-primary);
@@ -392,12 +410,13 @@ body {
 
 .btn-secondary:hover {
   background: var(--border);
-  transform: translateY(-2px);
+  transform: translateY(-1px); /* Subtle lift */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* New Danger Button Style */
 .btn-danger {
-  background: var(--danger-color);
+  background: #d92d20; /* A slightly different red for danger */
   color: white;
 }
 
@@ -410,7 +429,7 @@ body {
 .btn-group {
   display: flex;
   gap: 16px;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
   justify-content: center;
 }
 
@@ -418,8 +437,8 @@ body {
 .about-content {
   background: rgba(255, 255, 255, 0.02);
   padding: 24px;
-  border-radius: 12px;
-  margin-bottom: 24px;
+  border-radius: var(--radius); /* Use variable */
+  margin-bottom: 24px; /* Keep spacing */
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -446,34 +465,29 @@ body {
 
 /* Save Status */
 .save-status {
-  position: fixed;
-  bottom: 32px;
-  right: 32px;
+  position: fixed; /* Keep it fixed */
+  bottom: 24px; /* Adjust position */
+  right: 24px; /* Adjust position */
   padding: 16px 24px;
-  border-radius: 12px;
+  border-radius: var(--radius); /* Use variable */
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.3s ease-out; /* Use ease-out for smoother effect */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   z-index: 1000;
-  min-width: 200px;
+  min-width: 220px; /* Wider status */
   text-align: center;
 }
 
 .save-status.success {
-  background: var(--success-color);
-  border-color: var(--success-color);
-  color: var(--background);
+  background: var(--primary); /* Use primary color */
+  border-color: var(--primary);
+  color: white; /* White text on success */
 }
 
-.save-status.warning {
-  background: var(--warning-color);
-  border-color: var(--warning-color);
-  color: var(--background);
-}
 
 .save-status.error {
   background: var(--danger-color);
@@ -496,7 +510,7 @@ body {
 
   .header-stats {
     justify-content: center;
-    gap: 32px;
+    gap: 24px; /* Adjusted gap */
   }
   
   .settings-grid {
@@ -528,7 +542,7 @@ body {
     width: 100%;
   }
 
-  .stat-value {
+ .header-stats .stat-value { /* Specificity for header stats */
     font-size: 24px;
   }
 
@@ -556,7 +570,7 @@ body {
     padding: 8px 12px;
   }
 
-  .btn-group {
+ .btn-group { /* Ensure button group stacks */
     flex-direction: column;
   }
 
@@ -569,7 +583,7 @@ body {
 .nav-tab:focus,
 .toggle-switch input:focus + .toggle-slider,
 .btn:focus,
-input[type="number"]:focus {
+input[type="number"]:focus { /* Use primary color for focus */
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
 }
@@ -577,15 +591,4 @@ input[type="number"]:focus {
 /* Smooth animations */
 .settings-card {
   animation: slideIn 0.4s ease;
-}
-
-@keyframes slideIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(30px) scale(0.98);
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0) scale(1);
-  }
 }

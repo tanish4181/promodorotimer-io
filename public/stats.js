@@ -1171,6 +1171,10 @@ class PomodoroStats {
   }
 
   showTooltip(e) {
+    // Remove any existing tooltip first
+    if (this.currentTooltip) {
+      this.currentTooltip.remove();
+    }
     const cell = e.currentTarget
     const tooltip = document.createElement('div')
     tooltip.className = 'heatmap-tooltip'
@@ -1191,11 +1195,11 @@ class PomodoroStats {
   }
 
   hideTooltip() {
-    if (this.currentTooltip) {
-      this.currentTooltip.remove()
-      this.currentTooltip = null
+      if (this.currentTooltip) {
+        this.currentTooltip.remove()
+        this.currentTooltip = null
+      }
     }
-  }
 
   showError(message) {
     document.body.innerHTML = `

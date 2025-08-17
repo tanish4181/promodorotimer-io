@@ -432,6 +432,20 @@ body {
 }
 
 /* Vertical Heatmap */
+.vertical-heatmap {
+  display: flex;
+  gap: 2px; /* Adjust gap between columns as needed */
+  margin-top: 20px;
+  min-width: 800px; /* Ensure enough width for all columns */
+  overflow-x: auto; /* Allow horizontal scrolling */
+  padding-bottom: 10px; /* Add some padding for scrollbar */
+}
+
+.vertical-heatmap .month-column {
+  flex-shrink: 0; /* Prevent columns from shrinking */
+}
+
+/* Vertical Heatmap */
 .heatmap-container {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -507,6 +521,16 @@ body {
   border-radius: 2px;
 }
 
+/* Heatmap Tooltip */
+.heatmap-tooltip {
+  position: absolute;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: 5px 10px;
+  border-radius: var(--radius-small);
+  font-size: 12px;
+  pointer-events: none;
+}
 /* Charts */
 .charts-grid {
   display: grid;
@@ -1423,5 +1447,84 @@ body {
   margin: 0 auto;
   padding: 24px;
 }
+/* Horizontal Heatmap Styles */
+.horizontal-heatmap {
+    /* Styles for the main heatmap container */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Adjust spacing */
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
+    padding-bottom: 10px; /* Add some padding for the scrollbar */
+}
+
+.heatmap-month-labels-horizontal {
+    /* Container for horizontal month labels */
+    display: flex;
+    gap: 3px; /* Should match the gap between week columns */
+    position: relative; /* For positioning the month labels absolutely */
+    height: 20px; /* Adjust height as needed */
+}
+
+.month-label-horizontal {
+    /* Individual month labels */
+    position: absolute;
+    top: 0;
+    font-size: 12px; /* Adjust font size */
+    color: var(--text-secondary); /* Adjust color */
+    text-align: left; /* Align text */
+    white-space: nowrap; /* Prevent text wrapping */
+    /* width and left styles will be set inline by JavaScript */
+}
+
+.heatmap-body-horizontal {
+    /* Container for day labels and the heatmap grid */
+    display: flex;
+    gap: 5px; /* Adjust spacing between day labels and grid */
+}
+
+.heatmap-day-labels-vertical {
+    /* Container for vertical day labels */
+    display: flex;
+    flex-direction: column;
+    gap: 3px; /* Should match the gap between heatmap cells vertically */
+    justify-content: center; /* Center vertically */
+}
+
+.day-label-vertical {
+    /* Individual vertical day labels */
+    font-size: 10px; /* Adjust font size */
+    color: var(--text-muted); /* Adjust color */
+    height: 12px; /* Should match heatmap cell height */
+    display: flex;
+    align-items: center;
+}
+
+.heatmap-grid-horizontal {
+    /* Container for the main heatmap grid */
+    display: flex;
+    gap: 3px; /* Gap between week columns */
+}
+
+.week-column-horizontal {
+    /* Container for a single week's worth of days */
+    display: flex;
+    flex-direction: column;
+    gap: 3px; /* Gap between heatmap cells vertically */
+}
+
+.heatmap-cell.horizontal {
+    /* Individual heatmap cells for the horizontal layout */
+    width: 12px; /* Adjust size */
+    height: 12px; /* Adjust size */
+    border-radius: 2px; /* Adjust border radius */
+    /* Background color will be set by data-level attribute and existing rules */
+}
+
+.heatmap-cell.horizontal.empty {
+    background: var(--heatmap-0); /* Style for empty cells */
+}
+
+/* Add or modify existing heatmap-legend styles as needed */
+
 
 /* Loading
