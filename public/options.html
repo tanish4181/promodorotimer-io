@@ -222,6 +222,40 @@
               </label>
             </div>
           </div>
+
+          <!-- Allowlist Card -->
+          <div class="settings-card">
+            <div class="card-header">
+              <h3>✅ Allowlist</h3>
+              <p>Websites accessible during focus mode</p>
+            </div>
+            <div class="website-list-management">
+              <div class="input-group">
+                <input type="text" id="allowlist-input" placeholder="e.g., wikipedia.org">
+                <button id="add-allowlist-btn" class="btn btn-primary">Add</button>
+              </div>
+              <div id="allowlist-container" class="website-list">
+                <div id="allowlist-empty" class="empty-list-message">Allowlist is empty</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Blocklist Card -->
+          <div class="settings-card">
+            <div class="card-header">
+              <h3>🛑 Blocklist</h3>
+              <p>Websites blocked when timer is off</p>
+            </div>
+            <div class="website-list-management">
+              <div class="input-group">
+                <input type="text" id="blocklist-input" placeholder="e.g., facebook.com">
+                <button id="add-blocklist-btn" class="btn btn-primary">Add</button>
+              </div>
+              <div id="blocklist-container" class="website-list">
+                <div id="blocklist-empty" class="empty-list-message">Blocklist is empty</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -297,6 +331,32 @@
                 </div>
                 <div class="toggle-switch">
                   <input type="checkbox" id="break-reminders" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group">
+              <label class="toggle-setting" for="break-block-all">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Block all websites during breaks</div>
+                  <div class="toggle-description">Force a complete break from the browser</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-block-all">
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group">
+              <label class="toggle-setting" for="break-use-allowlist">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Use allowlist during breaks</div>
+                  <div class="toggle-description">Allow access only to websites in your allowlist</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-use-allowlist" checked>
                   <span class="toggle-slider"></span>
                 </div>
               </label>

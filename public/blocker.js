@@ -387,3 +387,11 @@ class AdvancedWebsiteBlocker {
       this.overlay.style.visibility = "visible";
     }
   }
+
+  showPageContent() {
+    // Allow scrolling
+    document.documentElement.classList.remove("pomodoro-blocked");
+
+    // Show body content
+    document.body.style.visibility = "visible";
+  }
