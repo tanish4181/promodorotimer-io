@@ -98,7 +98,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Close tab button
       document.getElementById('close-tab').addEventListener('click', function() {
-        window.close();
+        chrome.runtime.sendMessage({ type: "CLOSE_CURRENT_TAB" });
       });
 
       // Pause timer button

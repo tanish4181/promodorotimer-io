@@ -267,6 +267,12 @@ class PomodoroBackground {
           sendResponse({ blocked: isBlocked });
           break;
 
+        case "CLOSE_CURRENT_TAB":
+          if (sender.tab) {
+            chrome.tabs.remove(sender.tab.id);
+          }
+          break;
+
         default:
           console.warn("[v0] Unknown message type:", message.type);
           sendResponse({ error: "Unknown message type" });
