@@ -1,4 +1,4 @@
-// Enhanced Options Page Script for Pomodoro Timer Chrome Extension
+// Enhanced Options Page Script for Pomodoro Timer Chrome Extension with Website Blocking
 
 class ModernPomodoroOptions {
   constructor() {
@@ -6,6 +6,8 @@ class ModernPomodoroOptions {
     this.elements = {};
     this.currentSettings = {};
     this.backgroundAvailable = false;
+    this.allowlist = [];
+    this.blocklist = [];
 
     this.initializeElements();
     this.setupTabNavigation();
@@ -18,11 +20,9 @@ class ModernPomodoroOptions {
     this.elements.focusTime = document.getElementById("focus-time");
     this.elements.shortBreak = document.getElementById("short-break");
     this.elements.longBreak = document.getElementById("long-break");
-    this.elements.sessionsUntilLongBreak = document.getElementById(
-      "sessions-until-long-break"
-    );
+    this.elements.sessionsUntilLongBreak = document.getElementById("sessions-until-long-break");
 
-    // Toggle settings - Fixed to properly get checkbox elements
+    // Toggle settings
     this.elements.autoStartBreaks = document.getElementById("auto-start-breaks");
     this.elements.autoStartPomodoros = document.getElementById("auto-start-pomodoros");
     this.elements.autoSwitchModes = document.getElementById("auto-switch-modes");
@@ -37,300 +37,232 @@ class ModernPomodoroOptions {
     this.elements.focusOverlay = document.getElementById("focus-overlay");
     this.elements.hideDistractions = document.getElementById("hide-distractions");
     this.elements.focusIndicator = document.getElementById("focus-indicator");
-    this.elements.websiteBlocking = document.getElementById("website-blocking");
     this.elements.hideYoutubeComments = document.getElementById("hide-youtube-comments");
     this.elements.hideYoutubeRecommendations = document.getElementById("hide-youtube-recommendations");
     this.elements.hideYoutubeShorts = document.getElementById("hide-youtube-shorts");
     this.elements.pauseYoutubeBreaks = document.getElementById("pause-youtube-breaks");
     this.elements.collectStats = document.getElementById("collect-stats");
 
-    // Buttons
-    this.elements.exportData = document.getElementById("export-data");
-    this.elements.clearData = document.getElementById("clear-data");
-    this.elements.viewStats = document.getElementById("view-stats");
-    this.elements.resetDefaults = document.getElementById("reset-defaults");
+    // Website blocking elements
+    this.elements.websiteBlocking = document.getElementById("website-blocking");
+    this.elements.breakBlockAll = document.getElementById("break-block-all");
+    this.elements.breakUseAllowlist = document.getElementById("break-use-allowlist");
+    this.elements.allowlistInput = document.getElementById("allowlist-input");
+    this.elements.addAllowlistBtn = document.getElementById("add-allowlist-btn");
+    this.elements.allowlistContainer = document.getElementById("allowlist-container");
+    this.elements.allowlistEmpty = document.getElementById("allowlist-empty");
+    this.elements.blocklistInput = document.getElementById("blocklist-input");
+    this.elements.addBlocklistBtn = document.getElementById("add-blocklist-btn");
+    this.elements.blocklistContainer = document.getElementById("blocklist-container");
+    this.elements.blocklistEmpty = document.getElementById("blocklist-empty");
 
-    // Status and header elements
-    this.elements.saveStatus = document.getElementById("save-status");
+    // Action buttons
+    this.elements.exportDataBtn = document.getElementById("export-data");
+    this.elements.viewStatsBtn = document.getElementById("view-stats");
+    this.elements.resetDefaultsBtn = document.getElementById("reset-defaults");
+    this.elements.clearDataBtn = document.getElementById("clear-data");
+
+    // Header stats
     this.elements.headerFocusTime = document.getElementById("header-focus-time");
     this.elements.headerBreakTime = document.getElementById("header-break-time");
-    this.elements.storageUsage = document.getElementById("storage-usage");
 
-    // Tab elements
-    this.elements.tabButtons = document.querySelectorAll('.nav-tab');
-    this.elements.tabContents = document.querySelectorAll('.tab-content');
-
-    console.log("[v0] Elements initialized:", Object.keys(this.elements).length, "elements found");
+    console.log("[v0] All DOM elements initialized");
   }
 
   setupTabNavigation() {
-    this.elements.tabButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-        const targetTab = e.target.closest('.nav-tab').dataset.tab;
-        this.switchTab(targetTab);
+    const navTabs = document.querySelectorAll(".nav-tab");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    navTabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const targetTab = tab.dataset.tab;
+        
+        // Update active tab
+        navTabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        
+        // Update active content
+        tabContents.forEach(content => {
+          content.classList.toggle("active", content.id === targetTab);
+        });
+        
+        console.log(`[v0] Switched to tab: ${targetTab}`);
       });
     });
   }
 
-  switchTab(tabName) {
-    // Remove active class from all tabs and contents
-    this.elements.tabButtons.forEach(btn => btn.classList.remove('active'));
-    this.elements.tabContents.forEach(content => content.classList.remove('active'));
-
-    // Add active class to selected tab and content
-    const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
-    const activeContent = document.getElementById(tabName);
-    
-    if (activeButton && activeContent) {
-      activeButton.classList.add('active');
-      activeContent.classList.add('active');
-    }
-  }
-
   bindEventListeners() {
-    // Timer settings
-    if (this.elements.focusTime) {
-      this.elements.focusTime.addEventListener("change", () => this.handleSettingChange());
+    // Number inputs
+    const numberInputs = [
+      this.elements.focusTime,
+      this.elements.shortBreak,
+      this.elements.longBreak,
+      this.elements.sessionsUntilLongBreak
+    ];
+    
+    numberInputs.forEach(input => {
+      if (input) {
+        input.addEventListener("change", () => this.saveSettings());
+        input.addEventListener("input", () => this.updateHeaderStats());
+      }
+    });
+
+    // Toggle inputs
+    const toggleInputs = [
+      this.elements.autoStartBreaks,
+      this.elements.autoStartPomodoros,
+      this.elements.autoSwitchModes,
+      this.elements.notifications,
+      this.elements.sounds,
+      this.elements.breakReminders,
+      this.elements.enforceBreaks,
+      this.elements.youtubeIntegration,
+      this.elements.breakOverlay,
+      this.elements.breakCountdown,
+      this.elements.nextSessionInfo,
+      this.elements.focusOverlay,
+      this.elements.hideDistractions,
+      this.elements.focusIndicator,
+      this.elements.websiteBlocking,
+      this.elements.breakBlockAll,
+      this.elements.breakUseAllowlist,
+      this.elements.hideYoutubeComments,
+      this.elements.hideYoutubeRecommendations,
+      this.elements.hideYoutubeShorts,
+      this.elements.pauseYoutubeBreaks,
+      this.elements.collectStats
+    ];
+
+    toggleInputs.forEach(input => {
+      if (input) {
+        input.addEventListener("change", () => this.saveSettings());
+      }
+    });
+
+    // Website blocking specific listeners
+    this.setupWebsiteBlockingListeners();
+
+    // Action buttons
+    if (this.elements.exportDataBtn) {
+      this.elements.exportDataBtn.addEventListener("click", () => this.exportData());
     }
-    if (this.elements.shortBreak) {
-      this.elements.shortBreak.addEventListener("change", () => this.handleSettingChange());
+    if (this.elements.viewStatsBtn) {
+      this.elements.viewStatsBtn.addEventListener("click", () => this.openStats());
     }
-    if (this.elements.longBreak) {
-      this.elements.longBreak.addEventListener("change", () => this.handleSettingChange());
+    if (this.elements.resetDefaultsBtn) {
+      this.elements.resetDefaultsBtn.addEventListener("click", () => this.resetDefaults());
     }
-    if (this.elements.sessionsUntilLongBreak) {
-      this.elements.sessionsUntilLongBreak.addEventListener("change", () => this.handleSettingChange());
+    if (this.elements.clearDataBtn) {
+      this.elements.clearDataBtn.addEventListener("click", () => this.clearAllData());
     }
 
-    // Toggle settings
-    this.bindToggleListener("autoStartBreaks");
-    this.bindToggleListener("autoStartPomodoros");
-    this.bindToggleListener("autoSwitchModes");
-    this.bindToggleListener("notifications");
-    this.bindToggleListener("sounds");
-    this.bindToggleListener("breakReminders");
-    this.bindToggleListener("enforceBreaks");
-    this.bindToggleListener("youtubeIntegration");
-    this.bindToggleListener("breakOverlay");
-    this.bindToggleListener("breakCountdown");
-    this.bindToggleListener("nextSessionInfo");
-    this.bindToggleListener("focusOverlay");
-    this.bindToggleListener("hideDistractions");
-    this.bindToggleListener("focusIndicator");
-    this.bindToggleListener("websiteBlocking");
-    this.bindToggleListener("hideYoutubeComments");
-    this.bindToggleListener("hideYoutubeRecommendations");
-    this.bindToggleListener("hideYoutubeShorts");
-    this.bindToggleListener("pauseYoutubeBreaks");
-    this.bindToggleListener("collectStats");
+    // Break mode mutual exclusion
+    if (this.elements.breakBlockAll && this.elements.breakUseAllowlist) {
+      this.elements.breakBlockAll.addEventListener("change", (e) => {
+        if (e.target.checked) {
+          this.elements.breakUseAllowlist.checked = false;
+        }
+        this.saveSettings();
+      });
 
-    // Buttons
-    if (this.elements.exportData) {
-      this.elements.exportData.addEventListener("click", () => this.exportData());
+      this.elements.breakUseAllowlist.addEventListener("change", (e) => {
+        if (e.target.checked) {
+          this.elements.breakBlockAll.checked = false;
+        }
+        this.saveSettings();
+      });
     }
-    if (this.elements.clearData) {
-      this.elements.clearData.addEventListener("click", () => this.clearData());
-    }
-    if (this.elements.viewStats) {
-      this.elements.viewStats.addEventListener("click", () => this.viewStats());
-    }
-    if (this.elements.resetDefaults) {
-      this.elements.resetDefaults.addEventListener("click", () => this.resetDefaults());
-    }
+
+    console.log("[v0] All event listeners bound");
   }
 
-  bindToggleListener(settingKey) {
-    const element = this.elements[settingKey];
-    if (element) {
-      element.addEventListener("change", () => {
-        console.log(`[v0] Toggle changed: ${settingKey} = ${element.checked}`);
-        this.handleToggleChange(settingKey);
+  setupWebsiteBlockingListeners() {
+    // Allowlist management
+    if (this.elements.addAllowlistBtn) {
+      this.elements.addAllowlistBtn.addEventListener("click", () => {
+        this.addWebsiteToList("allowlist");
       });
-      console.log(`[v0] Bound event listener for ${settingKey}`);
-    } else {
-      console.warn(`[v0] Could not bind event listener for ${settingKey} - element not found`);
+    }
+
+    if (this.elements.allowlistInput) {
+      this.elements.allowlistInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          this.addWebsiteToList("allowlist");
+        }
+      });
+    }
+
+    // Blocklist management
+    if (this.elements.addBlocklistBtn) {
+      this.elements.addBlocklistBtn.addEventListener("click", () => {
+        this.addWebsiteToList("blocklist");
+      });
+    }
+
+    if (this.elements.blocklistInput) {
+      this.elements.blocklistInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          this.addWebsiteToList("blocklist");
+        }
+      });
     }
   }
 
   async initializeOptions() {
+    console.log("[v0] Initializing options page");
+    this.showStatus("Loading settings...", "loading");
+    
     try {
-      console.log("[v0] Initializing options page");
-
-      // Check if background script is available
-      this.backgroundAvailable = await this.checkBackgroundScript();
-
-      if (this.backgroundAvailable) {
-        console.log("[v0] Background script is available");
-      } else {
-        console.warn("[v0] Background script not available, using local storage only");
-        this.showSaveStatus("Using local storage mode", "warning");
-      }
-
-      // Load settings
       await this.loadSettings();
-      
-      // Update storage usage
-      await this.updateStorageUsage();
-      
+      await this.loadWebsiteLists();
+      this.updateHeaderStats();
+      this.calculateStorageUsage();
+      this.showStatus("Settings loaded successfully", "success");
+      console.log("[v0] Options initialized successfully");
     } catch (error) {
       console.error("[v0] Error initializing options:", error);
-      this.showSaveStatus("Error initializing options", "error");
-    }
-  }
-
-  async checkBackgroundScript() {
-    try {
-      await chrome.runtime.sendMessage({ type: "GET_STATE" });
-      return true;
-    } catch (error) {
-      console.warn("[v0] Background script not available:", error.message);
-      return false;
-    }
-  }
-
-  async handleToggleChange(settingName) {
-    const element = this.elements[settingName];
-    const newValue = element.checked;
-    this.currentSettings[settingName] = newValue;
-
-    try {
-      // Save directly to storage
-      await chrome.storage.local.set({ settings: this.currentSettings });
-      
-      // Also try to notify background script if available
-      if (this.backgroundAvailable) {
-        try {
-          await chrome.runtime.sendMessage({
-            type: "SETTINGS_UPDATED",
-            settings: { [settingName]: newValue }
-          });
-        } catch (error) {
-          console.warn("[v0] Could not notify background script:", error);
-        }
-      }
-      
-      this.showSaveStatus("Setting updated", "success");
-      console.log(`[v0] Setting ${settingName} updated to ${newValue}`);
-    } catch (error) {
-      console.error("[v0] Error saving setting:", error);
-      this.showSaveStatus("Error saving setting", "error");
-      // Revert the toggle
-      element.checked = !newValue;
-      this.currentSettings[settingName] = !newValue;
-    }
-  }
-
-  async handleSettingChange() {
-    try {
-      // Update the settings object from the form
-      this.currentSettings.focusTime = parseInt(this.elements.focusTime.value);
-      this.currentSettings.shortBreak = parseInt(this.elements.shortBreak.value);
-      this.currentSettings.longBreak = parseInt(this.elements.longBreak.value);
-      this.currentSettings.sessionsUntilLongBreak = parseInt(this.elements.sessionsUntilLongBreak.value);
-
-      // Update header display
-      this.updateHeaderStats();
-
-      // Save to storage
-      await chrome.storage.local.set({ settings: this.currentSettings });
-      
-      // Notify background script if available
-      if (this.backgroundAvailable) {
-        try {
-          await chrome.runtime.sendMessage({
-            type: "SETTINGS_UPDATED",
-            settings: this.currentSettings
-          });
-        } catch (error) {
-          console.warn("[v0] Could not notify background script:", error);
-        }
-      }
-      
-      this.showSaveStatus("Settings saved", "success");
-    } catch (error) {
-      console.error("[v0] Error saving settings:", error);
-      this.showSaveStatus("Error saving settings", "error");
-    }
-  }
-
-  updateHeaderStats() {
-    if (this.elements.headerFocusTime) {
-      this.elements.headerFocusTime.textContent = this.currentSettings.focusTime || 25;
-    }
-    if (this.elements.headerBreakTime) {
-      this.elements.headerBreakTime.textContent = this.currentSettings.shortBreak || 5;
+      this.showStatus("Error loading settings", "error");
     }
   }
 
   async loadSettings() {
     try {
-      console.log("[v0] Loading settings");
-      const result = await chrome.storage.local.get("settings");
-      const defaultSettings = this.getDefaultSettings();
-
-      // Merge existing settings with defaults
-      this.currentSettings = { ...defaultSettings, ...result.settings };
-      console.log("[v0] Merged settings:", this.currentSettings);
-
-      // Update form elements
-      this.updateFormElements();
+      // Try to get settings from background script first
+      const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
       
-      console.log("[v0] Settings loaded successfully");
-      this.showSaveStatus("Settings loaded", "success");
+      if (response && response.state && response.state.settings) {
+        this.currentSettings = response.state.settings;
+        this.backgroundAvailable = true;
+        console.log("[v0] Settings loaded from background script");
+      } else {
+        throw new Error("Background not available");
+      }
     } catch (error) {
-      console.error("[v0] Error loading settings:", error);
-      this.showSaveStatus("Error loading settings", "error");
+      console.log("[v0] Background not available, loading from storage");
+      // Fallback to direct storage access
+      const result = await chrome.storage.local.get("settings");
+      this.currentSettings = result.settings || this.getDefaultSettings();
+      this.backgroundAvailable = false;
     }
+    
+    this.populateSettings();
   }
 
-  updateFormElements() {
-    // Update number inputs
-    if (this.elements.focusTime) {
-      this.elements.focusTime.value = this.currentSettings.focusTime || 25;
-    }
-    if (this.elements.shortBreak) {
-      this.elements.shortBreak.value = this.currentSettings.shortBreak || 5;
-    }
-    if (this.elements.longBreak) {
-      this.elements.longBreak.value = this.currentSettings.longBreak || 15;
-    }
-    if (this.elements.sessionsUntilLongBreak) {
-      this.elements.sessionsUntilLongBreak.value = this.currentSettings.sessionsUntilLongBreak || 4;
-    }
-
-    // Update toggle switches
-    this.setToggleValue("autoStartBreaks", this.currentSettings.autoStartBreaks !== false);
-    this.setToggleValue("autoStartPomodoros", this.currentSettings.autoStartPomodoros === true);
-    this.setToggleValue("autoSwitchModes", this.currentSettings.autoSwitchModes !== false);
-    this.setToggleValue("notifications", this.currentSettings.notifications !== false);
-    this.setToggleValue("sounds", this.currentSettings.sounds !== false);
-    this.setToggleValue("breakReminders", this.currentSettings.breakReminders !== false);
-    this.setToggleValue("enforceBreaks", this.currentSettings.enforceBreaks !== false);
-    this.setToggleValue("youtubeIntegration", this.currentSettings.youtubeIntegration !== false);
-    this.setToggleValue("breakOverlay", this.currentSettings.breakOverlay !== false);
-    this.setToggleValue("breakCountdown", this.currentSettings.breakCountdown !== false);
-    this.setToggleValue("nextSessionInfo", this.currentSettings.nextSessionInfo !== false);
-    this.setToggleValue("focusOverlay", this.currentSettings.focusOverlay === true);
-    this.setToggleValue("hideDistractions", this.currentSettings.hideDistractions !== false);
-    this.setToggleValue("focusIndicator", this.currentSettings.focusIndicator !== false);
-    this.setToggleValue("websiteBlocking", this.currentSettings.websiteBlocking !== false);
-    this.setToggleValue("hideYoutubeComments", this.currentSettings.hideYoutubeComments !== false);
-    this.setToggleValue("hideYoutubeRecommendations", this.currentSettings.hideYoutubeRecommendations !== false);
-    this.setToggleValue("hideYoutubeShorts", this.currentSettings.hideYoutubeShorts !== false);
-    this.setToggleValue("pauseYoutubeBreaks", this.currentSettings.pauseYoutubeBreaks !== false);
-    this.setToggleValue("collectStats", this.currentSettings.collectStats !== false);
-
-    // Update header stats
-    this.updateHeaderStats();
-  }
-
-  setToggleValue(settingKey, value) {
-    const element = this.elements[settingKey];
-    if (element) {
-      element.checked = value;
-      console.log(`[v0] Set toggle ${settingKey} to ${value}`);
-    } else {
-      console.warn(`[v0] Could not set toggle ${settingKey} - element not found`);
+  async loadWebsiteLists() {
+    try {
+      const result = await chrome.storage.local.get(["allowedWebsites", "blockedWebsites"]);
+      this.allowlist = result.allowedWebsites || [];
+      this.blocklist = result.blockedWebsites || [];
+      
+      this.renderWebsiteList("allowlist");
+      this.renderWebsiteList("blocklist");
+      
+      console.log("[v0] Website lists loaded:", {
+        allowlist: this.allowlist.length,
+        blocklist: this.blocklist.length
+      });
+    } catch (error) {
+      console.error("[v0] Error loading website lists:", error);
     }
   }
 
@@ -355,6 +287,8 @@ class ModernPomodoroOptions {
       hideDistractions: true,
       focusIndicator: true,
       websiteBlocking: true,
+      breakBlockAll: false,
+      breakUseAllowlist: true,
       hideYoutubeComments: true,
       hideYoutubeRecommendations: true,
       hideYoutubeShorts: true,
@@ -363,120 +297,354 @@ class ModernPomodoroOptions {
     };
   }
 
-  showSaveStatus(message, type = "info") {
-    const statusElement = this.elements.saveStatus;
-    if (!statusElement) return;
+  populateSettings() {
+    // Number inputs
+    if (this.elements.focusTime) this.elements.focusTime.value = this.currentSettings.focusTime || 25;
+    if (this.elements.shortBreak) this.elements.shortBreak.value = this.currentSettings.shortBreak || 5;
+    if (this.elements.longBreak) this.elements.longBreak.value = this.currentSettings.longBreak || 15;
+    if (this.elements.sessionsUntilLongBreak) this.elements.sessionsUntilLongBreak.value = this.currentSettings.sessionsUntilLongBreak || 4;
 
-    const statusText = statusElement.querySelector(".status-text");
-    if (statusText) {
-      statusText.textContent = message;
-    }
+    // Toggle inputs
+    const toggleSettings = [
+      "autoStartBreaks", "autoStartPomodoros", "autoSwitchModes",
+      "notifications", "sounds", "breakReminders", "enforceBreaks",
+      "youtubeIntegration", "breakOverlay", "breakCountdown",
+      "nextSessionInfo", "focusOverlay", "hideDistractions",
+      "focusIndicator", "websiteBlocking", "breakBlockAll",
+      "breakUseAllowlist", "hideYoutubeComments", "hideYoutubeRecommendations",
+      "hideYoutubeShorts", "pauseYoutubeBreaks", "collectStats"
+    ];
 
-    // Update status styling
-    statusElement.className = `save-status ${type}`;
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      statusElement.className = "save-status";
-      if (statusText) {
-        statusText.textContent = "Settings saved automatically";
+    toggleSettings.forEach(setting => {
+      const element = this.elements[setting];
+      if (element) {
+        element.checked = this.currentSettings[setting] !== undefined ? this.currentSettings[setting] : false;
       }
-    }, 3000);
+    });
+
+    console.log("[v0] Settings populated in UI");
+  }
+
+  async saveSettings() {
+    const newSettings = {
+      focusTime: parseInt(this.elements.focusTime?.value) || 25,
+      shortBreak: parseInt(this.elements.shortBreak?.value) || 5,
+      longBreak: parseInt(this.elements.longBreak?.value) || 15,
+      sessionsUntilLongBreak: parseInt(this.elements.sessionsUntilLongBreak?.value) || 4,
+      autoStartBreaks: this.elements.autoStartBreaks?.checked || false,
+      autoStartPomodoros: this.elements.autoStartPomodoros?.checked || false,
+      autoSwitchModes: this.elements.autoSwitchModes?.checked || false,
+      notifications: this.elements.notifications?.checked || false,
+      sounds: this.elements.sounds?.checked || false,
+      breakReminders: this.elements.breakReminders?.checked || false,
+      enforceBreaks: this.elements.enforceBreaks?.checked || false,
+      youtubeIntegration: this.elements.youtubeIntegration?.checked || false,
+      breakOverlay: this.elements.breakOverlay?.checked || false,
+      breakCountdown: this.elements.breakCountdown?.checked || false,
+      nextSessionInfo: this.elements.nextSessionInfo?.checked || false,
+      focusOverlay: this.elements.focusOverlay?.checked || false,
+      hideDistractions: this.elements.hideDistractions?.checked || false,
+      focusIndicator: this.elements.focusIndicator?.checked || false,
+      websiteBlocking: this.elements.websiteBlocking?.checked || false,
+      breakBlockAll: this.elements.breakBlockAll?.checked || false,
+      breakUseAllowlist: this.elements.breakUseAllowlist?.checked || false,
+      hideYoutubeComments: this.elements.hideYoutubeComments?.checked || false,
+      hideYoutubeRecommendations: this.elements.hideYoutubeRecommendations?.checked || false,
+      hideYoutubeShorts: this.elements.hideYoutubeShorts?.checked || false,
+      pauseYoutubeBreaks: this.elements.pauseYoutubeBreaks?.checked || false,
+      collectStats: this.elements.collectStats?.checked || false,
+    };
+
+    try {
+      // Save to storage
+      await chrome.storage.local.set({ settings: newSettings });
+      
+      // Update background script if available
+      if (this.backgroundAvailable) {
+        await chrome.runtime.sendMessage({
+          type: "SETTINGS_UPDATED",
+          settings: newSettings
+        });
+      }
+      
+      this.currentSettings = newSettings;
+      this.updateHeaderStats();
+      this.showStatus("Settings saved successfully", "success");
+      
+      console.log("[v0] Settings saved:", newSettings);
+    } catch (error) {
+      console.error("[v0] Error saving settings:", error);
+      this.showStatus("Error saving settings", "error");
+    }
+  }
+
+  addWebsiteToList(listType) {
+    const inputElement = listType === "allowlist" ? 
+      this.elements.allowlistInput : this.elements.blocklistInput;
+    
+    if (!inputElement) return;
+    
+    const website = inputElement.value.trim();
+    if (!website) return;
+    
+    // Clean and validate URL
+    const cleanedWebsite = this.cleanWebsiteUrl(website);
+    if (!cleanedWebsite) {
+      this.showStatus("Please enter a valid website URL", "error");
+      return;
+    }
+    
+    const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
+    
+    // Check if already exists
+    if (targetList.includes(cleanedWebsite)) {
+      this.showStatus(`Website already in ${listType}`, "error");
+      return;
+    }
+    
+    // Add to list
+    targetList.push(cleanedWebsite);
+    inputElement.value = "";
+    
+    // Save and render
+    this.saveWebsiteLists();
+    this.renderWebsiteList(listType);
+    
+    this.showStatus(`Website added to ${listType}`, "success");
+    console.log(`[v0] Website added to ${listType}:`, cleanedWebsite);
+  }
+
+  removeWebsiteFromList(listType, website) {
+    const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
+    const index = targetList.indexOf(website);
+    
+    if (index > -1) {
+      targetList.splice(index, 1);
+      this.saveWebsiteLists();
+      this.renderWebsiteList(listType);
+      this.showStatus(`Website removed from ${listType}`, "success");
+      console.log(`[v0] Website removed from ${listType}:`, website);
+    }
+  }
+
+  cleanWebsiteUrl(url) {
+    // Remove protocol and www
+    let cleaned = url.replace(/^https?:\/\//, "").replace(/^www\./, "");
+    
+    // Remove trailing slash
+    cleaned = cleaned.replace(/\/$/, "");
+    
+    // Basic validation
+    if (!cleaned || !cleaned.includes(".")) {
+      return null;
+    }
+    
+    return cleaned;
+  }
+
+  async saveWebsiteLists() {
+    try {
+      await chrome.storage.local.set({
+        allowedWebsites: this.allowlist,
+        blockedWebsites: this.blocklist
+      });
+      
+      // Update background script if available
+      if (this.backgroundAvailable) {
+        await chrome.runtime.sendMessage({
+          type: "WEBSITE_LISTS_UPDATED",
+          allowlist: this.allowlist,
+          blocklist: this.blocklist
+        });
+      }
+      
+      console.log("[v0] Website lists saved");
+    } catch (error) {
+      console.error("[v0] Error saving website lists:", error);
+    }
+  }
+
+  renderWebsiteList(listType) {
+    const container = listType === "allowlist" ? 
+      this.elements.allowlistContainer : this.elements.blocklistContainer;
+    const emptyElement = listType === "allowlist" ? 
+      this.elements.allowlistEmpty : this.elements.blocklistEmpty;
+    const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
+    
+    if (!container) return;
+    
+    // Clear existing content
+    container.innerHTML = "";
+    
+    if (targetList.length === 0) {
+      if (emptyElement) {
+        container.appendChild(emptyElement);
+      }
+      return;
+    }
+    
+    // Create website items
+    targetList.forEach(website => {
+      const item = document.createElement("div");
+      item.className = "website-item";
+      item.innerHTML = `
+        <span class="website-name">${website}</span>
+        <div class="website-actions">
+          <button class="website-remove-btn" title="Remove website">×</button>
+        </div>
+      `;
+      
+      // Add remove functionality
+      const removeBtn = item.querySelector(".website-remove-btn");
+      removeBtn.addEventListener("click", () => {
+        this.removeWebsiteFromList(listType, website);
+      });
+      
+      container.appendChild(item);
+    });
+  }
+
+  updateHeaderStats() {
+    if (this.elements.headerFocusTime) {
+      this.elements.headerFocusTime.textContent = this.elements.focusTime?.value || 25;
+    }
+    if (this.elements.headerBreakTime) {
+      this.elements.headerBreakTime.textContent = this.elements.shortBreak?.value || 5;
+    }
+  }
+
+  async calculateStorageUsage() {
+    try {
+      const result = await chrome.storage.local.get();
+      const dataSize = JSON.stringify(result).length;
+      const usageKB = Math.round(dataSize / 1024);
+      
+      const storageElement = document.getElementById("storage-usage");
+      if (storageElement) {
+        storageElement.textContent = `${usageKB} KB`;
+      }
+      
+      console.log(`[v0] Storage usage calculated: ${usageKB} KB`);
+    } catch (error) {
+      console.error("[v0] Error calculating storage usage:", error);
+    }
   }
 
   async exportData() {
     try {
-      const result = await chrome.storage.local.get(null);
-      const dataStr = JSON.stringify(result, null, 2);
-      const dataBlob = new Blob([dataStr], { type: "application/json" });
-
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `pomodoro-timer-data-${new Date().toISOString().split("T")[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const data = await chrome.storage.local.get();
+      const exportData = {
+        settings: data.settings,
+        dailyStats: data.dailyStats,
+        allowedWebsites: data.allowedWebsites,
+        blockedWebsites: data.blockedWebsites,
+        todos: data.todos,
+        exportDate: new Date().toISOString()
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json"
+      });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pomodoro-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      
       URL.revokeObjectURL(url);
-
-      this.showSaveStatus("Data exported successfully", "success");
+      this.showStatus("Data exported successfully", "success");
+      
+      console.log("[v0] Data exported");
     } catch (error) {
       console.error("[v0] Error exporting data:", error);
-      this.showSaveStatus("Error exporting data", "error");
+      this.showStatus("Error exporting data", "error");
     }
   }
 
-  async clearData() {
-    if (confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
-      try {
-        await chrome.storage.local.clear();
-        this.currentSettings = this.getDefaultSettings();
-        this.updateFormElements();
-        this.showSaveStatus("All data cleared", "success");
-        await this.updateStorageUsage();
-      } catch (error) {
-        console.error("[v0] Error clearing data:", error);
-        this.showSaveStatus("Error clearing data", "error");
-      }
-    }
-  }
-
-  viewStats() {
-    try {
-      chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") });
-    } catch (error) {
-      console.error("[v0] Error opening stats:", error);
-      this.showSaveStatus("Error opening stats", "error");
-    }
+  openStats() {
+    chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") });
   }
 
   async resetDefaults() {
-    if (confirm("Are you sure you want to reset all settings to defaults?")) {
-      try {
-        this.currentSettings = this.getDefaultSettings();
-        await chrome.storage.local.set({ settings: this.currentSettings });
-
-        if (this.backgroundAvailable) {
-          try {
-            await chrome.runtime.sendMessage({
-              type: "SETTINGS_UPDATED",
-              settings: this.currentSettings,
-            });
-          } catch (error) {
-            console.warn("[v0] Could not notify background script:", error);
-          }
-        }
-
-        this.updateFormElements();
-        this.showSaveStatus("Settings reset to defaults", "success");
-      } catch (error) {
-        console.error("[v0] Error resetting settings:", error);
-        this.showSaveStatus("Error resetting settings", "error");
+    const confirmed = confirm("Are you sure you want to reset all settings to default values?");
+    if (!confirmed) return;
+    
+    try {
+      const defaultSettings = this.getDefaultSettings();
+      await chrome.storage.local.set({ settings: defaultSettings });
+      
+      // Update background script if available
+      if (this.backgroundAvailable) {
+        await chrome.runtime.sendMessage({
+          type: "SETTINGS_UPDATED",
+          settings: defaultSettings
+        });
       }
+      
+      this.currentSettings = defaultSettings;
+      this.populateSettings();
+      this.updateHeaderStats();
+      this.showStatus("Settings reset to defaults", "success");
+      
+      console.log("[v0] Settings reset to defaults");
+    } catch (error) {
+      console.error("[v0] Error resetting defaults:", error);
+      this.showStatus("Error resetting defaults", "error");
     }
   }
 
-  async updateStorageUsage() {
+  async clearAllData() {
+    const confirmed = confirm("Are you sure you want to clear all data? This cannot be undone.");
+    if (!confirmed) return;
+    
+    const doubleConfirmed = confirm("This will delete all your statistics, settings, and website lists. Are you absolutely sure?");
+    if (!doubleConfirmed) return;
+    
     try {
-      const result = await chrome.storage.local.get(null);
-      const dataStr = JSON.stringify(result);
-      const sizeInBytes = new Blob([dataStr]).size;
-      const sizeInKB = Math.round(sizeInBytes / 1024 * 100) / 100;
+      await chrome.storage.local.clear();
       
-      if (this.elements.storageUsage) {
-        this.elements.storageUsage.textContent = `${sizeInKB} KB`;
-      }
+      // Reset local data
+      this.currentSettings = this.getDefaultSettings();
+      this.allowlist = [];
+      this.blocklist = [];
+      
+      // Repopulate UI
+      this.populateSettings();
+      this.renderWebsiteList("allowlist");
+      this.renderWebsiteList("blocklist");
+      this.updateHeaderStats();
+      this.calculateStorageUsage();
+      
+      this.showStatus("All data cleared successfully", "success");
+      console.log("[v0] All data cleared");
     } catch (error) {
-      console.error("[v0] Error calculating storage usage:", error);
-      if (this.elements.storageUsage) {
-        this.elements.storageUsage.textContent = "Unknown";
-      }
+      console.error("[v0] Error clearing data:", error);
+      this.showStatus("Error clearing data", "error");
     }
+  }
+
+  showStatus(message, type = "success") {
+    const statusElement = document.getElementById("save-status");
+    if (!statusElement) return;
+    
+    statusElement.textContent = message;
+    statusElement.className = `save-status ${type}`;
+    statusElement.style.opacity = "1";
+    statusElement.style.transform = "translateY(0)";
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      statusElement.style.opacity = "0";
+      statusElement.style.transform = "translateY(20px)";
+    }, 3000);
+    
+    console.log(`[v0] Status: ${message} (${type})`);
   }
 }
 
-// Initialize options page when DOM is loaded
+// Initialize options when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[v0] DOM loaded, initializing modern options");
+  console.log("[v0] DOM loaded, initializing options");
   new ModernPomodoroOptions();
 });
