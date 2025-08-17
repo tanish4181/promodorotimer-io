@@ -31,6 +31,8 @@ class PomodoroBackground {
         hideDistractions: true,
         focusIndicator: true,
         websiteBlocking: true,
+        breakBlockAll: false,
+        breakUseAllowlist: true,
         hideYoutubeComments: true,
         hideYoutubeRecommendations: true,
         hideYoutubeShorts: true,
@@ -38,6 +40,7 @@ class PomodoroBackground {
         collectStats: true,
       },
       blockedWebsites: [],
+      allowedWebsites: [],
       todos: [],
     };
 
@@ -111,6 +114,7 @@ class PomodoroBackground {
         "settings",
         "lastActiveTime",
         "blockedWebsites",
+        "allowedWebsites",
         "todos",
       ]);
 
@@ -186,6 +190,7 @@ class PomodoroBackground {
         collectStats: true,
       },
       blockedWebsites: [],
+      allowedWebsites: [],
       todos: [],
     };
     await this.saveState();
@@ -248,6 +253,18 @@ class PomodoroBackground {
 
         case "GET_TODOS":
           sendResponse({ todos: this.state.todos });
+          break;
+
+        case "WEBSITE_LISTS_UPDATED":
+          this.state.allowedWebsites = message.allowlist || [];
+          this.state.blockedWebsites = message.blocklist || [];
+          this.saveState();
+          sendResponse({ success: true });
+          break;
+
+        case "CHECK_WEBSITE_BLOCKED":
+          const isBlocked = this.isUrlBlocked(message.url);
+          sendResponse({ blocked: isBlocked });
           break;
 
         default:
@@ -493,6 +510,68 @@ class PomodoroBackground {
     );
     await this.saveState();
     console.log("[v0] Website unblocked:", website);
+  }
+
+  _isUrlInList(url, list) {
+    if (!url || !list || list.length === 0) {
+      return false;
+    }
+    try {
+      const urlHostname = new URL(url).hostname.toLowerCase();
+      for (const domain of list) {
+        const lowerCaseDomain = domain.toLowerCase();
+        if (urlHostname === lowerCaseDomain || urlHostname.endsWith(`.${lowerCaseDomain}`)) {
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error(`[v0] Invalid URL format for blocking check: ${url}`, error);
+      return false;
+    }
+    return false;
+  }
+
+  isUrlBlocked(url) {
+    // 1. Master switch for the entire feature
+    if (!this.state.settings.websiteBlocking) {
+      return false;
+    }
+
+    // 2. Allowlist is the highest priority and always overrides blocking
+    if (this._isUrlInList(url, this.state.allowedWebsites)) {
+      return false;
+    }
+
+    const { isRunning, currentMode, settings } = this.state;
+
+    // 3. Logic for when the timer is active (Focus or Break)
+    if (isRunning) {
+      if (currentMode === 'focus') {
+        // During focus, block everything that is not on the allowlist.
+        return true;
+      }
+
+      if (currentMode === 'shortBreak' || currentMode === 'longBreak') {
+        // During breaks, check user's break blocking preferences.
+        if (settings.breakBlockAll) {
+          // Option 1: Block all websites.
+          return true;
+        }
+        if (settings.breakUseAllowlist) {
+          // Option 2: Use allowlist (block everything else).
+          return true;
+        }
+      }
+    } else {
+      // 4. Logic for when the timer is OFF (Idle state)
+      // Block sites that are on the blocklist.
+      if (this._isUrlInList(url, this.state.blockedWebsites)) {
+        return true;
+      }
+    }
+
+    // 5. Default case: If no other rule applies, do not block the site.
+    return false;
   }
 
   broadcastUpdate() {
