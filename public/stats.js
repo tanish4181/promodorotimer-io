@@ -1089,7 +1089,10 @@ class PomodoroStats {
     
     if (editGoalsBtn) {
       editGoalsBtn.addEventListener('click', () => {
-        document.querySelector('.goal-settings').style.display = 'block'
+        const goalSettings = document.querySelector('.goal-settings')
+        const goalsHeader = document.querySelector('.section-header h2').closest('.section-header');
+        goalsHeader.after(goalSettings); // Insert after the goals header
+        goalSettings.style.display = 'block'; // Make it visible
         editGoalsBtn.style.display = 'none'
       })
     }
