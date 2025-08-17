@@ -1,4 +1,4 @@
-// Stats page script for Pomodoro Timer Chrome Extension
+// Enhanced Stats page with GitHub-style vertical heatmap and comprehensive analytics
 
 class PomodoroStats {
   constructor() {
@@ -11,66 +11,169 @@ class PomodoroStats {
       currentStreak: 0,
       dailyStats: {},
       weeklyStats: {},
-      monthlyStats: {}
+      monthlyStats: {},
+      bestDay: null,
+      productivityScore: 0
     }
     
+    this.currentView = 'overview' // overview, trends, goals
     this.initializeStats()
   }
 
   async initializeStats() {
-    console.log("[v0] Initializing stats page")
+    console.log("[Stats] Initializing stats page")
+    this.showLoading()
     
     try {
       await this.loadStats()
-      this.renderStats()
+      await this.calculateAdvancedStats()
+      this.renderPage()
       this.setupEventListeners()
+      console.log("[Stats] Stats page initialized successfully")
     } catch (error) {
-      console.error("[v0] Error initializing stats:", error)
+      console.error("[Stats] Error initializing stats:", error)
       this.showError("Failed to load statistics")
     }
   }
 
+  showLoading() {
+    document.body.innerHTML = `
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <h2>Loading Your Productivity Stats</h2>
+        <p>Analyzing your Pomodoro sessions...</p>
+      </div>
+    `
+  }
+
   async loadStats() {
     try {
-      const result = await chrome.storage.local.get(['dailyStats', 'totalSessions', 'settings'])
+      const result = await chrome.storage.local.get([
+        'dailyStats', 
+        'totalSessions', 
+        'settings',
+        'todos',
+        'sessionHistory', // New: detailed session history
+        'goals' // New: user goals
+      ])
       
       this.stats.dailyStats = result.dailyStats || {}
       this.stats.totalSessions = result.totalSessions || 0
+      this.settings = result.settings || {}
+      this.todos = result.todos || []
+      this.sessionHistory = result.sessionHistory || []
+      this.goals = result.goals || { daily: 8, weekly: 40, monthly: 160 }
       
-      // Calculate additional stats
-      this.calculateStats()
-      
-      console.log("[v0] Stats loaded:", this.stats)
+      console.log("[Stats] Raw data loaded:", {
+        dailyStatsCount: Object.keys(this.stats.dailyStats).length,
+        totalSessions: this.stats.totalSessions,
+        sessionHistoryCount: this.sessionHistory.length
+      })
     } catch (error) {
-      console.error("[v0] Error loading stats:", error)
+      console.error("[Stats] Error loading stats:", error)
       throw error
     }
   }
 
-  calculateStats() {
+  async calculateAdvancedStats() {
+    console.log("[Stats] Calculating advanced statistics...")
+    
     // Calculate totals from daily stats
     let totalFocusTime = 0
     let totalBreakTime = 0
     let totalSessions = 0
-    let maxSessionsInDay = 0
+    let dailySessionCounts = []
 
-    Object.values(this.stats.dailyStats).forEach(day => {
-      totalFocusTime += day.focusTime || 0
-      totalBreakTime += day.breakTime || 0
-      totalSessions += day.focusSessions || 0
-      maxSessionsInDay = Math.max(maxSessionsInDay, day.focusSessions || 0)
+    Object.entries(this.stats.dailyStats).forEach(([date, day]) => {
+      const sessions = day.focusSessions || 0
+      const focusTime = day.focusTime || 0
+      const breakTime = day.breakTime || 0
+      
+      totalFocusTime += focusTime
+      totalBreakTime += breakTime
+      totalSessions += sessions
+      
+      if (sessions > 0) {
+        dailySessionCounts.push({ date, sessions, focusTime })
+      }
     })
 
+    // Update stats
     this.stats.totalFocusTime = totalFocusTime
     this.stats.totalBreakTime = totalBreakTime
     this.stats.totalSessions = totalSessions
     this.stats.averageSessionLength = totalSessions > 0 ? Math.round(totalFocusTime / totalSessions) : 0
+    
+    // Calculate streaks
     this.stats.longestStreak = this.calculateLongestStreak()
     this.stats.currentStreak = this.calculateCurrentStreak()
+    
+    // Find best day
+    this.stats.bestDay = dailySessionCounts.length > 0 
+      ? dailySessionCounts.reduce((best, current) => 
+          current.sessions > best.sessions ? current : best
+        )
+      : null
 
-    // Calculate weekly and monthly stats
+    // Calculate productivity score (0-100)
+    this.stats.productivityScore = this.calculateProductivityScore()
+
+    // Calculate time-based stats
     this.calculateWeeklyStats()
     this.calculateMonthlyStats()
+    this.calculateTrendStats()
+
+    console.log("[Stats] Advanced stats calculated:", {
+      totalSessions: this.stats.totalSessions,
+      totalFocusHours: Math.round(this.stats.totalFocusTime / 60),
+      currentStreak: this.stats.currentStreak,
+      longestStreak: this.stats.longestStreak,
+      productivityScore: this.stats.productivityScore
+    })
+  }
+
+  calculateProductivityScore() {
+    const today = new Date().toISOString().split('T')[0]
+    const last7Days = this.getLast7Days()
+    
+    let totalPossibleSessions = last7Days.length * (this.goals.daily || 8)
+    let actualSessions = 0
+    
+    last7Days.forEach(date => {
+      const day = this.stats.dailyStats[date]
+      if (day) {
+        actualSessions += day.focusSessions || 0
+      }
+    })
+    
+    return totalPossibleSessions > 0 
+      ? Math.round((actualSessions / totalPossibleSessions) * 100)
+      : 0
+  }
+
+  calculateTrendStats() {
+    const last30Days = this.getLast30Days()
+    const last7Days = this.getLast7Days()
+    
+    // Calculate averages
+    let last30DaysSessions = 0
+    let last7DaysSessions = 0
+    
+    last30Days.forEach(date => {
+      const day = this.stats.dailyStats[date]
+      if (day) last30DaysSessions += day.focusSessions || 0
+    })
+    
+    last7Days.forEach(date => {
+      const day = this.stats.dailyStats[date]
+      if (day) last7DaysSessions += day.focusSessions || 0
+    })
+    
+    this.stats.last30DaysAvg = last30Days.length > 0 ? last30DaysSessions / last30Days.length : 0
+    this.stats.last7DaysAvg = last7Days.length > 0 ? last7DaysSessions / last7Days.length : 0
+    
+    // Calculate trend (positive = improving, negative = declining)
+    this.stats.trend = this.stats.last7DaysAvg - this.stats.last30DaysAvg
   }
 
   calculateLongestStreak() {
@@ -80,7 +183,7 @@ class PomodoroStats {
 
     for (let i = 0; i < dates.length; i++) {
       const day = this.stats.dailyStats[dates[i]]
-      if (day.focusSessions > 0) {
+      if (day && (day.focusSessions || 0) > 0) {
         currentStreak++
         longestStreak = Math.max(longestStreak, currentStreak)
       } else {
@@ -92,127 +195,824 @@ class PomodoroStats {
   }
 
   calculateCurrentStreak() {
-    const dates = Object.keys(this.stats.dailyStats).sort()
-    let currentStreak = 0
+    const today = new Date().toISOString().split('T')[0]
+    let currentDate = new Date()
+    let streak = 0
 
-    for (let i = dates.length - 1; i >= 0; i--) {
-      const day = this.stats.dailyStats[dates[i]]
-      if (day.focusSessions > 0) {
-        currentStreak++
+    // Count backwards from today
+    for (let i = 0; i < 365; i++) {
+      const dateStr = currentDate.toISOString().split('T')[0]
+      const day = this.stats.dailyStats[dateStr]
+      
+      if (day && (day.focusSessions || 0) > 0) {
+        streak++
       } else {
         break
       }
+      
+      currentDate.setDate(currentDate.getDate() - 1)
     }
 
-    return currentStreak
+    return streak
   }
 
   calculateWeeklyStats() {
-    const now = new Date()
-    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
+    const last7Days = this.getLast7Days()
     
     this.stats.weeklyStats = {
       focusSessions: 0,
       focusTime: 0,
-      breakTime: 0
+      breakTime: 0,
+      daysActive: 0
     }
 
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart)
-      date.setDate(date.getDate() + i)
-      const dateStr = date.toISOString().split('T')[0]
-      
-      if (this.stats.dailyStats[dateStr]) {
-        const day = this.stats.dailyStats[dateStr]
+    last7Days.forEach(date => {
+      const day = this.stats.dailyStats[date]
+      if (day) {
         this.stats.weeklyStats.focusSessions += day.focusSessions || 0
         this.stats.weeklyStats.focusTime += day.focusTime || 0
         this.stats.weeklyStats.breakTime += day.breakTime || 0
+        if ((day.focusSessions || 0) > 0) {
+          this.stats.weeklyStats.daysActive++
+        }
       }
-    }
+    })
   }
 
   calculateMonthlyStats() {
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const last30Days = this.getLast30Days()
     
     this.stats.monthlyStats = {
       focusSessions: 0,
       focusTime: 0,
-      breakTime: 0
+      breakTime: 0,
+      daysActive: 0
     }
 
-    for (let i = 0; i < now.getDate(); i++) {
-      const date = new Date(monthStart)
-      date.setDate(date.getDate() + i)
-      const dateStr = date.toISOString().split('T')[0]
-      
-      if (this.stats.dailyStats[dateStr]) {
-        const day = this.stats.dailyStats[dateStr]
+    last30Days.forEach(date => {
+      const day = this.stats.dailyStats[date]
+      if (day) {
         this.stats.monthlyStats.focusSessions += day.focusSessions || 0
         this.stats.monthlyStats.focusTime += day.focusTime || 0
         this.stats.monthlyStats.breakTime += day.breakTime || 0
+        if ((day.focusSessions || 0) > 0) {
+          this.stats.monthlyStats.daysActive++
+        }
       }
+    })
+  }
+
+  getLast7Days() {
+    const dates = []
+    const today = new Date()
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      dates.push(date.toISOString().split('T')[0])
+    }
+    
+    return dates
+  }
+
+  getLast30Days() {
+    const dates = []
+    const today = new Date()
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      dates.push(date.toISOString().split('T')[0])
+    }
+    
+    return dates
+  }
+
+  renderPage() {
+    document.body.innerHTML = `
+      <div class="container">
+        ${this.renderHeader()}
+        ${this.renderNavigation()}
+        ${this.renderCurrentView()}
+      </div>
+    `
+    
+    // Add event listeners after rendering
+    setTimeout(() => this.setupEventListeners(), 100)
+  }
+
+  renderHeader() {
+    return `
+      <div class="header">
+        <div class="header-content">
+          <h1>📊 Productivity Dashboard</h1>
+          <p>Track your focus sessions and boost your productivity</p>
+        </div>
+        <div class="header-stats">
+          <div class="header-stat">
+            <div class="stat-number">${this.stats.totalSessions}</div>
+            <div class="stat-label">Total Sessions</div>
+          </div>
+          <div class="header-stat">
+            <div class="stat-number">${Math.round(this.stats.totalFocusTime / 60)}h</div>
+            <div class="stat-label">Total Focus Time</div>
+          </div>
+          <div class="header-stat">
+            <div class="stat-number">${this.stats.productivityScore}%</div>
+            <div class="stat-label">Productivity Score</div>
+          </div>
+        </div>
+      </div>
+    `
+  }
+
+  renderNavigation() {
+    return `
+      <div class="navigation">
+        <button class="nav-btn ${this.currentView === 'overview' ? 'active' : ''}" data-view="overview">
+          <span class="nav-icon">📈</span>
+          <span class="nav-label">Overview</span>
+        </button>
+        <button class="nav-btn ${this.currentView === 'heatmap' ? 'active' : ''}" data-view="heatmap">
+          <span class="nav-icon">🔥</span>
+          <span class="nav-label">Activity</span>
+        </button>
+        <button class="nav-btn ${this.currentView === 'trends' ? 'active' : ''}" data-view="trends">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Trends</span>
+        </button>
+        <button class="nav-btn ${this.currentView === 'goals' ? 'active' : ''}" data-view="goals">
+          <span class="nav-icon">🎯</span>
+          <span class="nav-label">Goals</span>
+        </button>
+      </div>
+    `
+  }
+
+  renderCurrentView() {
+    switch (this.currentView) {
+      case 'overview':
+        return this.renderOverview()
+      case 'heatmap':
+        return this.renderHeatmapView()
+      case 'trends':
+        return this.renderTrendsView()
+      case 'goals':
+        return this.renderGoalsView()
+      default:
+        return this.renderOverview()
     }
   }
 
-  setupEventListeners() {
-    // Add any event listeners if needed
-  }
-
-  renderStats() {
-    if (this.stats.totalSessions === 0 && Object.keys(this.stats.dailyStats).length === 0) {
-      this.showEmptyState()
-      return
+  renderOverview() {
+    if (this.stats.totalSessions === 0) {
+      return this.renderEmptyState()
     }
 
-    this.renderOverviewStats()
-    this.renderHeatmap()
-    this.renderTimeline()
+    return `
+      <div class="view-content">
+        ${this.renderOverviewStats()}
+        ${this.renderQuickHeatmap()}
+        ${this.renderRecentActivity()}
+      </div>
+    `
   }
 
   renderOverviewStats() {
-    const container = document.querySelector('.stats-grid')
-    if (!container) return
+    const focusHours = Math.floor(this.stats.totalFocusTime / 60)
+    const focusMinutes = this.stats.totalFocusTime % 60
+    const avgSessionMins = this.stats.averageSessionLength
 
-    container.innerHTML = `
-      <div class="stat-card">
-        <h3>Total Sessions</h3>
-        <div class="stat-value">${this.stats.totalSessions}</div>
-        <div class="stat-label">Focus sessions completed</div>
-      </div>
-      
-      <div class="stat-card">
-        <h3>Focus Time</h3>
-        <div class="stat-value">${Math.round(this.stats.totalFocusTime / 60)}h</div>
-        <div class="stat-label">Total hours focused</div>
-      </div>
-      
-      <div class="stat-card">
-        <h3>Current Streak</h3>
-        <div class="stat-value">${this.stats.currentStreak}</div>
-        <div class="stat-label">Days in a row</div>
-      </div>
-      
-      <div class="stat-card">
-        <h3>Longest Streak</h3>
-        <div class="stat-value">${this.stats.longestStreak}</div>
-        <div class="stat-label">Best streak</div>
+    return `
+      <div class="stats-grid">
+        <div class="stat-card primary">
+          <div class="stat-header">
+            <h3>🍅 Focus Sessions</h3>
+            <div class="stat-trend ${this.stats.trend > 0 ? 'positive' : this.stats.trend < 0 ? 'negative' : 'neutral'}">
+              ${this.stats.trend > 0 ? '📈' : this.stats.trend < 0 ? '📉' : '➡️'}
+            </div>
+          </div>
+          <div class="stat-value">${this.stats.totalSessions}</div>
+          <div class="stat-details">
+            <div class="stat-detail">
+              <span class="detail-label">This Week:</span>
+              <span class="detail-value">${this.stats.weeklyStats.focusSessions}</span>
+            </div>
+            <div class="stat-detail">
+              <span class="detail-label">This Month:</span>
+              <span class="detail-value">${this.stats.monthlyStats.focusSessions}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="stat-card secondary">
+          <div class="stat-header">
+            <h3>⏱️ Focus Time</h3>
+          </div>
+          <div class="stat-value">${focusHours}h ${focusMinutes}m</div>
+          <div class="stat-details">
+            <div class="stat-detail">
+              <span class="detail-label">Avg Session:</span>
+              <span class="detail-value">${avgSessionMins}m</span>
+            </div>
+            <div class="stat-detail">
+              <span class="detail-label">This Week:</span>
+              <span class="detail-value">${Math.round(this.stats.weeklyStats.focusTime / 60)}h</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="stat-card accent">
+          <div class="stat-header">
+            <h3>🔥 Current Streak</h3>
+          </div>
+          <div class="stat-value">${this.stats.currentStreak}</div>
+          <div class="stat-details">
+            <div class="stat-detail">
+              <span class="detail-label">Best Streak:</span>
+              <span class="detail-value">${this.stats.longestStreak} days</span>
+            </div>
+            <div class="stat-detail">
+              <span class="detail-label">Active Days:</span>
+              <span class="detail-value">${this.stats.weeklyStats.daysActive}/7</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="stat-card success">
+          <div class="stat-header">
+            <h3>📊 Productivity</h3>
+          </div>
+          <div class="stat-value">${this.stats.productivityScore}%</div>
+          <div class="stat-details">
+            <div class="stat-detail">
+              <span class="detail-label">7-day avg:</span>
+              <span class="detail-value">${this.stats.last7DaysAvg.toFixed(1)}</span>
+            </div>
+            <div class="stat-detail">
+              <span class="detail-label">30-day avg:</span>
+              <span class="detail-value">${this.stats.last30DaysAvg.toFixed(1)}</span>
+            </div>
+          </div>
+        </div>
       </div>
     `
   }
 
-  renderHeatmap() {
-    const container = document.querySelector('.heatmap-container')
-    if (!container) return
-
+  renderQuickHeatmap() {
     const heatmapData = this.generateHeatmapData()
-    
-    container.innerHTML = `
-      <h2>Activity Heatmap</h2>
-      <div class="heatmap">
-        ${this.generateHeatmapHTML(heatmapData)}
+    const recentData = this.getLast30Days().map(date => ({
+      date,
+      level: this.getActivityLevel((heatmapData[date] && heatmapData[date].sessions) || 0)
+    }))
+
+    return `
+      <div class="quick-heatmap-container">
+        <div class="section-header">
+          <h2>📅 Recent Activity (Last 30 Days)</h2>
+          <button class="view-full-btn" data-view="heatmap">View Full Heatmap</button>
+        </div>
+        <div class="quick-heatmap">
+          ${recentData.map(day => `
+            <div class="quick-heatmap-cell" 
+                 data-level="${day.level}" 
+                 data-date="${day.date}"
+                 title="${this.getTooltipText(heatmapData[day.date] || { sessions: 0, time: 0 })}">
+            </div>
+          `).join('')}
+        </div>
+        <div class="heatmap-legend">
+          <span class="legend-label">Less</span>
+          <div class="legend-levels">
+            ${[0,1,2,3,4].map(level => `<div class="legend-cell" data-level="${level}"></div>`).join('')}
+          </div>
+          <span class="legend-label">More</span>
+        </div>
       </div>
     `
+  }
+
+  renderHeatmapView() {
+    return `
+      <div class="view-content">
+        <div class="heatmap-container">
+          <div class="section-header">
+            <h2>🔥 Activity Heatmap - Last 12 Months</h2>
+            <div class="heatmap-stats">
+              <span class="heatmap-stat">
+                <strong>${this.stats.totalSessions}</strong> sessions in the last year
+              </span>
+              <span class="heatmap-stat">
+                <strong>${this.stats.currentStreak}</strong> day current streak
+              </span>
+            </div>
+          </div>
+          ${this.renderVerticalHeatmap()}
+        </div>
+      </div>
+    `
+  }
+
+  renderVerticalHeatmap() {
+    const heatmapData = this.generateHeatmapData()
+    const monthsData = this.generateVerticalHeatmapData(heatmapData)
+    
+    return `
+      <div class="vertical-heatmap">
+        <div class="heatmap-months">
+          ${monthsData.map(month => `
+            <div class="heatmap-month">
+              <div class="month-header">
+                <h3 class="month-name">${month.name}</h3>
+                <div class="month-stats">
+                  <span class="month-sessions">${month.totalSessions} sessions</span>
+                  <span class="month-time">${Math.round(month.totalTime / 60)}h</span>
+                </div>
+              </div>
+              <div class="month-grid">
+                ${month.weeks.map(week => `
+                  <div class="week-column">
+                    ${week.map(day => `
+                      <div class="heatmap-cell vertical" 
+                           data-level="${day.level}" 
+                           data-date="${day.date}"
+                           data-sessions="${day.sessions}"
+                           data-time="${day.time}"
+                           title="${this.getTooltipText(day)}">
+                      </div>
+                    `).join('')}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="heatmap-legend">
+          <div class="legend-content">
+            <span class="legend-label">Less</span>
+            <div class="legend-levels">
+              ${[0,1,2,3,4].map(level => `<div class="legend-cell" data-level="${level}"></div>`).join('')}
+            </div>
+            <span class="legend-label">More</span>
+          </div>
+          <div class="legend-info">
+            <span>Each square represents a day. Darker squares indicate more focus sessions.</span>
+          </div>
+        </div>
+      </div>
+    `
+  }
+
+  generateVerticalHeatmapData(heatmapData) {
+    const months = []
+    const today = new Date()
+    
+    // Generate last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const monthName = monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate()
+      
+      let totalSessions = 0
+      let totalTime = 0
+      const weeks = []
+      let currentWeek = []
+      
+      // Add padding for first week if month doesn't start on Sunday
+      const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).getDay()
+      for (let j = 0; j < firstDay; j++) {
+        currentWeek.push({ date: '', sessions: 0, time: 0, level: 0, isEmpty: true })
+      }
+      
+      // Add all days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), day)
+        const dateStr = date.toISOString().split('T')[0]
+        const dayData = heatmapData[dateStr] || { sessions: 0, time: 0 }
+        const level = this.getActivityLevel(dayData.sessions)
+        
+        totalSessions += dayData.sessions
+        totalTime += dayData.time
+        
+        currentWeek.push({
+          date: dateStr,
+          sessions: dayData.sessions,
+          time: dayData.time,
+          level: level,
+          isEmpty: false
+        })
+        
+        // If week is complete (7 days) or it's the last day of month
+        if (currentWeek.length === 7 || day === daysInMonth) {
+          // Pad the last week if necessary
+          while (currentWeek.length < 7) {
+            currentWeek.push({ date: '', sessions: 0, time: 0, level: 0, isEmpty: true })
+          }
+          weeks.push([...currentWeek])
+          currentWeek = []
+        }
+      }
+      
+      months.push({
+        name: monthName,
+        totalSessions,
+        totalTime,
+        weeks
+      })
+    }
+    
+    return months
+  }
+
+  renderTrendsView() {
+    return `
+      <div class="view-content">
+        <div class="trends-container">
+          <div class="section-header">
+            <h2>📈 Productivity Trends</h2>
+          </div>
+          ${this.renderTrendCharts()}
+          ${this.renderInsights()}
+        </div>
+      </div>
+    `
+  }
+
+  renderTrendCharts() {
+    const weeklyData = this.generateWeeklyTrendData()
+    const monthlyData = this.generateMonthlyTrendData()
+    
+    return `
+      <div class="charts-grid">
+        <div class="chart-container">
+          <h3>📊 Weekly Sessions Trend</h3>
+          <div class="simple-chart weekly-chart">
+            ${weeklyData.map((week, index) => `
+              <div class="chart-bar" style="height: ${(week.sessions / Math.max(...weeklyData.map(w => w.sessions)) * 100) || 0}%">
+                <div class="bar-value">${week.sessions}</div>
+                <div class="bar-label">W${week.week}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="chart-summary">
+            Average: ${(weeklyData.reduce((sum, w) => sum + w.sessions, 0) / weeklyData.length).toFixed(1)} sessions/week
+          </div>
+        </div>
+        
+        <div class="chart-container">
+          <h3>⏰ Daily Average Sessions</h3>
+          <div class="daily-averages">
+            ${this.renderDailyAverages()}
+          </div>
+        </div>
+      </div>
+    `
+  }
+
+  generateWeeklyTrendData() {
+    const weeks = []
+    const today = new Date()
+    
+    for (let i = 11; i >= 0; i--) {
+      const weekStart = new Date(today)
+      weekStart.setDate(weekStart.getDate() - (i * 7) - today.getDay())
+      
+      let sessions = 0
+      let time = 0
+      
+      for (let j = 0; j < 7; j++) {
+        const date = new Date(weekStart)
+        date.setDate(date.getDate() + j)
+        const dateStr = date.toISOString().split('T')[0]
+        const dayData = this.stats.dailyStats[dateStr]
+        
+        if (dayData) {
+          sessions += dayData.focusSessions || 0
+          time += dayData.focusTime || 0
+        }
+      }
+      
+      weeks.push({
+        week: 12 - i,
+        sessions,
+        time,
+        startDate: weekStart.toISOString().split('T')[0]
+      })
+    }
+    
+    return weeks
+  }
+
+  generateMonthlyTrendData() {
+    const months = []
+    const today = new Date()
+    
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' })
+      const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate()
+      
+      let sessions = 0
+      let time = 0
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), day)
+        const dateStr = date.toISOString().split('T')[0]
+        const dayData = this.stats.dailyStats[dateStr]
+        
+        if (dayData) {
+          sessions += dayData.focusSessions || 0
+          time += dayData.focusTime || 0
+        }
+      }
+      
+      months.push({ month: monthName, sessions, time })
+    }
+    
+    return months
+  }
+
+  renderDailyAverages() {
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const dailyAverages = new Array(7).fill(0)
+    const dailyCounts = new Array(7).fill(0)
+    
+    Object.entries(this.stats.dailyStats).forEach(([dateStr, dayData]) => {
+      const date = new Date(dateStr)
+      const dayOfWeek = date.getDay()
+      
+      dailyAverages[dayOfWeek] += dayData.focusSessions || 0
+      dailyCounts[dayOfWeek]++
+    })
+    
+    const maxAvg = Math.max(...dailyAverages.map((sum, i) => dailyCounts[i] > 0 ? sum / dailyCounts[i] : 0))
+    
+    return daysOfWeek.map((day, index) => {
+      const avg = dailyCounts[index] > 0 ? dailyAverages[index] / dailyCounts[index] : 0
+      const percentage = maxAvg > 0 ? (avg / maxAvg) * 100 : 0
+      
+      return `
+        <div class="daily-average-item">
+          <div class="day-name">${day.slice(0, 3)}</div>
+          <div class="average-bar">
+            <div class="average-fill" style="height: ${percentage}%"></div>
+          </div>
+          <div class="average-value">${avg.toFixed(1)}</div>
+        </div>
+      `
+    }).join('')
+  }
+
+  renderInsights() {
+    const insights = this.generateInsights()
+    
+    return `
+      <div class="insights-container">
+        <h3>🧠 AI Insights</h3>
+        <div class="insights-grid">
+          ${insights.map(insight => `
+            <div class="insight-card ${insight.type}">
+              <div class="insight-icon">${insight.icon}</div>
+              <div class="insight-content">
+                <h4>${insight.title}</h4>
+                <p>${insight.description}</p>
+                ${insight.action ? `<button class="insight-action">${insight.action}</button>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  generateInsights() {
+    const insights = []
+    
+    // Streak insight
+    if (this.stats.currentStreak > 7) {
+      insights.push({
+        type: 'success',
+        icon: '🔥',
+        title: 'Amazing Streak!',
+        description: `You're on a ${this.stats.currentStreak}-day streak! Keep up the excellent work.`,
+      })
+    } else if (this.stats.currentStreak === 0) {
+      insights.push({
+        type: 'warning',
+        icon: '⚡',
+        title: 'Start Your Streak',
+        description: 'Complete at least one focus session today to start building your streak!',
+        action: 'Start Focus Session'
+      })
+    }
+    
+    // Productivity trend
+    if (this.stats.trend > 1) {
+      insights.push({
+        type: 'success',
+        icon: '📈',
+        title: 'Improving Productivity',
+        description: `Your focus sessions increased by ${this.stats.trend.toFixed(1)} per day this week!`,
+      })
+    } else if (this.stats.trend < -1) {
+      insights.push({
+        type: 'warning',
+        icon: '📉',
+        title: 'Productivity Dip',
+        description: `Your sessions decreased by ${Math.abs(this.stats.trend).toFixed(1)} per day. Consider adjusting your schedule.`,
+      })
+    }
+    
+    // Best day insight
+    if (this.stats.bestDay) {
+      const date = new Date(this.stats.bestDay.date).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'short', 
+        day: 'numeric' 
+      })
+      insights.push({
+        type: 'info',
+        icon: '🌟',
+        title: 'Best Day Ever',
+        description: `Your most productive day was ${date} with ${this.stats.bestDay.sessions} sessions!`,
+      })
+    }
+    
+    // Goal progress
+    const weeklyGoalProgress = (this.stats.weeklyStats.focusSessions / this.goals.daily) * 100
+    if (weeklyGoalProgress >= 100) {
+      insights.push({
+        type: 'success',
+        icon: '🎯',
+        title: 'Goal Achieved!',
+        description: `You've hit ${weeklyGoalProgress.toFixed(0)}% of your weekly goal. Excellent work!`,
+      })
+    } else if (weeklyGoalProgress > 70) {
+      insights.push({
+        type: 'info',
+        icon: '🎯',
+        title: 'Close to Goal',
+        description: `You're at ${weeklyGoalProgress.toFixed(0)}% of your weekly goal. Just a little more to go!`,
+      })
+    }
+    
+    return insights.slice(0, 4) // Show max 4 insights
+  }
+
+  renderGoalsView() {
+    return `
+      <div class="view-content">
+        <div class="goals-container">
+          <div class="section-header">
+            <h2>🎯 Goals & Progress</h2>
+            <button class="edit-goals-btn" id="editGoalsBtn">Edit Goals</button>
+          </div>
+          ${this.renderGoalProgress()}
+          ${this.renderGoalSettings()}
+        </div>
+      </div>
+    `
+  }
+
+  renderGoalProgress() {
+    const dailyProgress = Math.min((this.getTodaysSessions() / this.goals.daily) * 100, 100)
+    const weeklyProgress = Math.min((this.stats.weeklyStats.focusSessions / this.goals.weekly) * 100, 100)
+    const monthlyProgress = Math.min((this.stats.monthlyStats.focusSessions / this.goals.monthly) * 100, 100)
+    
+    return `
+      <div class="goals-progress">
+        <div class="goal-item">
+          <div class="goal-header">
+            <h3>📅 Daily Goal</h3>
+            <span class="goal-value">${this.getTodaysSessions()} / ${this.goals.daily}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${dailyProgress}%"></div>
+          </div>
+          <div class="progress-text">${dailyProgress.toFixed(0)}% complete</div>
+        </div>
+        
+        <div class="goal-item">
+          <div class="goal-header">
+            <h3>📊 Weekly Goal</h3>
+            <span class="goal-value">${this.stats.weeklyStats.focusSessions} / ${this.goals.weekly}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${weeklyProgress}%"></div>
+          </div>
+          <div class="progress-text">${weeklyProgress.toFixed(0)}% complete</div>
+        </div>
+        
+        <div class="goal-item">
+          <div class="goal-header">
+            <h3>📈 Monthly Goal</h3>
+            <span class="goal-value">${this.stats.monthlyStats.focusSessions} / ${this.goals.monthly}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${monthlyProgress}%"></div>
+          </div>
+          <div class="progress-text">${monthlyProgress.toFixed(0)}% complete</div>
+        </div>
+      </div>
+    `
+  }
+
+  renderGoalSettings() {
+    return `
+      <div class="goal-settings" style="display: none;">
+        <h3>⚙️ Goal Settings</h3>
+        <div class="goal-inputs">
+          <div class="goal-input">
+            <label for="dailyGoal">Daily Sessions</label>
+            <input type="number" id="dailyGoal" value="${this.goals.daily}" min="1" max="20">
+          </div>
+          <div class="goal-input">
+            <label for="weeklyGoal">Weekly Sessions</label>
+            <input type="number" id="weeklyGoal" value="${this.goals.weekly}" min="7" max="140">
+          </div>
+          <div class="goal-input">
+            <label for="monthlyGoal">Monthly Sessions</label>
+            <input type="number" id="monthlyGoal" value="${this.goals.monthly}" min="30" max="600">
+          </div>
+        </div>
+        <div class="goal-actions">
+          <button class="save-goals-btn" id="saveGoalsBtn">Save Goals</button>
+          <button class="cancel-goals-btn" id="cancelGoalsBtn">Cancel</button>
+        </div>
+      </div>
+    `
+  }
+
+  getTodaysSessions() {
+    const today = new Date().toISOString().split('T')[0]
+    const todayData = this.stats.dailyStats[today]
+    return todayData ? (todayData.focusSessions || 0) : 0
+  }
+
+  renderRecentActivity() {
+    const recentActivity = this.getRecentActivity()
+    
+    if (recentActivity.length === 0) {
+      return `
+        <div class="recent-activity-container">
+          <h2>📋 Recent Activity</h2>
+          <div class="empty-activity">
+            <div class="empty-icon">📊</div>
+            <h3>No recent activity</h3>
+            <p>Start your first focus session to see your activity here.</p>
+          </div>
+        </div>
+      `
+    }
+
+    return `
+      <div class="recent-activity-container">
+        <div class="section-header">
+          <h2>📋 Recent Activity</h2>
+        </div>
+        <div class="activity-timeline">
+          ${recentActivity.map(activity => `
+            <div class="timeline-item">
+              <div class="timeline-date">
+                <div class="date-day">${activity.day}</div>
+                <div class="date-month">${activity.month}</div>
+              </div>
+              <div class="timeline-content">
+                <div class="activity-summary">
+                  <span class="activity-sessions">${activity.sessions} session${activity.sessions > 1 ? 's' : ''}</span>
+                  <span class="activity-time">${Math.round(activity.time / 60)} hours</span>
+                </div>
+                <div class="activity-details">
+                  ${activity.sessions >= 8 ? '🔥 Excellent day!' : 
+                    activity.sessions >= 4 ? '👍 Good progress' : 
+                    activity.sessions >= 1 ? '✨ Getting started' : ''}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  getRecentActivity() {
+    const dates = Object.keys(this.stats.dailyStats)
+      .sort()
+      .reverse()
+      .slice(0, 10)
+    
+    return dates.map(date => {
+      const day = this.stats.dailyStats[date]
+      const dateObj = new Date(date)
+      
+      return {
+        date: date,
+        day: dateObj.getDate(),
+        month: dateObj.toLocaleDateString('en-US', { month: 'short' }),
+        sessions: day.focusSessions || 0,
+        time: day.focusTime || 0
+      }
+    }).filter(activity => activity.sessions > 0)
   }
 
   generateHeatmapData() {
@@ -244,141 +1044,166 @@ class PomodoroStats {
     return 4
   }
 
-  generateHeatmapHTML(data) {
-    const dates = Object.keys(data).sort()
-    const weeks = []
-    let currentWeek = []
-    
-    // Group dates into weeks (7 days per week)
-    for (let i = 0; i < dates.length; i++) {
-      currentWeek.push({ date: dates[i], ...data[dates[i]] })
-      
-      if (currentWeek.length === 7 || i === dates.length - 1) {
-        // Pad the last week if it's not complete
-        while (currentWeek.length < 7) {
-          currentWeek.push({ date: '', sessions: 0, time: 0, level: 0 })
-        }
-        weeks.push([...currentWeek])
-        currentWeek = []
-      }
-    }
-    
-    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    
-    return `
-      <div class="heatmap-row">
-        <div class="heatmap-day-label"></div>
-        ${dayLabels.map(day => `<div class="heatmap-day-label">${day}</div>`).join('')}
-      </div>
-      ${weeks.map(week => `
-        <div class="heatmap-row">
-          <div class="heatmap-day-label">${this.getWeekLabel(week[0]?.date)}</div>
-          <div class="heatmap-week">
-            ${week.map(day => `
-              <div class="heatmap-cell" 
-                   data-level="${day.level}" 
-                   data-date="${day.date}"
-                   data-sessions="${day.sessions}"
-                   data-time="${day.time}"
-                   title="${this.getTooltipText(day)}">
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `).join('')}
-    `
-  }
-
-  getWeekLabel(dateStr) {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
-
   getTooltipText(day) {
-    if (!day.date || day.sessions === 0) {
+    if (!day || !day.sessions || day.sessions === 0) {
       return "No activity"
     }
-    return `${day.date}: ${day.sessions} sessions (${Math.round(day.time / 60)}h)`
+    return `${day.sessions} session${day.sessions > 1 ? 's' : ''} (${Math.round(day.time / 60)}h ${day.time % 60}m)`
   }
 
-  renderTimeline() {
-    const container = document.querySelector('.timeline-container')
-    if (!container) return
+  renderEmptyState() {
+    return `
+      <div class="empty-state">
+        <div class="empty-state-icon">🍅</div>
+        <h3>Start Your Productivity Journey</h3>
+        <p>Complete your first Pomodoro session to see detailed statistics and insights about your productivity.</p>
+        <button class="start-session-btn" onclick="chrome.tabs.create({url: chrome.runtime.getURL('popup.html')})">
+          Start Your First Session
+        </button>
+      </div>
+    `
+  }
 
-    const recentActivity = this.getRecentActivity()
-    
-    if (recentActivity.length === 0) {
-      container.innerHTML = `
-        <h2>Recent Activity</h2>
-        <div class="empty-state">
-          <div class="empty-state-icon">📊</div>
-          <h3>No activity yet</h3>
-          <p>Start your first focus session to see your activity timeline here.</p>
-        </div>
-      `
-      return
+  setupEventListeners() {
+    // Navigation
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const view = e.currentTarget.dataset.view
+        this.switchView(view)
+      })
+    })
+
+    // View full heatmap button
+    const viewFullBtn = document.querySelector('.view-full-btn')
+    if (viewFullBtn) {
+      viewFullBtn.addEventListener('click', (e) => {
+        const view = e.currentTarget.dataset.view
+        this.switchView(view)
+      })
     }
 
-    container.innerHTML = `
-      <h2>Recent Activity</h2>
-      <div class="timeline">
-        ${recentActivity.map(activity => `
-          <div class="timeline-item">
-            <div class="timeline-icon focus">🍅</div>
-            <div class="timeline-content">
-              <div class="timeline-title">${activity.sessions} focus session${activity.sessions > 1 ? 's' : ''}</div>
-              <div class="timeline-time">${activity.date}</div>
-              <div class="timeline-duration">${Math.round(activity.time / 60)} hours focused</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `
-  }
-
-  getRecentActivity() {
-    const dates = Object.keys(this.stats.dailyStats)
-      .sort()
-      .reverse()
-      .slice(0, 10)
+    // Goals editing
+    const editGoalsBtn = document.getElementById('editGoalsBtn')
+    const saveGoalsBtn = document.getElementById('saveGoalsBtn')
+    const cancelGoalsBtn = document.getElementById('cancelGoalsBtn')
     
-    return dates.map(date => {
-      const day = this.stats.dailyStats[date]
-      return {
-        date: new Date(date).toLocaleDateString('en-US', { 
-          weekday: 'short', 
-          month: 'short', 
-          day: 'numeric' 
-        }),
-        sessions: day.focusSessions || 0,
-        time: day.focusTime || 0
-      }
-    }).filter(activity => activity.sessions > 0)
+    if (editGoalsBtn) {
+      editGoalsBtn.addEventListener('click', () => {
+        document.querySelector('.goal-settings').style.display = 'block'
+        editGoalsBtn.style.display = 'none'
+      })
+    }
+
+    if (saveGoalsBtn) {
+      saveGoalsBtn.addEventListener('click', () => this.saveGoals())
+    }
+
+    if (cancelGoalsBtn) {
+      cancelGoalsBtn.addEventListener('click', () => this.cancelGoalsEdit())
+    }
+
+    // Heatmap cell tooltips
+    document.querySelectorAll('.heatmap-cell, .quick-heatmap-cell').forEach(cell => {
+      cell.addEventListener('mouseenter', (e) => {
+        this.showTooltip(e)
+      })
+      
+      cell.addEventListener('mouseleave', () => {
+        this.hideTooltip()
+      })
+    })
   }
 
-  showEmptyState() {
-    const container = document.querySelector('.container')
-    if (!container) return
-
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">📊</div>
-        <h3>No Statistics Available</h3>
-        <p>Start using the Pomodoro timer to see your productivity statistics here.</p>
-      </div>
+  switchView(view) {
+    this.currentView = view
+    
+    // Update navigation
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === view)
+    })
+    
+    // Update content
+    const contentContainer = document.querySelector('.container')
+    contentContainer.innerHTML = `
+      ${this.renderHeader()}
+      ${this.renderNavigation()}
+      ${this.renderCurrentView()}
     `
+    
+    // Re-setup event listeners
+    setTimeout(() => this.setupEventListeners(), 100)
+  }
+
+  async saveGoals() {
+    const dailyGoal = parseInt(document.getElementById('dailyGoal').value)
+    const weeklyGoal = parseInt(document.getElementById('weeklyGoal').value)
+    const monthlyGoal = parseInt(document.getElementById('monthlyGoal').value)
+    
+    this.goals = {
+      daily: dailyGoal,
+      weekly: weeklyGoal,
+      monthly: monthlyGoal
+    }
+    
+    try {
+      await chrome.storage.local.set({ goals: this.goals })
+      console.log("[Stats] Goals saved successfully")
+      
+      // Recalculate stats with new goals
+      await this.calculateAdvancedStats()
+      
+      // Switch back to goals view to show updated progress
+      this.switchView('goals')
+      
+    } catch (error) {
+      console.error("[Stats] Error saving goals:", error)
+    }
+  }
+
+  cancelGoalsEdit() {
+    document.querySelector('.goal-settings').style.display = 'none'
+    document.getElementById('editGoalsBtn').style.display = 'inline-block'
+    
+    // Reset input values
+    document.getElementById('dailyGoal').value = this.goals.daily
+    document.getElementById('weeklyGoal').value = this.goals.weekly
+    document.getElementById('monthlyGoal').value = this.goals.monthly
+  }
+
+  showTooltip(e) {
+    const cell = e.currentTarget
+    const tooltip = document.createElement('div')
+    tooltip.className = 'heatmap-tooltip'
+    tooltip.textContent = cell.title
+    
+    // Position tooltip
+    const rect = cell.getBoundingClientRect()
+    tooltip.style.position = 'fixed'
+    tooltip.style.left = rect.left + rect.width / 2 + 'px'
+    tooltip.style.top = rect.top - 10 + 'px'
+    tooltip.style.transform = 'translate(-50%, -100%)'
+    tooltip.style.zIndex = '1000'
+    
+    document.body.appendChild(tooltip)
+    
+    // Store reference for cleanup
+    this.currentTooltip = tooltip
+  }
+
+  hideTooltip() {
+    if (this.currentTooltip) {
+      this.currentTooltip.remove()
+      this.currentTooltip = null
+    }
   }
 
   showError(message) {
-    const container = document.querySelector('.container')
-    if (!container) return
-
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">❌</div>
+    document.body.innerHTML = `
+      <div class="error-state">
+        <div class="error-icon">❌</div>
         <h3>Error Loading Statistics</h3>
         <p>${message}</p>
+        <button class="retry-btn" onclick="window.location.reload()">Retry</button>
       </div>
     `
   }
@@ -386,6 +1211,6 @@ class PomodoroStats {
 
 // Initialize stats page when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[v0] DOM loaded, initializing stats")
+  console.log("[Stats] DOM loaded, initializing stats")
   new PomodoroStats()
 })

@@ -1,4 +1,4 @@
-// popup.js: Corrected script for Pomodoro Timer Chrome Extension
+// Enhanced popup.js with dynamic timer updates
 
 class PomodoroPopup {
     constructor() {
@@ -34,6 +34,8 @@ class PomodoroPopup {
         };
 
         this.state = {};
+        this.updateInterval = null;
+        this.lastUpdateTime = 0;
         
         this.initialize();
     }
@@ -41,6 +43,9 @@ class PomodoroPopup {
     async initialize() {
         this.initializeEventListeners();
         await this.loadState();
+
+        // Start dynamic timer updates
+        this.startDynamicUpdates();
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.type === "TIMER_UPDATE") {
@@ -50,9 +55,126 @@ class PomodoroPopup {
         });
     }
 
+    startDynamicUpdates() {
+        // Clear any existing interval
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
+
+        // Update every second for smooth countdown
+        this.updateInterval = setInterval(() => {
+            if (this.state && this.state.isRunning) {
+                // Simulate countdown locally for smooth UI
+                if (this.state.currentTime > 0) {
+                    this.state.currentTime = Math.max(0, this.state.currentTime - 1);
+                    this.updateTimerDisplay();
+                }
+            }
+            
+            // Sync with background every 5 seconds to correct any drift
+            const now = Date.now();
+            if (now - this.lastUpdateTime > 5000) {
+                this.syncWithBackground();
+                this.lastUpdateTime = now;
+            }
+        }, 1000);
+
+        console.log("[v0] Dynamic timer updates started");
+    }
+
+    async syncWithBackground() {
+        try {
+            const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
+            if (response && response.state) {
+                // Only update if there's a significant difference (more than 2 seconds)
+                const timeDiff = Math.abs(this.state.currentTime - response.state.currentTime);
+                if (timeDiff > 2 || this.state.isRunning !== response.state.isRunning) {
+                    this.state = response.state;
+                    this.updateDisplay();
+                }
+            }
+        } catch (error) {
+            // Background script might not be available, continue with local countdown
+            console.log("[v0] Could not sync with background, continuing with local timer");
+        }
+    }
+
+    updateTimerDisplay() {
+        if (!this.state || !this.elements.timerText) {
+            return;
+        }
+
+        const minutes = Math.floor(this.state.currentTime / 60);
+        const seconds = this.state.currentTime % 60;
+        this.elements.timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        
+        // Update progress circle
+        this.updateProgressCircle();
+    }
+
+    updateProgressCircle() {
+        const circle = this.elements.timerCircle;
+        if (!circle) return;
+
+        const totalTime = this.getTotalTimeForCurrentMode();
+        const progress = totalTime > 0 ? (totalTime - this.state.currentTime) / totalTime : 0;
+        
+        // Create or update the progress ring
+        let progressRing = circle.querySelector('.progress-ring');
+        if (!progressRing) {
+            progressRing = document.createElement('div');
+            progressRing.className = 'progress-ring';
+            progressRing.innerHTML = `
+                <svg class="progress-svg" viewBox="0 0 120 120">
+                    <circle class="progress-track" cx="60" cy="60" r="54" />
+                    <circle class="progress-fill" cx="60" cy="60" r="54" />
+                </svg>
+            `;
+            circle.appendChild(progressRing);
+        }
+
+        const progressFill = progressRing.querySelector('.progress-fill');
+        if (progressFill) {
+            const circumference = 2 * Math.PI * 54;
+            const strokeDashoffset = circumference - (progress * circumference);
+            progressFill.style.strokeDashoffset = strokeDashoffset;
+        }
+    }
+
+    getTotalTimeForCurrentMode() {
+        if (!this.state || !this.state.settings) return 25 * 60;
+        
+        switch (this.state.currentMode) {
+            case 'focus':
+                return this.state.settings.focusTime * 60;
+            case 'shortBreak':
+                return this.state.settings.shortBreak * 60;
+            case 'longBreak':
+                return this.state.settings.longBreak * 60;
+            default:
+                return 25 * 60;
+        }
+    }
+
     initializeEventListeners() {
-        this.elements.startBtn?.addEventListener("click", () => this.sendMessageToBackground("START_TIMER"));
-        this.elements.pauseBtn?.addEventListener("click", () => this.sendMessageToBackground("PAUSE_TIMER"));
+        this.elements.startBtn?.addEventListener("click", () => {
+            this.sendMessageToBackground("START_TIMER");
+            // Immediately update UI for responsiveness
+            if (this.state) {
+                this.state.isRunning = true;
+                this.updateDisplay();
+            }
+        });
+        
+        this.elements.pauseBtn?.addEventListener("click", () => {
+            this.sendMessageToBackground("PAUSE_TIMER");
+            // Immediately update UI for responsiveness
+            if (this.state) {
+                this.state.isRunning = false;
+                this.updateDisplay();
+            }
+        });
+        
         this.elements.resetBtn?.addEventListener("click", () => this.sendMessageToBackground("RESET_TIMER"));
         this.elements.skipBreakBtn?.addEventListener("click", () => this.sendMessageToBackground("SKIP_BREAK"));
         this.elements.settingsBtn?.addEventListener("click", () => this.openSettings());
@@ -104,9 +226,7 @@ class PomodoroPopup {
     }
     
     updateToggleButton(button, isActive) {
-        if (!button) {
-            return;
-        }
+        if (!button) return;
         button.classList.toggle("active", isActive);
     }
 
@@ -169,35 +289,60 @@ class PomodoroPopup {
     }
 
     updateDisplay() {
-        if (!this.state || !this.elements.timerText) {
-            return;
-        }
+        if (!this.state) return;
 
-        const minutes = Math.floor(this.state.currentTime / 60);
-        const seconds = this.state.currentTime % 60;
-        this.elements.timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        // Update timer display
+        this.updateTimerDisplay();
         
-        if (this.elements.timerLabel) this.elements.timerLabel.textContent = this.state.currentMode === 'focus' ? 'Focus Time' : 'Break Time';
-        if (this.elements.currentMode) this.elements.currentMode.textContent = this.state.currentMode.charAt(0).toUpperCase() + this.state.currentMode.slice(1);
+        if (this.elements.timerLabel) {
+            const labelMap = {
+                'focus': 'Focus Time',
+                'shortBreak': 'Short Break',
+                'longBreak': 'Long Break'
+            };
+            this.elements.timerLabel.textContent = labelMap[this.state.currentMode] || 'Focus Time';
+        }
+        
+        if (this.elements.currentMode) {
+            const modeMap = {
+                'focus': 'Focus',
+                'shortBreak': 'Short Break',
+                'longBreak': 'Long Break'
+            };
+            this.elements.currentMode.textContent = modeMap[this.state.currentMode] || 'Focus';
+        }
+        
         if (this.elements.sessionCount) this.elements.sessionCount.textContent = this.state.sessionCount;
 
-        if (this.elements.timerCircle) this.elements.timerCircle.classList.toggle("active", this.state.isRunning);
+        // Update timer circle active state
+        if (this.elements.timerCircle) {
+            this.elements.timerCircle.classList.toggle("running", this.state.isRunning);
+            this.elements.timerCircle.classList.toggle("focus", this.state.currentMode === 'focus');
+            this.elements.timerCircle.classList.toggle("break", this.state.currentMode !== 'focus');
+        }
+
+        // Update control buttons
         if (this.elements.startBtn) this.elements.startBtn.style.display = this.state.isRunning ? 'none' : 'block';
         if (this.elements.pauseBtn) this.elements.pauseBtn.style.display = this.state.isRunning ? 'block' : 'none';
         
+        // Update skip break visibility
         const isBreakMode = this.state.currentMode === "shortBreak" || this.state.currentMode === "longBreak";
         if (this.elements.skipBreakContainer) this.elements.skipBreakContainer.style.display = isBreakMode ? "flex" : "none";
 
+        // Update body classes for theming
         document.body.className = "";
         if (this.state.currentMode === "shortBreak") document.body.classList.add("break-mode");
         if (this.state.currentMode === "longBreak") document.body.classList.add("long-break-mode");
+        if (this.state.isRunning) document.body.classList.add("timer-running");
         
+        // Update toggle buttons
         if (this.state.settings) {
             this.updateToggleButton(this.elements.toggleBlockingBtn, this.state.settings.websiteBlocking);
             this.updateToggleButton(this.elements.toggleBreakOverlayBtn, this.state.settings.breakOverlay);
             this.updateToggleButton(this.elements.toggleFocusIndicatorBtn, this.state.settings.focusIndicator);
         }
 
+        // Update quick settings
         if (this.elements.focusTimeSelect) this.elements.focusTimeSelect.value = this.state.settings.focusTime;
         if (this.elements.breakTimeSelect) this.elements.breakTimeSelect.value = this.state.settings.shortBreak;
     }
@@ -338,8 +483,24 @@ class PomodoroPopup {
     openStats() {
         chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") });
     }
+
+    // Cleanup when popup closes
+    destroy() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
+    }
 }
 
+// Initialize popup and handle cleanup
+let pomodoroPopup;
 document.addEventListener("DOMContentLoaded", () => {
-    new PomodoroPopup();
+    pomodoroPopup = new PomodoroPopup();
+});
+
+// Cleanup on page unload
+window.addEventListener("beforeunload", () => {
+    if (pomodoroPopup) {
+        pomodoroPopup.destroy();
+    }
 });
