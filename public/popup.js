@@ -31,8 +31,6 @@ class PomodoroPopup {
         };
 
         this.state = {};
-        this.updateInterval = null;
-        this.lastUpdateTime = 0;
         
         this.initialize();
     }
@@ -41,59 +39,12 @@ class PomodoroPopup {
         this.initializeEventListeners();
         await this.loadState();
 
-        // Start dynamic timer updates
-        this.startDynamicUpdates();
-
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.type === "TIMER_UPDATE") {
                 this.state = message.state;
                 this.updateDisplay();
             }
         });
-    }
-
-    startDynamicUpdates() {
-        // Clear any existing interval
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-        }
-
-        // Update every second for smooth countdown
-        this.updateInterval = setInterval(() => {
-            if (this.state && this.state.isRunning) {
-                // Simulate countdown locally for smooth UI
-                if (this.state.currentTime > 0) {
-                    this.state.currentTime = Math.max(0, this.state.currentTime - 1);
-                    this.updateTimerDisplay();
-                }
-            }
-            
-            // Sync with background every 5 seconds to correct any drift
-            const now = Date.now();
-            if (now - this.lastUpdateTime > 5000) {
-                this.syncWithBackground();
-                this.lastUpdateTime = now;
-            }
-        }, 1000);
-
-        console.log("[v0] Dynamic timer updates started");
-    }
-
-    async syncWithBackground() {
-        try {
-            const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
-            if (response && response.state) {
-                // Only update if there's a significant difference (more than 2 seconds)
-                const timeDiff = Math.abs(this.state.currentTime - response.state.currentTime);
-                if (timeDiff > 2 || this.state.isRunning !== response.state.isRunning) {
-                    this.state = response.state;
-                    this.updateDisplay();
-                }
-            }
-        } catch (error) {
-            // Background script might not be available, continue with local countdown
-            console.log("[v0] Could not sync with background, continuing with local timer");
-        }
     }
 
     updateTimerDisplay() {
