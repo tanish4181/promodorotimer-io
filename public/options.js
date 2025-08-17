@@ -1,13 +1,14 @@
-// Options page script for Pomodoro Timer Chrome Extension
+// Enhanced Options Page Script for Pomodoro Timer Chrome Extension
 
-class PomodoroOptions {
+class ModernPomodoroOptions {
   constructor() {
-    console.log("[v0] Initializing PomodoroOptions");
+    console.log("[v0] Initializing Modern PomodoroOptions");
     this.elements = {};
     this.currentSettings = {};
     this.backgroundAvailable = false;
 
     this.initializeElements();
+    this.setupTabNavigation();
     this.bindEventListeners();
     this.initializeOptions();
   }
@@ -22,41 +23,25 @@ class PomodoroOptions {
     );
 
     // Toggle settings - Fixed to properly get checkbox elements
-    this.elements.autoStartBreaks =
-      document.getElementById("auto-start-breaks");
-    this.elements.autoStartPomodoros = document.getElementById(
-      "auto-start-pomodoros"
-    );
-    this.elements.autoSwitchModes =
-      document.getElementById("auto-switch-modes");
+    this.elements.autoStartBreaks = document.getElementById("auto-start-breaks");
+    this.elements.autoStartPomodoros = document.getElementById("auto-start-pomodoros");
+    this.elements.autoSwitchModes = document.getElementById("auto-switch-modes");
     this.elements.notifications = document.getElementById("notifications");
     this.elements.sounds = document.getElementById("sounds");
     this.elements.breakReminders = document.getElementById("break-reminders");
     this.elements.enforceBreaks = document.getElementById("enforce-breaks");
-    this.elements.youtubeIntegration = document.getElementById(
-      "youtube-integration"
-    );
+    this.elements.youtubeIntegration = document.getElementById("youtube-integration");
     this.elements.breakOverlay = document.getElementById("break-overlay");
     this.elements.breakCountdown = document.getElementById("break-countdown");
-    this.elements.nextSessionInfo =
-      document.getElementById("next-session-info");
+    this.elements.nextSessionInfo = document.getElementById("next-session-info");
     this.elements.focusOverlay = document.getElementById("focus-overlay");
-    this.elements.hideDistractions =
-      document.getElementById("hide-distractions");
+    this.elements.hideDistractions = document.getElementById("hide-distractions");
     this.elements.focusIndicator = document.getElementById("focus-indicator");
     this.elements.websiteBlocking = document.getElementById("website-blocking");
-    this.elements.hideYoutubeComments = document.getElementById(
-      "hide-youtube-comments"
-    );
-    this.elements.hideYoutubeRecommendations = document.getElementById(
-      "hide-youtube-recommendations"
-    );
-    this.elements.hideYoutubeShorts = document.getElementById(
-      "hide-youtube-shorts"
-    );
-    this.elements.pauseYoutubeBreaks = document.getElementById(
-      "pause-youtube-breaks"
-    );
+    this.elements.hideYoutubeComments = document.getElementById("hide-youtube-comments");
+    this.elements.hideYoutubeRecommendations = document.getElementById("hide-youtube-recommendations");
+    this.elements.hideYoutubeShorts = document.getElementById("hide-youtube-shorts");
+    this.elements.pauseYoutubeBreaks = document.getElementById("pause-youtube-breaks");
     this.elements.collectStats = document.getElementById("collect-stats");
 
     // Buttons
@@ -65,73 +50,59 @@ class PomodoroOptions {
     this.elements.viewStats = document.getElementById("view-stats");
     this.elements.resetDefaults = document.getElementById("reset-defaults");
 
-    // Status
+    // Status and header elements
     this.elements.saveStatus = document.getElementById("save-status");
+    this.elements.headerFocusTime = document.getElementById("header-focus-time");
+    this.elements.headerBreakTime = document.getElementById("header-break-time");
+    this.elements.storageUsage = document.getElementById("storage-usage");
 
-    console.log(
-      "[v0] Elements initialized:",
-      Object.keys(this.elements).length,
-      "elements found"
-    );
+    // Tab elements
+    this.elements.tabButtons = document.querySelectorAll('.nav-tab');
+    this.elements.tabContents = document.querySelectorAll('.tab-content');
 
-    // Log which toggle elements were not found
-    Object.entries(this.elements).forEach(([key, element]) => {
-      if (!element && this.isToggleElement(key)) {
-        console.warn(`[v0] Toggle element not found: ${key}`);
-      }
+    console.log("[v0] Elements initialized:", Object.keys(this.elements).length, "elements found");
+  }
+
+  setupTabNavigation() {
+    this.elements.tabButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const targetTab = e.target.closest('.nav-tab').dataset.tab;
+        this.switchTab(targetTab);
+      });
     });
   }
 
-  isToggleElement(key) {
-    const toggleElements = [
-      "autoStartBreaks",
-      "autoStartPomodoros",
-      "autoSwitchModes",
-      "notifications",
-      "sounds",
-      "breakReminders",
-      "enforceBreaks",
-      "youtubeIntegration",
-      "breakOverlay",
-      "breakCountdown",
-      "nextSessionInfo",
-      "focusOverlay",
-      "hideDistractions",
-      "focusIndicator",
-      "websiteBlocking",
-      "hideYoutubeComments",
-      "hideYoutubeRecommendations",
-      "hideYoutubeShorts",
-      "pauseYoutubeBreaks",
-      "collectStats",
-    ];
-    return toggleElements.includes(key);
+  switchTab(tabName) {
+    // Remove active class from all tabs and contents
+    this.elements.tabButtons.forEach(btn => btn.classList.remove('active'));
+    this.elements.tabContents.forEach(content => content.classList.remove('active'));
+
+    // Add active class to selected tab and content
+    const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+    const activeContent = document.getElementById(tabName);
+    
+    if (activeButton && activeContent) {
+      activeButton.classList.add('active');
+      activeContent.classList.add('active');
+    }
   }
 
   bindEventListeners() {
     // Timer settings
     if (this.elements.focusTime) {
-      this.elements.focusTime.addEventListener("change", () =>
-        this.handleSettingChange()
-      );
+      this.elements.focusTime.addEventListener("change", () => this.handleSettingChange());
     }
     if (this.elements.shortBreak) {
-      this.elements.shortBreak.addEventListener("change", () =>
-        this.handleSettingChange()
-      );
+      this.elements.shortBreak.addEventListener("change", () => this.handleSettingChange());
     }
     if (this.elements.longBreak) {
-      this.elements.longBreak.addEventListener("change", () =>
-        this.handleSettingChange()
-      );
+      this.elements.longBreak.addEventListener("change", () => this.handleSettingChange());
     }
     if (this.elements.sessionsUntilLongBreak) {
-      this.elements.sessionsUntilLongBreak.addEventListener("change", () =>
-        this.handleSettingChange()
-      );
+      this.elements.sessionsUntilLongBreak.addEventListener("change", () => this.handleSettingChange());
     }
 
-    // Toggle settings - Fixed event binding
+    // Toggle settings
     this.bindToggleListener("autoStartBreaks");
     this.bindToggleListener("autoStartPomodoros");
     this.bindToggleListener("autoSwitchModes");
@@ -155,9 +126,7 @@ class PomodoroOptions {
 
     // Buttons
     if (this.elements.exportData) {
-      this.elements.exportData.addEventListener("click", () =>
-        this.exportData()
-      );
+      this.elements.exportData.addEventListener("click", () => this.exportData());
     }
     if (this.elements.clearData) {
       this.elements.clearData.addEventListener("click", () => this.clearData());
@@ -166,9 +135,7 @@ class PomodoroOptions {
       this.elements.viewStats.addEventListener("click", () => this.viewStats());
     }
     if (this.elements.resetDefaults) {
-      this.elements.resetDefaults.addEventListener("click", () =>
-        this.resetDefaults()
-      );
+      this.elements.resetDefaults.addEventListener("click", () => this.resetDefaults());
     }
   }
 
@@ -181,9 +148,7 @@ class PomodoroOptions {
       });
       console.log(`[v0] Bound event listener for ${settingKey}`);
     } else {
-      console.warn(
-        `[v0] Could not bind event listener for ${settingKey} - element not found`
-      );
+      console.warn(`[v0] Could not bind event listener for ${settingKey} - element not found`);
     }
   }
 
@@ -197,20 +162,16 @@ class PomodoroOptions {
       if (this.backgroundAvailable) {
         console.log("[v0] Background script is available");
       } else {
-        console.warn(
-          "[v0] Background script not available, some features may be limited"
-        );
-        this.showSaveStatus(
-          "Background script not available, settings will be saved locally",
-          "warning"
-        );
-
-        // Set up periodic check for background script availability
-        this.setupBackgroundCheck();
+        console.warn("[v0] Background script not available, using local storage only");
+        this.showSaveStatus("Using local storage mode", "warning");
       }
 
       // Load settings
       await this.loadSettings();
+      
+      // Update storage usage
+      await this.updateStorageUsage();
+      
     } catch (error) {
       console.error("[v0] Error initializing options:", error);
       this.showSaveStatus("Error initializing options", "error");
@@ -219,7 +180,6 @@ class PomodoroOptions {
 
   async checkBackgroundScript() {
     try {
-      // Try to send a simple message to check if background script is available
       await chrome.runtime.sendMessage({ type: "GET_STATE" });
       return true;
     } catch (error) {
@@ -228,45 +188,80 @@ class PomodoroOptions {
     }
   }
 
-  setupBackgroundCheck() {
-    // Check every 5 seconds if background script becomes available
-    setInterval(async () => {
-      if (!this.backgroundAvailable) {
-        const isAvailable = await this.checkBackgroundScript();
-        if (isAvailable) {
-          console.log("[v0] Background script is now available");
-          this.backgroundAvailable = true;
-          this.showSaveStatus("Background script connected", "success");
-        }
-      }
-    }, 5000);
-  }
-
-  // In your original public/options.js
-
-  // --- REPLACE your old handleToggleChange with this ---
   async handleToggleChange(settingName) {
     const element = this.elements[settingName];
     const newValue = element.checked;
     this.currentSettings[settingName] = newValue;
 
-    // The fix: Save directly to storage instead of sending a message
-    await chrome.storage.local.set({ settings: this.currentSettings });
-    this.showSaveStatus("Setting updated", "success");
+    try {
+      // Save directly to storage
+      await chrome.storage.local.set({ settings: this.currentSettings });
+      
+      // Also try to notify background script if available
+      if (this.backgroundAvailable) {
+        try {
+          await chrome.runtime.sendMessage({
+            type: "SETTINGS_UPDATED",
+            settings: { [settingName]: newValue }
+          });
+        } catch (error) {
+          console.warn("[v0] Could not notify background script:", error);
+        }
+      }
+      
+      this.showSaveStatus("Setting updated", "success");
+      console.log(`[v0] Setting ${settingName} updated to ${newValue}`);
+    } catch (error) {
+      console.error("[v0] Error saving setting:", error);
+      this.showSaveStatus("Error saving setting", "error");
+      // Revert the toggle
+      element.checked = !newValue;
+      this.currentSettings[settingName] = !newValue;
+    }
   }
 
-  // --- REPLACE your old handleSettingChange with this ---
   async handleSettingChange() {
-    // Update the settings object from the form
-    this.currentSettings.focusTime = Number.parseInt(
-      this.elements.focusTime.value
-    );
-    // ... (update other number inputs) ...
+    try {
+      // Update the settings object from the form
+      this.currentSettings.focusTime = parseInt(this.elements.focusTime.value);
+      this.currentSettings.shortBreak = parseInt(this.elements.shortBreak.value);
+      this.currentSettings.longBreak = parseInt(this.elements.longBreak.value);
+      this.currentSettings.sessionsUntilLongBreak = parseInt(this.elements.sessionsUntilLongBreak.value);
 
-    // The fix: Save directly to storage instead of sending a message
-    await chrome.storage.local.set({ settings: this.currentSettings });
-    this.showSaveStatus("Settings saved", "success");
+      // Update header display
+      this.updateHeaderStats();
+
+      // Save to storage
+      await chrome.storage.local.set({ settings: this.currentSettings });
+      
+      // Notify background script if available
+      if (this.backgroundAvailable) {
+        try {
+          await chrome.runtime.sendMessage({
+            type: "SETTINGS_UPDATED",
+            settings: this.currentSettings
+          });
+        } catch (error) {
+          console.warn("[v0] Could not notify background script:", error);
+        }
+      }
+      
+      this.showSaveStatus("Settings saved", "success");
+    } catch (error) {
+      console.error("[v0] Error saving settings:", error);
+      this.showSaveStatus("Error saving settings", "error");
+    }
   }
+
+  updateHeaderStats() {
+    if (this.elements.headerFocusTime) {
+      this.elements.headerFocusTime.textContent = this.currentSettings.focusTime || 25;
+    }
+    if (this.elements.headerBreakTime) {
+      this.elements.headerBreakTime.textContent = this.currentSettings.shortBreak || 5;
+    }
+  }
+
   async loadSettings() {
     try {
       console.log("[v0] Loading settings");
@@ -278,105 +273,55 @@ class PomodoroOptions {
       console.log("[v0] Merged settings:", this.currentSettings);
 
       // Update form elements
-      if (this.elements.focusTime) {
-        this.elements.focusTime.value = this.currentSettings.focusTime || 25;
-      }
-      if (this.elements.shortBreak) {
-        this.elements.shortBreak.value = this.currentSettings.shortBreak || 5;
-      }
-      if (this.elements.longBreak) {
-        this.elements.longBreak.value = this.currentSettings.longBreak || 15;
-      }
-      if (this.elements.sessionsUntilLongBreak) {
-        this.elements.sessionsUntilLongBreak.value =
-          this.currentSettings.sessionsUntilLongBreak || 4;
-      }
-
-      // Update toggle switches with improved logic
-      this.setToggleValue(
-        "autoStartBreaks",
-        this.currentSettings.autoStartBreaks !== false
-      );
-      this.setToggleValue(
-        "autoStartPomodoros",
-        this.currentSettings.autoStartPomodoros === true
-      );
-      this.setToggleValue(
-        "autoSwitchModes",
-        this.currentSettings.autoSwitchModes !== false
-      );
-      this.setToggleValue(
-        "notifications",
-        this.currentSettings.notifications !== false
-      );
-      this.setToggleValue("sounds", this.currentSettings.sounds !== false);
-      this.setToggleValue(
-        "breakReminders",
-        this.currentSettings.breakReminders !== false
-      );
-      this.setToggleValue(
-        "enforceBreaks",
-        this.currentSettings.enforceBreaks !== false
-      );
-      this.setToggleValue(
-        "youtubeIntegration",
-        this.currentSettings.youtubeIntegration !== false
-      );
-      this.setToggleValue(
-        "breakOverlay",
-        this.currentSettings.breakOverlay !== false
-      );
-      this.setToggleValue(
-        "breakCountdown",
-        this.currentSettings.breakCountdown !== false
-      );
-      this.setToggleValue(
-        "nextSessionInfo",
-        this.currentSettings.nextSessionInfo !== false
-      );
-      this.setToggleValue(
-        "focusOverlay",
-        this.currentSettings.focusOverlay === true
-      );
-      this.setToggleValue(
-        "hideDistractions",
-        this.currentSettings.hideDistractions !== false
-      );
-      this.setToggleValue(
-        "focusIndicator",
-        this.currentSettings.focusIndicator !== false
-      );
-      this.setToggleValue(
-        "websiteBlocking",
-        this.currentSettings.websiteBlocking !== false
-      );
-      this.setToggleValue(
-        "hideYoutubeComments",
-        this.currentSettings.hideYoutubeComments !== false
-      );
-      this.setToggleValue(
-        "hideYoutubeRecommendations",
-        this.currentSettings.hideYoutubeRecommendations !== false
-      );
-      this.setToggleValue(
-        "hideYoutubeShorts",
-        this.currentSettings.hideYoutubeShorts !== false
-      );
-      this.setToggleValue(
-        "pauseYoutubeBreaks",
-        this.currentSettings.pauseYoutubeBreaks !== false
-      );
-      this.setToggleValue(
-        "collectStats",
-        this.currentSettings.collectStats !== false
-      );
-
-      console.log("[v0] Settings loaded successfully:", this.currentSettings);
+      this.updateFormElements();
+      
+      console.log("[v0] Settings loaded successfully");
       this.showSaveStatus("Settings loaded", "success");
     } catch (error) {
       console.error("[v0] Error loading settings:", error);
       this.showSaveStatus("Error loading settings", "error");
     }
+  }
+
+  updateFormElements() {
+    // Update number inputs
+    if (this.elements.focusTime) {
+      this.elements.focusTime.value = this.currentSettings.focusTime || 25;
+    }
+    if (this.elements.shortBreak) {
+      this.elements.shortBreak.value = this.currentSettings.shortBreak || 5;
+    }
+    if (this.elements.longBreak) {
+      this.elements.longBreak.value = this.currentSettings.longBreak || 15;
+    }
+    if (this.elements.sessionsUntilLongBreak) {
+      this.elements.sessionsUntilLongBreak.value = this.currentSettings.sessionsUntilLongBreak || 4;
+    }
+
+    // Update toggle switches
+    this.setToggleValue("autoStartBreaks", this.currentSettings.autoStartBreaks !== false);
+    this.setToggleValue("autoStartPomodoros", this.currentSettings.autoStartPomodoros === true);
+    this.setToggleValue("autoSwitchModes", this.currentSettings.autoSwitchModes !== false);
+    this.setToggleValue("notifications", this.currentSettings.notifications !== false);
+    this.setToggleValue("sounds", this.currentSettings.sounds !== false);
+    this.setToggleValue("breakReminders", this.currentSettings.breakReminders !== false);
+    this.setToggleValue("enforceBreaks", this.currentSettings.enforceBreaks !== false);
+    this.setToggleValue("youtubeIntegration", this.currentSettings.youtubeIntegration !== false);
+    this.setToggleValue("breakOverlay", this.currentSettings.breakOverlay !== false);
+    this.setToggleValue("breakCountdown", this.currentSettings.breakCountdown !== false);
+    this.setToggleValue("nextSessionInfo", this.currentSettings.nextSessionInfo !== false);
+    this.setToggleValue("focusOverlay", this.currentSettings.focusOverlay === true);
+    this.setToggleValue("hideDistractions", this.currentSettings.hideDistractions !== false);
+    this.setToggleValue("focusIndicator", this.currentSettings.focusIndicator !== false);
+    this.setToggleValue("websiteBlocking", this.currentSettings.websiteBlocking !== false);
+    this.setToggleValue("hideYoutubeComments", this.currentSettings.hideYoutubeComments !== false);
+    this.setToggleValue("hideYoutubeRecommendations", this.currentSettings.hideYoutubeRecommendations !== false);
+    this.setToggleValue("hideYoutubeShorts", this.currentSettings.hideYoutubeShorts !== false);
+    this.setToggleValue("pauseYoutubeBreaks", this.currentSettings.pauseYoutubeBreaks !== false);
+    this.setToggleValue("collectStats", this.currentSettings.collectStats !== false);
+
+    // Update header stats
+    this.updateHeaderStats();
   }
 
   setToggleValue(settingKey, value) {
@@ -385,9 +330,7 @@ class PomodoroOptions {
       element.checked = value;
       console.log(`[v0] Set toggle ${settingKey} to ${value}`);
     } else {
-      console.warn(
-        `[v0] Could not set toggle ${settingKey} - element not found`
-      );
+      console.warn(`[v0] Could not set toggle ${settingKey} - element not found`);
     }
   }
 
@@ -450,11 +393,10 @@ class PomodoroOptions {
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `pomodoro-timer-data-${
-        new Date().toISOString().split("T")[0]
-      }.json`;
+      link.download = `pomodoro-timer-data-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(link);
       link.click();
-
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       this.showSaveStatus("Data exported successfully", "success");
@@ -465,16 +407,13 @@ class PomodoroOptions {
   }
 
   async clearData() {
-    if (
-      confirm(
-        "Are you sure you want to clear all data? This action cannot be undone."
-      )
-    ) {
+    if (confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
       try {
         await chrome.storage.local.clear();
         this.currentSettings = this.getDefaultSettings();
-        this.loadSettings();
+        this.updateFormElements();
         this.showSaveStatus("All data cleared", "success");
+        await this.updateStorageUsage();
       } catch (error) {
         console.error("[v0] Error clearing data:", error);
         this.showSaveStatus("Error clearing data", "error");
@@ -498,13 +437,17 @@ class PomodoroOptions {
         await chrome.storage.local.set({ settings: this.currentSettings });
 
         if (this.backgroundAvailable) {
-          await chrome.runtime.sendMessage({
-            type: "SETTINGS_UPDATED",
-            settings: this.currentSettings,
-          });
+          try {
+            await chrome.runtime.sendMessage({
+              type: "SETTINGS_UPDATED",
+              settings: this.currentSettings,
+            });
+          } catch (error) {
+            console.warn("[v0] Could not notify background script:", error);
+          }
         }
 
-        await this.loadSettings();
+        this.updateFormElements();
         this.showSaveStatus("Settings reset to defaults", "success");
       } catch (error) {
         console.error("[v0] Error resetting settings:", error);
@@ -512,10 +455,28 @@ class PomodoroOptions {
       }
     }
   }
+
+  async updateStorageUsage() {
+    try {
+      const result = await chrome.storage.local.get(null);
+      const dataStr = JSON.stringify(result);
+      const sizeInBytes = new Blob([dataStr]).size;
+      const sizeInKB = Math.round(sizeInBytes / 1024 * 100) / 100;
+      
+      if (this.elements.storageUsage) {
+        this.elements.storageUsage.textContent = `${sizeInKB} KB`;
+      }
+    } catch (error) {
+      console.error("[v0] Error calculating storage usage:", error);
+      if (this.elements.storageUsage) {
+        this.elements.storageUsage.textContent = "Unknown";
+      }
+    }
+  }
 }
 
 // Initialize options page when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[v0] DOM loaded, initializing options");
-  new PomodoroOptions();
+  console.log("[v0] DOM loaded, initializing modern options");
+  new ModernPomodoroOptions();
 });
