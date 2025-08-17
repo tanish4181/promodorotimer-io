@@ -64,6 +64,12 @@ class YouTubeIntegration {
     
     // Set up periodic state refresh
     this.setupPeriodicRefresh()
+
+    // Listen for YouTube's own navigation events for faster updates
+    document.addEventListener('yt-navigate-finish', () => {
+      console.log('[v0] YouTube navigation finished, re-running setup.');
+      this.setupYouTubeIntegration();
+    });
   }
 
   isYouTubePage() {
@@ -257,55 +263,43 @@ class YouTubeIntegration {
   }
 
   hideShorts() {
-    console.log("[v0] Hiding all YouTube Shorts")
-    
-    // Create comprehensive CSS to hide all Shorts
-    const style = document.createElement('style')
-    style.id = 'pomodoro-youtube-styles'
-    style.textContent = `
-      /* Hide all Shorts content */
-      ytd-reel-shelf-renderer,
-      ytd-rich-section-renderer:has(ytd-reel-shelf-renderer),
-      ytd-guide-entry-renderer:has(a[href="/shorts"]),
-      ytd-mini-guide-entry-renderer:has(a[href="/shorts"]),
-      ytd-tab:has(a[href*="/shorts/"]),
-      ytd-rich-item-renderer:has(a[href*="/shorts/"]),
-      ytd-video-renderer:has(a[href*="/shorts/"]),
-      ytd-grid-video-renderer:has(a[href*="/shorts/"]),
-      ytd-thumbnail[is-shorts],
-      [href*="/shorts/"] {
-        display: none !important;
-      }
-      
-      /* Hide Shorts button in navigation */
-      ytd-guide-entry-renderer:has(a[href="/shorts"]),
-      ytd-mini-guide-entry-renderer:has(a[href="/shorts"]) {
-        display: none !important;
-      }
-      
-      /* Hide Shorts shelf */
-      ytd-reel-shelf-renderer,
-      ytd-rich-section-renderer:has(ytd-reel-shelf-renderer) {
-        display: none !important;
-      }
-      
-      /* Hide Shorts in search results */
-      ytd-search ytd-video-renderer:has(a[href*="/shorts/"]) {
-        display: none !important;
-      }
-      
-      /* Hide Shorts tab */
-      ytd-tab:has(a[href*="/shorts/"]) {
-        display: none !important;
-      }
-    `
-    
-    // Remove existing styles and add new ones
-    const existingStyles = document.getElementById('pomodoro-youtube-styles')
-    if (existingStyles) {
-      existingStyles.remove()
+    console.log("[v0] Hiding all YouTube Shorts with enhanced selectors")
+
+    const styleId = 'pomodoro-youtube-styles';
+    let style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      document.head.appendChild(style);
     }
-    document.head.appendChild(style)
+    
+    style.textContent = `
+      /* General catch-all for any element linking to shorts */
+      a[href*="/shorts/"],
+
+      /* Shorts tab in main navigation sidebar */
+      ytd-guide-entry-renderer:has(a[title="Shorts"]),
+      
+      /* Shorts shelf on home page and other pages */
+      ytd-rich-shelf-renderer:has(ytd-thumbnail-overlay-time-status-renderer[overlay-style="SHORTS"]),
+      
+      /* Individual shorts videos in grids (home page, search, etc.) */
+      ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+      ytd-grid-video-renderer:has(a[href*="/shorts/"]),
+      ytd-video-renderer:has(a[href*="/shorts/"]),
+
+      /* Shorts in 'Up next' recommendations on watch page */
+      ytd-compact-video-renderer:has(a[href*="/shorts/"]),
+
+      /* The entire Shorts player UI */
+      ytd-shorts,
+      ytd-reel-video-renderer,
+
+      /* Mini-player for shorts */
+      ytd-miniplayer[miniplayer-active] ytd-reel-video-renderer {
+        display: none !important;
+      }
+    `;
   }
 
   showFocusModeIndicator() {
