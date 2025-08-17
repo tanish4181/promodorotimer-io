@@ -191,11 +191,11 @@ body {
 /* Progress Ring */
 .progress-ring {
   position: absolute;
-  top: -2px;
-  left: -2px;
+  top: 50%;
+  left: 50%;
   width: 204px;
   height: 204px;
-  transform: rotate(-90deg);
+  transform: translate(-50%, -50%) rotate(-90deg);
 }
 
 .progress-svg {
