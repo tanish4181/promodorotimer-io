@@ -376,8 +376,14 @@ class YouTubeIntegration {
       case "TIMER_UPDATE":
         // Update local state with new timer state
         if (message.state) {
-          this.timerState = message.state
-          this.setupYouTubeIntegration()
+          this.timerState = message.state;
+          this.setupYouTubeIntegration();
+
+          // If the mode is no longer a break, ensure the overlay is removed.
+          const isBreak = this.timerState.currentMode === 'shortBreak' || this.timerState.currentMode === 'longBreak';
+          if (!isBreak && this.overlayElement) {
+            this.removeBreakOverlay();
+          }
         }
         break
         
