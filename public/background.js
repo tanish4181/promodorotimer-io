@@ -44,8 +44,8 @@ class PomodoroBackground {
       todos: [],
     };
 
-    this.timerInterval = null;
-    this.lastTickTime = 0;
+    this.lastTickTime = 0; // Keep for time drift calculation on load
+    this.alarmName = "pomodoroTimer";
 
     this.initialize();
   }
@@ -61,8 +61,10 @@ class PomodoroBackground {
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.log("[v0] Background received message:", message.type);
         this.handleMessage(message, sender, sendResponse);
-        return true; // Keep message channel open
+        return true; // Keep message channel open for async responses
       });
+
+      // Listener for settings changes
       chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "local" && changes.settings) {
           console.log("Background detected settings change, updating state.");
@@ -73,8 +75,12 @@ class PomodoroBackground {
         }
       });
 
-      // Set up periodic timer updates
-      this.startPeriodicUpdates();
+      // Set up alarm listener for the timer
+      chrome.alarms.onAlarm.addListener((alarm) => {
+        if (alarm.name === this.alarmName) {
+          this.handleTimerTick();
+        }
+      });
 
       // Handle extension lifecycle
       chrome.runtime.onStartup.addListener(() => {
@@ -93,14 +99,6 @@ class PomodoroBackground {
     }
   }
 
-  startPeriodicUpdates() {
-    // Update timer every second when running
-    setInterval(() => {
-      if (this.state.isRunning) {
-        this.handleTimerTick();
-      }
-    }, 1000);
-  }
 
   async loadState() {
     try {
@@ -301,9 +299,12 @@ class PomodoroBackground {
   }
 
   async startTimer() {
-    console.log("[v0] Starting timer");
+    console.log("[v0] Starting timer with chrome.alarms");
     this.state.isRunning = true;
     this.lastTickTime = Date.now();
+    chrome.alarms.create(this.alarmName, {
+        periodInMinutes: 1 / 60, // Fire every second
+    });
 
     if (
       this.state.settings.youtubeIntegration &&
@@ -319,6 +320,7 @@ class PomodoroBackground {
   async pauseTimer() {
     console.log("[v0] Pausing timer");
     this.state.isRunning = false;
+    chrome.alarms.clear(this.alarmName);
 
     if (this.state.settings.youtubeIntegration) {
       this.notifyContentScripts({ type: "TIMER_PAUSED" });
@@ -331,6 +333,7 @@ class PomodoroBackground {
   async resetTimer() {
     console.log("[v0] Resetting timer");
     this.state.isRunning = false;
+    chrome.alarms.clear(this.alarmName);
 
     const timeMap = {
       focus: this.state.settings.focusTime * 60,
@@ -358,23 +361,22 @@ class PomodoroBackground {
   }
 
   handleTimerTick() {
-    if (!this.state.isRunning) return;
+    if (!this.state.isRunning) {
+      chrome.alarms.clear(this.alarmName);
+      return;
+    }
 
-    const now = Date.now();
-    const timeDiff = Math.floor((now - this.lastTickTime) / 1000);
-    this.lastTickTime = now;
-
-    this.state.currentTime -= timeDiff;
-
-    if (this.state.currentTime <= 0) {
-      this.handleTimerComplete();
-    } else {
+    if (this.state.currentTime > 0) {
+      this.state.currentTime -= 1;
       this.broadcastUpdate();
+    } else {
+      this.handleTimerComplete();
     }
   }
 
   async handleTimerComplete() {
     this.state.isRunning = false;
+    chrome.alarms.clear(this.alarmName);
 
     if (this.state.settings.notifications) {
       await this.showNotification();
