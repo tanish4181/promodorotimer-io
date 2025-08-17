@@ -101,12 +101,14 @@ class AdvancedWebsiteBlocker {
       }
 
     } catch (error) {
-      console.error("[Blocker] Error checking block status:", error);
+      console.error("[Blocker] Error checking block status:", error.message);
       
-      // If extension context is invalidated, try to reload the page
       if (error.message?.includes("Extension context invalidated")) {
-        console.log("[Blocker] Extension context invalidated, attempting page reload");
+        console.log("[Blocker] Context invalidated, reloading page to re-establish connection.");
         window.location.reload();
+      } else if (error.message?.includes("Could not establish connection")) {
+        console.log("[Blocker] Connection failed, retrying...");
+        this.retryInitialization(); // Use the existing retry logic
       }
     }
   }

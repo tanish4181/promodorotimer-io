@@ -83,6 +83,10 @@ class YouTubeIntegration {
       console.log("[v0] Timer state loaded:", this.timerState)
     } catch (error) {
       console.error("[v0] Error loading timer state:", error)
+      if (error.message?.includes("Extension context invalidated")) {
+        console.log("[ContentScript] Context invalidated, reloading page to re-establish connection.");
+        window.location.reload();
+      }
     }
   }
 

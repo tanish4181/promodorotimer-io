@@ -119,7 +119,10 @@ class PomodoroBackground {
       ]);
 
       if (result.timerState) {
+        const defaultSettings = this.state.settings;
         this.state = { ...this.state, ...result };
+        // Merge loaded settings with defaults to ensure new settings are not missing
+        this.state.settings = { ...defaultSettings, ...this.state.settings };
 
         // Handle time drift if extension was inactive
         if (this.state.isRunning && result.lastActiveTime) {
