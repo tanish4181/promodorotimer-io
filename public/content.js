@@ -178,9 +178,16 @@ class YouTubeIntegration {
   }
 
   shouldHideDistractions() {
-    return this.timerState?.settings?.hideDistractions && 
-           this.timerState?.currentMode === 'focus' && 
-           this.timerState?.isRunning
+    if (!this.timerState?.settings?.hideDistractions) {
+      return false;
+    }
+
+    if (this.timerState.settings.youtubeHidingCondition === 'always') {
+      return true;
+    }
+
+    // Default 'on-timer' behavior
+    return this.timerState?.currentMode === 'focus' && this.timerState?.isRunning;
   }
 
   hideDistractions() {
