@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="popup-container">
+    <div class="header">
+      <h1>Pomodoro Timer</h1>
+      <div class="header-actions">
+        <button id="stats-btn" class="icon-btn" title="View Stats">📊</button>
+        <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+      </div>
+    </div>
+    
+    <div class="timer-display">
+      <div id="timer-circle">
+        <div id="timer-text">25:00</div>
+        <div id="timer-label">Focus Time</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button id="start-btn" class="primary-btn">Start</button>
+      <button id="pause-btn" class="secondary-btn" style="display: none;">Pause</button>
+      <button id="reset-btn" class="secondary-btn">Reset</button>
+    </div>
+
+    <!-- Skip Break Button (only visible during breaks) -->
+    <div id="skip-break-container" class="skip-break-container" style="display: none;">
+      <button id="skip-break-btn" class="skip-break-btn">⏭️ Skip Break & Start Focus</button>
+    </div>
+    
+    <div class="session-info">
+      <div class="info-item">
+        <span class="label">Session:</span>
+        <span id="session-count">1</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Mode:</span>
+        <span id="current-mode">Focus</span>
+      </div>
+    </div>
+
+    
+
+    <!-- Focus Tasks Section -->
+    <div class="todo-section">
+      <div class="section-header">
+        <h3>Focus Tasks</h3>
+      </div>
+      
+      <div class="add-todo">
+        <input type="text" id="todo-input" placeholder="Add a task for this session...">
+        <button id="add-todo-btn" class="add-btn">+</button>
+      </div>
+      
+      <div id="todo-list" class="todo-list">
+        <!-- Todo items will be populated here -->
+      </div>
+    </div>
+    
+    <div class="quick-settings">
+      <div class="setting-group">
+        <label>Focus Time:</label>
+        <select id="focus-time">
+          <option value="25">25 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="60">60 min</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label>Break Time:</label>
+        <select id="break-time">
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15">15 min</option>
+        </select>
+      </div>
+    </div>
+    
+    
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

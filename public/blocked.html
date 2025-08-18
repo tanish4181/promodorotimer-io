@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Blocked - Pomodoro Timer</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    
+    .container {
+      max-width: 500px;
+      padding: 2rem;
+    }
+    
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #059669;
+    }
+    
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: #d1d5db;
+      line-height: 1.6;
+    }
+    
+    .actions {
+      margin-top: 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-primary {
+      background: #059669;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #047857;
+      transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+      background: #374151;
+      color: white;
+      border: 1px solid #4b5563;
+    }
+    
+    .btn-secondary:hover {
+      background: #4b5563;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🍅</div>
+    <h1>Website Blocked</h1>
+    <p>This website is blocked during your focus session.</p>
+    <p>Stay focused and get back to work!</p>
+    <div class="actions">
+      <button class="btn btn-primary" id="close-tab">Close Tab</button>
+      <button class="btn btn-secondary" id="pause-timer">Pause Timer</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Close tab button
+      document.getElementById('close-tab').addEventListener('click', function() {
+        chrome.runtime.sendMessage({ type: "CLOSE_CURRENT_TAB" });
+      });
+
+      // Pause timer button
+      document.getElementById('pause-timer').addEventListener('click', async function() {
+        try {
+          if (chrome && chrome.runtime) {
+            await chrome.runtime.sendMessage({ type: "PAUSE_TIMER" });
+            window.close();
+          }
+        } catch (error) {
+          console.error("Error pausing timer:", error);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
