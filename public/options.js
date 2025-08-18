@@ -45,8 +45,6 @@ class ModernPomodoroOptions {
 
     // Website blocking elements
     this.elements.websiteBlocking = document.getElementById("website-blocking");
-    this.elements.breakBlockAll = document.getElementById("break-block-all");
-    this.elements.breakUseAllowlist = document.getElementById("break-use-allowlist");
     this.elements.allowlistInput = document.getElementById("allowlist-input");
     this.elements.addAllowlistBtn = document.getElementById("add-allowlist-btn");
     this.elements.allowlistContainer = document.getElementById("allowlist-container");
@@ -126,8 +124,6 @@ class ModernPomodoroOptions {
       this.elements.hideDistractions,
       this.elements.focusIndicator,
       this.elements.websiteBlocking,
-      this.elements.breakBlockAll,
-      this.elements.breakUseAllowlist,
       this.elements.hideYoutubeComments,
       this.elements.hideYoutubeRecommendations,
       this.elements.hideYoutubeShorts,
@@ -156,29 +152,6 @@ class ModernPomodoroOptions {
     }
     if (this.elements.clearDataBtn) {
       this.elements.clearDataBtn.addEventListener("click", () => this.clearAllData());
-    }
-
-    // Break mode mutual exclusion - ensures at least one is always checked
-    if (this.elements.breakBlockAll && this.elements.breakUseAllowlist) {
-      this.elements.breakBlockAll.addEventListener("change", (e) => {
-        if (e.target.checked) {
-          this.elements.breakUseAllowlist.checked = false;
-        } else {
-          // Prevent unchecking both; if this is unchecked, check the other one.
-          this.elements.breakUseAllowlist.checked = true;
-        }
-        this.saveSettings();
-      });
-
-      this.elements.breakUseAllowlist.addEventListener("change", (e) => {
-        if (e.target.checked) {
-          this.elements.breakBlockAll.checked = false;
-        } else {
-          // Prevent unchecking both; if this is unchecked, check the other one.
-          this.elements.breakBlockAll.checked = true;
-        }
-        this.saveSettings();
-      });
     }
 
     // YouTube hiding condition listeners
@@ -291,37 +264,6 @@ class ModernPomodoroOptions {
     }
   }
 
-  getDefaultSettings() {
-    return {
-      focusTime: 25,
-      shortBreak: 5,
-      longBreak: 15,
-      sessionsUntilLongBreak: 4,
-      autoStartBreaks: true,
-      autoStartPomodoros: false,
-      autoSwitchModes: true,
-      notifications: true,
-      sounds: true,
-      breakReminders: true,
-      enforceBreaks: true,
-      youtubeIntegration: true,
-      breakOverlay: true,
-      breakCountdown: true,
-      nextSessionInfo: true,
-      focusOverlay: false,
-      hideDistractions: true,
-      focusIndicator: true,
-      websiteBlocking: true,
-      breakBlockAll: false,
-      breakUseAllowlist: true,
-      hideYoutubeComments: true,
-      hideYoutubeRecommendations: true,
-      hideYoutubeShorts: true,
-      pauseYoutubeBreaks: true,
-      collectStats: true,
-    };
-  }
-
   populateSettings() {
     // Number inputs
     if (this.elements.focusTime) this.elements.focusTime.value = this.currentSettings.focusTime || 25;
@@ -335,8 +277,7 @@ class ModernPomodoroOptions {
       "notifications", "sounds", "breakReminders", "enforceBreaks",
       "youtubeIntegration", "breakOverlay", "breakCountdown",
       "nextSessionInfo", "focusOverlay", "hideDistractions",
-      "focusIndicator", "websiteBlocking", "breakBlockAll",
-      "breakUseAllowlist", "hideYoutubeComments", "hideYoutubeRecommendations",
+      "focusIndicator", "websiteBlocking", "hideYoutubeComments", "hideYoutubeRecommendations",
       "hideYoutubeShorts", "pauseYoutubeBreaks", "collectStats"
     ];
 
@@ -378,8 +319,6 @@ class ModernPomodoroOptions {
       hideDistractions: this.elements.hideDistractions?.checked || false,
       focusIndicator: this.elements.focusIndicator?.checked || false,
       websiteBlocking: this.elements.websiteBlocking?.checked || false,
-      breakBlockAll: this.elements.breakBlockAll?.checked || false,
-      breakUseAllowlist: this.elements.breakUseAllowlist?.checked || false,
       hideYoutubeComments: this.elements.hideYoutubeComments?.checked || false,
       hideYoutubeRecommendations: this.elements.hideYoutubeRecommendations?.checked || false,
       hideYoutubeShorts: this.elements.hideYoutubeShorts?.checked || false,
@@ -389,16 +328,11 @@ class ModernPomodoroOptions {
     };
 
     try {
-      // Save to storage
-      await chrome.storage.local.set({ settings: newSettings });
-      
-      // Update background script if available
-      if (this.backgroundAvailable) {
-        await chrome.runtime.sendMessage({
-          type: "SETTINGS_UPDATED",
-          settings: newSettings
-        });
-      }
+      // Always send a message to the background script to handle saving.
+      await chrome.runtime.sendMessage({
+        type: "SETTINGS_UPDATED",
+        settings: newSettings
+      });
       
       this.currentSettings = newSettings;
       this.updateHeaderStats();
@@ -640,23 +574,16 @@ class ModernPomodoroOptions {
 
   async saveWebsiteLists() {
     try {
-      await chrome.storage.local.set({
-        allowedWebsites: this.allowlist,
-        blockedWebsites: this.blocklist
+      // Always send a message to the background script to handle saving.
+      await chrome.runtime.sendMessage({
+        type: "WEBSITE_LISTS_UPDATED",
+        allowlist: this.allowlist,
+        blocklist: this.blocklist
       });
       
-      // Update background script if available
-      if (this.backgroundAvailable) {
-        await chrome.runtime.sendMessage({
-          type: "WEBSITE_LISTS_UPDATED",
-          allowlist: this.allowlist,
-          blocklist: this.blocklist
-        });
-      }
-      
-      console.log("[v0] Website lists saved");
+      console.log("[v1] Website lists update message sent");
     } catch (error) {
-      console.error("[v0] Error saving website lists:", error);
+      console.error("[v1] Error sending website lists update:", error);
     }
   }
 

@@ -76,15 +76,6 @@ class PomodoroBackground {
         return true;
       });
 
-      chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === "local" && changes.settings) {
-          this.state.settings = { ...this.state.settings, ...changes.settings.newValue };
-          if (!this.state.isRunning) {
-            this.timer.resetTimer();
-          }
-        }
-      });
-
       chrome.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === this.alarmName) {
             this.timer.handleTimerTick();
@@ -144,6 +135,7 @@ class PomodoroBackground {
     console.log("[v1] Handling message:", message.type);
     let success = true;
     let response = {};
+    let shouldSaveState = false;
 
     try {
         switch (message.type) {
@@ -152,38 +144,48 @@ class PomodoroBackground {
                 break;
             case "SETTINGS_UPDATED":
                 await this.settings.updateSettings(message.settings);
+                shouldSaveState = true;
                 break;
             case "START_TIMER":
                 await this.timer.startTimer();
+                shouldSaveState = true;
                 break;
             case "PAUSE_TIMER":
                 await this.timer.pauseTimer();
+                shouldSaveState = true;
                 break;
             case "RESET_TIMER":
                 await this.timer.resetTimer();
+                shouldSaveState = true;
                 break;
             case "SKIP_BREAK":
                 await this.timer.skipBreak();
+                shouldSaveState = true;
                 break;
             case "ADD_BLOCKED_WEBSITE":
                 await this.blocking.addBlockedWebsite(message.website);
+                shouldSaveState = true;
                 break;
             case "REMOVE_BLOCKED_WEBSITE":
                 await this.blocking.removeBlockedWebsite(message.website);
+                shouldSaveState = true;
                 break;
             case "ADD_TODO":
                 await this.todos.addTodo(message.text);
+                shouldSaveState = true;
                 break;
             case "TOGGLE_TODO":
                 await this.todos.toggleTodo(message.todoId);
+                shouldSaveState = true;
                 break;
             case "DELETE_TODO":
                 await this.todos.deleteTodo(message.todoId);
+                shouldSaveState = true;
                 break;
             case "WEBSITE_LISTS_UPDATED":
                 this.state.allowedWebsites = message.allowlist || [];
                 this.state.blockedWebsites = message.blocklist || [];
-                await this.saveState();
+                shouldSaveState = true;
                 break;
             case "CHECK_WEBSITE_BLOCKED":
                 response = { blocked: this.blocking.isUrlBlocked(message.url) };
@@ -203,8 +205,10 @@ class PomodoroBackground {
     }
 
     sendResponse({ success, ...response });
-    // After handling the message, save the state
-    await this.saveState();
+
+    if (shouldSaveState) {
+      await this.saveState();
+    }
   }
 
   async showNotification() {
