@@ -4,14 +4,13 @@ class AdvancedWebsiteBlocker {
   constructor() {
     this.isBlocked = false;
     this.overlay = null;
-    this.checkInterval = null;
     this.retryCount = 0;
     this.maxRetries = 3;
     this.init();
   }
 
   async init() {
-    console.log("[Blocker] Initializing advanced website blocker");
+    console.log("[v1][Blocker] Initializing advanced website blocker");
     
     try {
       // Wait for chrome runtime to be available
@@ -19,21 +18,16 @@ class AdvancedWebsiteBlocker {
       
       await this.checkAndBlock();
       
-      // Set up periodic checking for dynamic blocking state changes
-      this.checkInterval = setInterval(() => {
-        this.checkAndBlock();
-      }, 2000);
-      
-      // Listen for timer state changes
+      // Listen for timer state changes from the background
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === "TIMER_UPDATE") {
+        if (message.type === "TIMER_UPDATE" || message.type === "SETTINGS_UPDATED") {
           this.checkAndBlock();
         }
-        return true;
+        return true; // Keep message channel open for async responses
       });
       
     } catch (error) {
-      console.error("[Blocker] Error initializing:", error);
+      console.error("[v1][Blocker] Error initializing:", error);
       this.retryInitialization();
     }
   }
@@ -66,17 +60,17 @@ class AdvancedWebsiteBlocker {
   retryInitialization() {
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
-      console.log(`[Blocker] Retrying initialization (${this.retryCount}/${this.maxRetries})`);
+      console.log(`[v1][Blocker] Retrying initialization (${this.retryCount}/${this.maxRetries})`);
       setTimeout(() => this.init(), 1000 * this.retryCount);
     } else {
-      console.error("[Blocker] Max retries reached, blocker initialization failed");
+      console.error("[v1][Blocker] Max retries reached, blocker initialization failed");
     }
   }
 
   async checkAndBlock() {
     try {
       if (!chrome?.runtime?.sendMessage) {
-        console.error("[Blocker] Chrome runtime not available");
+        console.error("[v1][Blocker] Chrome runtime not available");
         return;
       }
 
@@ -101,20 +95,20 @@ class AdvancedWebsiteBlocker {
       }
 
     } catch (error) {
-      console.error("[Blocker] Error checking block status:", error.message);
+      console.error("[v1][Blocker] Error checking block status:", error.message);
       
       if (error.message?.includes("Extension context invalidated")) {
-        console.log("[Blocker] Context invalidated, reloading page to re-establish connection.");
+        console.log("[v1][Blocker] Context invalidated, reloading page to re-establish connection.");
         window.location.reload();
       } else if (error.message?.includes("Could not establish connection")) {
-        console.log("[Blocker] Connection failed, retrying...");
-        this.retryInitialization(); // Use the existing retry logic
+        console.log("[v1][Blocker] Connection failed, retrying...");
+        this.retryInitialization();
       }
     }
   }
 
   blockWebsite() {
-    console.log("[Blocker] Blocking website:", window.location.hostname);
+    console.log("[v1][Blocker] Blocking website:", window.location.hostname);
     
     this.isBlocked = true;
     this.createBlockingOverlay();
@@ -122,7 +116,7 @@ class AdvancedWebsiteBlocker {
   }
 
   unblockWebsite() {
-    console.log("[Blocker] Unblocking website:", window.location.hostname);
+    console.log("[v1][Blocker] Unblocking website:", window.location.hostname);
     
     this.isBlocked = false;
     this.removeBlockingOverlay();
@@ -146,17 +140,15 @@ class AdvancedWebsiteBlocker {
     // Bind event listeners
     this.bindOverlayEvents();
 
-    console.log("[Blocker] Blocking overlay created");
+    console.log("[v1][Blocker] Blocking overlay created");
   }
 
   getOverlayHTML() {
-    const currentMode = this.getCurrentMode();
-    const modeConfig = this.getModeConfig(currentMode);
-    
     return `
       <div class="pomodoro-block-container">
         <div class="pomodoro-block-content">
-          <h1 class="pomodoro-block-title">${modeConfig.title}</h1>
+          <h1 class="pomodoro-block-title">Focus Mode Active</h1>
+          <p class="pomodoro-block-subtitle">This site is currently blocked to help you stay on task.</p>
           <div class="pomodoro-block-actions">
             <button id="pomodoro-close-tab" class="pomodoro-btn pomodoro-btn-primary">
               Close Tab
@@ -165,35 +157,6 @@ class AdvancedWebsiteBlocker {
         </div>
       </div>
     `;
-  }
-
-  getCurrentMode() {
-    // Try to get current mode from URL or default to focus
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('pomodoroMode') || 'focus';
-    } catch {
-      return 'focus';
-    }
-  }
-
-  getModeConfig(mode) {
-    const configs = {
-      focus: {
-        title: 'Focus mode is on',
-      },
-      shortBreak: {
-        title: 'Break Time',
-      },
-      longBreak: {
-        title: 'Break Time',
-      },
-      idle: {
-        title: 'Website is blocked',
-      }
-    };
-    
-    return configs[mode] || configs.focus;
   }
 
   injectOverlayStyles() {
@@ -208,7 +171,7 @@ class AdvancedWebsiteBlocker {
         left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        background: rgba(15, 23, 42, 0.75) !important;
+        background: rgba(15, 23, 42, 0.85) !important;
         z-index: 2147483647 !important;
         display: flex !important;
         align-items: center !important;
@@ -240,11 +203,18 @@ class AdvancedWebsiteBlocker {
       }
 
       .pomodoro-block-title {
-        font-size: 28px !important;
-        font-weight: 600 !important;
+        font-size: 32px !important;
+        font-weight: 700 !important;
         color: #ffffff !important;
         text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
-        margin-bottom: 24px !important;
+        margin-bottom: 12px !important;
+      }
+
+      .pomodoro-block-subtitle {
+        font-size: 18px !important;
+        font-weight: 400 !important;
+        color: rgba(255, 255, 255, 0.8) !important;
+        margin-bottom: 32px !important;
       }
 
       .pomodoro-block-actions {
@@ -253,11 +223,11 @@ class AdvancedWebsiteBlocker {
       }
 
       .pomodoro-btn {
-        padding: 12px 24px !important;
+        padding: 14px 28px !important;
         border: 1px solid rgba(255, 255, 255, 0.5) !important;
-        border-radius: 8px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
+        border-radius: 12px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
         cursor: pointer !important;
         transition: all 0.2s ease !important;
         background: rgba(255, 255, 255, 0.1) !important;
@@ -267,9 +237,9 @@ class AdvancedWebsiteBlocker {
       .pomodoro-btn:hover {
         background: rgba(255, 255, 255, 0.2) !important;
         border-color: rgba(255, 255, 255, 0.8) !important;
+        transform: translateY(-2px);
       }
 
-      /* Hide page scroll */
       html.pomodoro-blocked {
         overflow: hidden !important;
         height: 100% !important;
@@ -285,24 +255,17 @@ class AdvancedWebsiteBlocker {
     if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        console.log("[Blocker] Closing tab");
+        console.log("[v1][Blocker] Closing tab via background message");
         this.closeTab();
       });
     }
 
-    // Keyboard shortcuts
     document.addEventListener("keydown", this.handleKeyboardShortcuts.bind(this));
-
-    // Prevent context menu on overlay
-    this.overlay.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-    });
+    this.overlay.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
   handleKeyboardShortcuts(e) {
     if (!this.isBlocked) return;
-
-    // ESC key to close tab
     if (e.key === "Escape") {
       e.preventDefault();
       this.closeTab();
@@ -311,28 +274,17 @@ class AdvancedWebsiteBlocker {
 
   closeTab() {
     try {
-      // Try to close the tab
-      window.close();
-      
-      // If window.close() doesn't work (e.g., not opened by script), 
-      // try to navigate to a neutral page after a brief delay
-      setTimeout(() => {
-        if (!window.closed) {
-          window.location.href = "about:blank";
-        }
-      }, 100);
+      chrome.runtime.sendMessage({ type: "CLOSE_CURRENT_TAB" });
     } catch (error) {
-      console.error("[Blocker] Error closing tab:", error);
-      // Fallback: navigate to blank page
+      console.error("[v1][Blocker] Error sending CLOSE_CURRENT_TAB message:", error);
+      // Fallback if messaging fails for some reason
       window.location.href = "about:blank";
     }
   }
 
   removeBlockingOverlay() {
     if (this.overlay) {
-      // Add fade out animation
-      this.overlay.style.animation = "pomodoroFadeOut 0.3s ease-out";
-      
+      this.overlay.style.animation = "pomodoroFadeOut 0.3s ease-out forwards";
       setTimeout(() => {
         if (this.overlay) {
           this.overlay.remove();
@@ -341,88 +293,47 @@ class AdvancedWebsiteBlocker {
       }, 300);
     }
 
-    // Remove styles
     const styleEl = document.getElementById("pomodoro-block-styles");
-    if (styleEl) {
-      styleEl.remove();
-    }
+    if (styleEl) styleEl.remove();
 
-    // Remove keyboard event listener
     document.removeEventListener("keydown", this.handleKeyboardShortcuts.bind(this));
   }
 
   hidePageContent() {
-    // Prevent scrolling
     document.documentElement.classList.add("pomodoro-blocked");
-    
-    // Hide body content but keep our overlay visible
     document.body.style.visibility = "hidden";
     document.body.style.overflow = "hidden";
-    
-    // Make sure our overlay is visible
     if (this.overlay) {
       this.overlay.style.visibility = "visible";
     }
-
-    console.log("[Blocker] Page content hidden");
+    console.log("[v1][Blocker] Page content hidden");
   }
 
   showPageContent() {
-    // Remove body hiding
+    document.documentElement.classList.remove("pomodoro-blocked");
     document.body.style.visibility = "visible";
     document.body.style.overflow = "auto";
-    
-    // Remove blocked class
-    document.documentElement.classList.remove("pomodoro-blocked");
-
-    console.log("[Blocker] Page content shown");
+    console.log("[v1][Blocker] Page content shown");
   }
 
-  showError(message) {
-    if (!this.overlay) return;
-
-    const reasonElement = this.overlay.querySelector("#block-reason");
-    if (reasonElement) {
-      reasonElement.innerHTML = `
-        <div style="color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
-          ⚠️ ${message}
-        </div>
-      `;
-    }
-  }
-
-  // Cleanup method for when the content script is unloaded
   cleanup() {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
-    }
-    
     if (this.isBlocked) {
       this.unblockWebsite();
     }
-    
-    console.log("[Blocker] Cleanup completed");
+    console.log("[v1][Blocker] Cleanup completed");
   }
 }
 
 // Initialize the advanced website blocker
-console.log("[Blocker] Initializing AdvancedWebsiteBlocker");
+console.log("[v1][Blocker] Initializing AdvancedWebsiteBlocker");
 const blocker = new AdvancedWebsiteBlocker();
 
-// Cleanup on page unload
 window.addEventListener("beforeunload", () => {
   if (blocker) {
     blocker.cleanup();
   }
 });
 
-// Handle extension context invalidation
-chrome.runtime.onConnect.addListener(() => {
-  // Connection established, extension context is valid
-});
-
-// Add fade out animation CSS
 const fadeOutStyle = document.createElement("style");
 fadeOutStyle.textContent = `
   @keyframes pomodoroFadeOut {

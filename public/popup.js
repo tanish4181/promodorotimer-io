@@ -2,7 +2,7 @@
 
 class PomodoroPopup {
     constructor() {
-        console.log("[v0] Initializing PomodoroPopup");
+        console.log("[v1] Initializing PomodoroPopup");
 
         this.elements = {
             timerText: document.getElementById("timer-text"),
@@ -30,21 +30,23 @@ class PomodoroPopup {
             todoList: document.getElementById("todo-list")
         };
 
-        this.state = {};
+        this.state = null; // Will be populated by the background script
         
         this.initialize();
     }
 
     async initialize() {
         this.initializeEventListeners();
-        await this.loadState();
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            if (message.type === "TIMER_UPDATE") {
+            if (message.type === "TIMER_UPDATE" && message.state) {
                 this.state = message.state;
                 this.updateDisplay();
+                this.renderTodos();
             }
         });
+
+        await this.loadState();
     }
 
     updateTimerDisplay() {
@@ -105,24 +107,8 @@ class PomodoroPopup {
     }
 
     initializeEventListeners() {
-        this.elements.startBtn?.addEventListener("click", () => {
-            this.sendMessageToBackground("START_TIMER");
-            // Immediately update UI for responsiveness
-            if (this.state) {
-                this.state.isRunning = true;
-                this.updateDisplay();
-            }
-        });
-        
-        this.elements.pauseBtn?.addEventListener("click", () => {
-            this.sendMessageToBackground("PAUSE_TIMER");
-            // Immediately update UI for responsiveness
-            if (this.state) {
-                this.state.isRunning = false;
-                this.updateDisplay();
-            }
-        });
-        
+        this.elements.startBtn?.addEventListener("click", () => this.sendMessageToBackground("START_TIMER"));
+        this.elements.pauseBtn?.addEventListener("click", () => this.sendMessageToBackground("PAUSE_TIMER"));
         this.elements.resetBtn?.addEventListener("click", () => this.sendMessageToBackground("RESET_TIMER"));
         this.elements.skipBreakBtn?.addEventListener("click", () => this.sendMessageToBackground("SKIP_BREAK"));
         this.elements.settingsBtn?.addEventListener("click", () => this.openSettings());
@@ -141,29 +127,23 @@ class PomodoroPopup {
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
 
-        console.log("[v0] All event listeners initialized.");
+        console.log("[v1] All event listeners initialized.");
     }
     
     async toggleSetting(settingName) {
         if (!this.state || !this.state.settings) {
-            console.error("[v0] No state or settings available");
+            console.error("[v1] No state or settings available to toggle");
             return;
         }
 
         const newValue = !this.state.settings[settingName];
-        
-        try {
-            this.state.settings[settingName] = newValue;
-            this.updateDisplay();
+        const newSettings = { [settingName]: newValue };
 
-            const newSettings = { [settingName]: newValue };
-            await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
-            
-            console.log(`[v0] Setting ${settingName} successfully toggled to ${newValue}`);
+        try {
+            await this.sendMessageToBackground("SETTINGS_UPDATED", { settings: newSettings });
+            console.log(`[v1] Setting ${settingName} toggle message sent successfully.`);
         } catch (error) {
-            console.error(`[v0] Error toggling setting ${settingName}:`, error);
-            this.state.settings[settingName] = !newValue;
-            this.updateDisplay();
+            console.error(`[v1] Error toggling setting ${settingName}:`, error);
         }
     }
     
@@ -173,62 +153,30 @@ class PomodoroPopup {
     }
 
     async loadState() {
-        console.log("[v0] Loading state from background script.");
+        console.log("[v1] Requesting state from background script.");
         try {
-            const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
+            const response = await this.sendMessageToBackground("GET_STATE");
             if (response && response.state) {
                 this.state = response.state;
                 this.updateDisplay();
                 this.renderTodos();
-                console.log("[v0] State loaded and rendered successfully.");
+                console.log("[v1] State loaded and rendered successfully.");
+            } else {
+                 console.error("[v1] Invalid state response from background");
             }
         } catch (error) {
-            console.error("[v0] Error loading state:", error);
-            this.initializeDefaultState();
-            this.updateDisplay();
-            this.renderTodos();
+            console.error("[v1] Error loading state:", error);
+            if (this.elements.timerText) {
+                this.elements.timerText.textContent = "Error";
+            }
         }
     }
 
-    initializeDefaultState() {
-      this.state = {
-        timerState: "focus",
-        currentTime: 25 * 60,
-        isRunning: false,
-        currentMode: "focus",
-        sessionCount: 1,
-        settings: {
-          focusTime: 25,
-          shortBreak: 5,
-          longBreak: 15,
-          sessionsUntilLongBreak: 4,
-          autoStartBreaks: true,
-          autoStartPomodoros: false,
-          autoSwitchModes: true,
-          notifications: true,
-          sounds: true,
-          breakReminders: true,
-          enforceBreaks: true,
-          youtubeIntegration: true,
-          breakOverlay: true,
-          breakCountdown: true,
-          nextSessionInfo: true,
-          focusOverlay: false,
-          hideDistractions: true,
-          focusIndicator: true,
-          websiteBlocking: true,
-          hideYoutubeComments: true,
-          hideYoutubeRecommendations: true,
-          hideYoutubeShorts: true,
-          pauseYoutubeBreaks: true,
-          collectStats: true,
-        },
-        todos: [],
-      };
-    }
-
     updateDisplay() {
-        if (!this.state) return;
+        if (!this.state) {
+            console.log("[v1] No state yet, skipping display update.");
+            return;
+        };
 
         // Update timer display
         this.updateTimerDisplay();
@@ -287,56 +235,40 @@ class PomodoroPopup {
     }
 
     async updateSettings() {
+        if (!this.state || !this.state.settings) {
+            console.error("[v1] No state or settings available to update");
+            return;
+        }
+
         const newSettings = {
-            ...this.state.settings,
             focusTime: Number(this.elements.focusTimeSelect.value),
             shortBreak: Number(this.elements.breakTimeSelect.value),
         };
+
         try {
-            await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
-            this.state.settings = newSettings;
-            this.updateDisplay();
+            await this.sendMessageToBackground("SETTINGS_UPDATED", { settings: newSettings });
         } catch (error) {
             console.error("Error updating settings:", error);
         }
     }
     
-    async addTodo() {
+    addTodo() {
       const todoText = this.elements.todoInput.value.trim();
       if (!todoText) return;
-      const newTodo = { id: Date.now(), text: todoText, completed: false, createdAt: new Date().toISOString() };
-      if (!this.state.todos) this.state.todos = [];
-      this.state.todos.push(newTodo);
+      this.sendMessageToBackground("ADD_TODO", { text: todoText });
       this.elements.todoInput.value = "";
-      this.saveTodos();
     }
   
-    async toggleTodo(todoId) {
-      const todo = this.state.todos.find(t => t.id === todoId);
-      if (todo) {
-        todo.completed = !todo.completed;
-        todo.completedAt = todo.completed ? new Date().toISOString() : null;
-        this.saveTodos();
-      }
+    toggleTodo(todoId) {
+      this.sendMessageToBackground("TOGGLE_TODO", { todoId });
     }
   
-    async deleteTodo(todoId) {
-      this.state.todos = this.state.todos.filter(t => t.id !== todoId);
-      this.saveTodos();
-    }
-  
-    async saveTodos() {
-      try {
-        await chrome.storage.local.set({ todos: this.state.todos });
-        await chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos });
-        this.renderTodos();
-      } catch (error) {
-        console.error("Error saving todos:", error);
-      }
+    deleteTodo(todoId) {
+      this.sendMessageToBackground("DELETE_TODO", { todoId });
     }
   
     renderTodos() {
-      if (!this.elements.todoList) return;
+      if (!this.elements.todoList || !this.state || !this.state.todos) return;
       
       const activeTodos = this.state.todos.filter(todo => !todo.completed);
       const completedTodos = this.state.todos.filter(todo => todo.completed);
@@ -370,11 +302,20 @@ class PomodoroPopup {
     }
     
     sendMessageToBackground(type, payload = {}) {
-        try {
-            chrome.runtime.sendMessage({ type, ...payload });
-        } catch (error) {
-            console.error(`Error sending message of type ${type} to background:`, error);
-        }
+        return new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({ type, ...payload }, (response) => {
+                if (chrome.runtime.lastError) {
+                    // Gracefully handle the error if the popup closes before a response is received
+                    if (chrome.runtime.lastError.message.includes("The message port closed before a response was received.")) {
+                        resolve(undefined);
+                    } else {
+                        reject(chrome.runtime.lastError);
+                    }
+                } else {
+                    resolve(response);
+                }
+            });
+        });
     }
     
     openSettings() {
@@ -387,9 +328,7 @@ class PomodoroPopup {
 
     // Cleanup when popup closes
     destroy() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-        }
+        // No interval to clear anymore
     }
 }
 
