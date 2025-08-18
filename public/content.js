@@ -105,10 +105,8 @@ class YouTubeIntegration {
   }
 
   setupYouTubeIntegration() {
-    if (!this.timerState || !this.timerState.settings.youtubeIntegration) {
-      console.log("[v0] YouTube integration disabled")
-      this.showDistractions() // Show distractions if integration is disabled
-      return
+    if (!this.timerState) {
+      return;
     }
 
     console.log("[v0] Setting up YouTube integration")
