@@ -304,6 +304,7 @@ class PomodoroBackground {
 
     // Broadcast update to all connected clients
     this.broadcastUpdate();
+    this.broadcastSettingsUpdate();
   }
 
   async startTimer() {
@@ -613,6 +614,21 @@ class PomodoroBackground {
     } catch (error) {
       // Popup might not be open
     }
+  }
+
+  broadcastSettingsUpdate() {
+    console.log("[v0] Broadcasting settings update to content scripts");
+    chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+            try {
+                chrome.tabs.sendMessage(tab.id, {
+                    type: "SETTINGS_UPDATED"
+                });
+            } catch (error) {
+                // Ignore errors for tabs that don't have our content scripts
+            }
+        });
+    });
   }
 
   async notifyContentScripts(message) {
