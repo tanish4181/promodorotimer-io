@@ -55,7 +55,8 @@ class PomodoroBackground {
       this.broadcastUpdate.bind(this),
       this.notifyContentScripts.bind(this),
       this.showNotification.bind(this),
-      () => this.stats.recordSession() // Pass recordSession from the stats module
+      () => this.stats.recordSession(), // Pass recordSession from the stats module
+      this.saveState.bind(this)
     );
     this.todos = new Todos(this.state, this.broadcastUpdate.bind(this));
     this.blocking = new Blocking(this.state, this.broadcastUpdate.bind(this));

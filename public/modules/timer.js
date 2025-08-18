@@ -1,10 +1,11 @@
 export class Timer {
-  constructor(state, broadcastUpdate, notifyContentScripts, showNotification, recordSession) {
+  constructor(state, broadcastUpdate, notifyContentScripts, showNotification, recordSession, saveState) {
     this.state = state;
     this.broadcastUpdate = broadcastUpdate;
     this.notifyContentScripts = notifyContentScripts;
     this.showNotification = showNotification;
     this.recordSession = recordSession;
+    this.saveState = saveState;
     this.alarmName = "pomodoroTimer";
   }
 
@@ -57,7 +58,7 @@ export class Timer {
     this.broadcastUpdate();
   }
 
-  handleTimerTick() {
+  async handleTimerTick() {
     if (!this.state.isRunning) {
       chrome.alarms.clear(this.alarmName);
       return;
@@ -65,9 +66,10 @@ export class Timer {
 
     if (this.state.currentTime > 0) {
       this.state.currentTime -= 1;
+      await this.saveState();
       this.broadcastUpdate();
     } else {
-      this.handleTimerComplete();
+      await this.handleTimerComplete();
     }
   }
 
@@ -90,6 +92,7 @@ export class Timer {
       setTimeout(() => this.startTimer(), 1000);
     }
 
+    await this.saveState();
     this.broadcastUpdate();
   }
 
