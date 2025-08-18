@@ -10,31 +10,28 @@ export class Timer {
   }
 
   async startTimer() {
-    console.log("[v1][Timer] Starting timer");
     this.state.isRunning = true;
     chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 });
 
     if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
-      this.notifyContentScripts({ type: "TIMER_STARTED" });
+      await this.notifyContentScripts({ type: "TIMER_STARTED" });
     }
 
-    this.broadcastUpdate();
+    await this.broadcastUpdate();
   }
 
   async pauseTimer() {
-    console.log("[v1][Timer] Pausing timer");
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
     if (this.state.settings.youtubeIntegration) {
-      this.notifyContentScripts({ type: "TIMER_PAUSED" });
+      await this.notifyContentScripts({ type: "TIMER_PAUSED" });
     }
 
-    this.broadcastUpdate();
+    await this.broadcastUpdate();
   }
 
   async resetTimer() {
-    console.log("[v1][Timer] Resetting timer");
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
@@ -45,17 +42,16 @@ export class Timer {
     };
 
     this.state.currentTime = timeMap[this.state.currentMode];
-    this.broadcastUpdate();
+    await this.broadcastUpdate();
   }
 
   async skipBreak() {
-    console.log("[v1][Timer] Skipping break");
     this.state.currentMode = "focus";
     this.state.currentTime = this.state.settings.focusTime * 60;
     this.state.isRunning = false;
 
-    this.notifyContentScripts({ type: "BREAK_SKIPPED" });
-    this.broadcastUpdate();
+    await this.notifyContentScripts({ type: "BREAK_SKIPPED" });
+    await this.broadcastUpdate();
   }
 
   async handleTimerTick() {
@@ -67,7 +63,7 @@ export class Timer {
     if (this.state.currentTime > 0) {
       this.state.currentTime -= 1;
       await this.saveState();
-      this.broadcastUpdate();
+      await this.broadcastUpdate();
     } else {
       await this.handleTimerComplete();
     }
@@ -93,7 +89,7 @@ export class Timer {
     }
 
     await this.saveState();
-    this.broadcastUpdate();
+    await this.broadcastUpdate();
   }
 
   async switchToNextMode() {

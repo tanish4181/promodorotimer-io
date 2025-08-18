@@ -6,8 +6,6 @@ export class Settings {
   }
 
   async updateSettings(newSettings) {
-    console.log("[v1][Settings] Updating settings in background:", newSettings);
-
     // Merge new settings with existing settings
     this.state.settings = { ...this.state.settings, ...newSettings };
 
@@ -16,10 +14,8 @@ export class Settings {
       this.state.currentTime = this.state.settings.focusTime * 60;
     }
 
-    console.log("[v1][Settings] Settings updated successfully:", this.state.settings);
-
     // Broadcast update to all connected clients
-    this.broadcastUpdate();
-    this.broadcastSettingsUpdate();
+    await this.broadcastUpdate();
+    await this.broadcastSettingsUpdate();
   }
 }

@@ -52,8 +52,7 @@ export class Blocking {
   async addBlockedWebsite(website) {
     if (!this.state.blockedWebsites.includes(website)) {
       this.state.blockedWebsites.push(website);
-      this.broadcastUpdate();
-      console.log("[v1][Blocking] Website blocked:", website);
+      await this.broadcastUpdate();
     }
   }
 
@@ -61,7 +60,6 @@ export class Blocking {
     this.state.blockedWebsites = this.state.blockedWebsites.filter(
       (w) => w !== website
     );
-    this.broadcastUpdate();
-    console.log("[v1][Blocking] Website unblocked:", website);
+    await this.broadcastUpdate();
   }
 }

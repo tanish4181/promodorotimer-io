@@ -132,7 +132,7 @@ class PomodoroBackground {
   }
 
   async handleMessage(message, sender, sendResponse) {
-    console.log("[v1] Handling message:", message.type);
+    console.log(`[v1] Handling message: ${message.type}`);
     let success = true;
     let response = {};
     let shouldSaveState = false;

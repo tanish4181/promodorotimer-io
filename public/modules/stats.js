@@ -24,9 +24,8 @@ export class Stats {
       dailyStats[today].focusTime += this.state.settings.focusTime;
 
       await chrome.storage.local.set({ dailyStats });
-      console.log("[v1][Stats] Session recorded for", today);
     } catch (error) {
-      console.error("[v1][Stats] Error recording session:", error);
+      console.error("[v1][stats] Error recording session:", error);
     }
   }
 }

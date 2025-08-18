@@ -13,8 +13,7 @@ export class Todos {
     };
     if (!this.state.todos) this.state.todos = [];
     this.state.todos.push(newTodo);
-    this.broadcastUpdate();
-    console.log("[v1][Todos] Todo added:", newTodo);
+    await this.broadcastUpdate();
   }
 
   async toggleTodo(todoId) {
@@ -22,14 +21,12 @@ export class Todos {
     if (todo) {
       todo.completed = !todo.completed;
       todo.completedAt = todo.completed ? new Date().toISOString() : null;
-      this.broadcastUpdate();
-      console.log("[v1][Todos] Todo toggled:", todo);
+      await this.broadcastUpdate();
     }
   }
 
   async deleteTodo(todoId) {
     this.state.todos = this.state.todos.filter(t => t.id !== todoId);
-    this.broadcastUpdate();
-    console.log("[v1][Todos] Todo deleted:", todoId);
+    await this.broadcastUpdate();
   }
 }
