@@ -37,6 +37,7 @@ class PomodoroBackground {
         hideYoutubeRecommendations: true,
         hideYoutubeShorts: true,
         pauseYoutubeBreaks: true,
+        youtubeHidingCondition: 'on-timer', // 'on-timer' or 'always'
         collectStats: true,
       },
       blockedWebsites: [],
@@ -188,6 +189,7 @@ class PomodoroBackground {
         hideYoutubeRecommendations: true,
         hideYoutubeShorts: true,
         pauseYoutubeBreaks: true,
+        youtubeHidingCondition: 'on-timer', // 'on-timer' or 'always'
         collectStats: true,
       },
       blockedWebsites: [],

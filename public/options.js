@@ -66,6 +66,9 @@ class ModernPomodoroOptions {
     this.elements.headerFocusTime = document.getElementById("header-focus-time");
     this.elements.headerBreakTime = document.getElementById("header-break-time");
 
+    // YouTube hiding condition radio buttons
+    this.elements.youtubeHidingConditionRadios = document.querySelectorAll('input[name="youtubeHidingCondition"]');
+
     console.log("[v0] All DOM elements initialized");
   }
 
@@ -178,6 +181,11 @@ class ModernPomodoroOptions {
         this.saveSettings();
       });
     }
+
+    // YouTube hiding condition listeners
+    this.elements.youtubeHidingConditionRadios.forEach(radio => {
+        radio.addEventListener('change', () => this.saveSettings());
+    });
 
     console.log("[v0] All event listeners bound");
   }
@@ -340,6 +348,14 @@ class ModernPomodoroOptions {
       }
     });
 
+    // Handle radio buttons for youtubeHidingCondition
+    const hidingCondition = this.currentSettings.youtubeHidingCondition || 'on-timer';
+    this.elements.youtubeHidingConditionRadios.forEach(radio => {
+        if (radio.value === hidingCondition) {
+            radio.checked = true;
+        }
+    });
+
     console.log("[v0] Settings populated in UI");
   }
 
@@ -370,6 +386,7 @@ class ModernPomodoroOptions {
       hideYoutubeRecommendations: this.elements.hideYoutubeRecommendations?.checked || false,
       hideYoutubeShorts: this.elements.hideYoutubeShorts?.checked || false,
       pauseYoutubeBreaks: this.elements.pauseYoutubeBreaks?.checked || false,
+      youtubeHidingCondition: document.querySelector('input[name="youtubeHidingCondition"]:checked')?.value || 'on-timer',
       collectStats: this.elements.collectStats?.checked || false,
     };
 
