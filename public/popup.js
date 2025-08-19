@@ -1,4 +1,4 @@
-// Enhanced popup.js with website blocking removed (moved to options)
+// Enhanced popup.js with support button functionality
 
 class PomodoroPopup {
     constructor() {
@@ -27,7 +27,10 @@ class PomodoroPopup {
 
             todoInput: document.getElementById("todo-input"),
             addTodoBtn: document.getElementById("add-todo-btn"),
-            todoList: document.getElementById("todo-list")
+            todoList: document.getElementById("todo-list"),
+
+            // Support button
+            supportBtn: document.getElementById("support-btn")
         };
 
         this.state = {};
@@ -134,6 +137,9 @@ class PomodoroPopup {
         this.elements.skipBreakBtn?.addEventListener("click", () => this.sendMessageToBackground("SKIP_BREAK"));
         this.elements.settingsBtn?.addEventListener("click", () => this.openSettings());
         this.elements.statsBtn?.addEventListener("click", () => this.openStats());
+
+        // Support button event listener
+        this.elements.supportBtn?.addEventListener("click", () => this.openSupportPage());
 
         this.elements.focusTimeSelect?.addEventListener("change", () => this.updateSettings());
         this.elements.breakTimeSelect?.addEventListener("change", () => this.updateSettings());
@@ -388,6 +394,10 @@ class PomodoroPopup {
 
     openStats() {
         chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") });
+    }
+
+    openSupportPage() {
+        chrome.tabs.create({ url: chrome.runtime.getURL("support.html") });
     }
 
     // Cleanup when popup closes

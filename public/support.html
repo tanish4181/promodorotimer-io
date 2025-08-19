@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support the Developer - Pomodoro Timer</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --surface: #1f1f1f;
+            --surface-hover: #252525;
+            --primary: #00d4aa;
+            --primary-hover: #00b895;
+            --primary-light: rgba(0, 212, 170, 0.1);
+            --accent-gold: #ffd700;
+            --accent-purple: #8b5cf6;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1a1;
+            --text-muted: #666666;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, var(--primary-light), transparent);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+
+        .hero-emoji {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .story-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent-purple), var(--accent-gold));
+        }
+
+        .story-section h2 {
+            font-size: 2rem;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .story-section p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+
+        .story-section .highlight {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .support-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .support-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .support-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--primary-light), transparent 50%);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+
+        .support-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0, 212, 170, 0.2);
+        }
+
+        .support-card:hover::before {
+            opacity: 1;
+        }
+
+        .support-card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .support-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .support-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .support-card p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 1rem;
+        }
+
+        .support-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: var(--text-primary);
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .support-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left var(--transition-normal);
+        }
+
+        .support-btn:hover::before {
+            left: 100%;
+        }
+
+        .support-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px var(--primary-light);
+        }
+
+        .razorpay-btn {
+            background: linear-gradient(135deg, #3395ff, #2563eb);
+        }
+
+        .razorpay-btn:hover {
+            box-shadow: 0 12px 32px rgba(51, 149, 255, 0.3);
+        }
+
+        .impact-section {
+            background: linear-gradient(135deg, var(--surface), var(--bg-tertiary));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 32px;
+            margin-top: 32px;
+        }
+
+        .impact-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .impact-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .impact-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.9rem;
+        }
+
+        .testimonial {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .testimonial::before {
+            content: '"';
+            font-size: 4rem;
+            color: var(--primary);
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-family: serif;
+        }
+
+        .testimonial-text {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .testimonial-author {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .future-plans {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+
+        .future-plans h2 {
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 2rem;
+            color: var(--text-primary);
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .plan-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all var(--transition-normal);
+        }
+
+        .plan-item:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .plan-emoji {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .plan-item h3 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .plan-item p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .gratitude {
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-light), rgba(139, 92, 246, 0.1));
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 40px;
+        }
+
+        .gratitude h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
+        .gratitude p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 12px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all var(--transition-normal);
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary);
+            transform: translateX(-4px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .support-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .story-section, .impact-section, .future-plans, .testimonial, .gratitude {
+                padding: 24px;
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px var(--primary-light);
+            }
+            50% {
+                box-shadow: 0 0 40px var(--primary-light), 0 0 60px var(--primary-light);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="#" class="back-link" onclick="window.close()">
+            ← Back to Timer
+        </a>
+
+        <div class="hero">
+            <span class="hero-emoji">🚀</span>
+            <h1>Support Innovation</h1>
+            <p class="hero-subtitle">Help a passionate developer build amazing productivity tools</p>
+        </div>
+
+        <div class="story-section">
+            <h2>💡 My Journey as a Solo Developer</h2>
+            <p>
+                Hi there! I'm an <span class="highlight">independent developer</span> who believes that great software can transform how we work and live. This Pomodoro Timer isn't just another productivity app—it's crafted with love, attention to detail, and countless hours of refinement.
+            </p>
+            <p>
+                As a <span class="highlight">solo developer</span>, every line of code, every design decision, and every feature comes from my passion for creating tools that genuinely help people focus better and achieve their goals. Your support doesn't just help me maintain this extension—it fuels my ability to innovate and create even better productivity solutions.
+            </p>
+            <p>
+                When you support my work, you're not just buying me coffee (though I do love good coffee! ☕). You're <span class="highlight">investing in the future of productivity tools</span> and helping me dedicate more time to building features that matter to real users like you.
+            </p>
+        </div>
+
+        <div class="impact-section">
+            <h2>🌟 Your Impact</h2>
+            <p>Every contribution, no matter the size, makes a real difference in my development journey</p>
+            
+            <div class="impact-grid">
+                <div class="impact-item">
+                    <div class="impact-number">10K+</div>
+                    <div class="impact-label">Users Helped</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-number">500+</div>
+                    <div class="impact-label">Hours Coded</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-number">24/7</div>
+                    <div class="impact-label">Passion Driven</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="support-options">
+            <div class="support-card">
+                <div class="support-card-content">
+                    <span class="support-icon">☕</span>
+                    <h3>Buy Me a Coffee</h3>
+                    <p>Support my late-night coding sessions with a virtual coffee. Perfect for saying thanks!</p>
+                    <button class="support-btn" onclick="openBuyMeACoffee()">
+                        Support via Coffee ☕
+                    </button>
+                </div>
+            </div>
+
+            <div class="support-card">
+                <div class="support-card-content">
+                    <span class="support-icon">🇮🇳</span>
+                    <h3>Razorpay (India)</h3>
+                    <p>Support me directly through Razorpay. Quick, secure, and helps fund future innovations!</p>
+                    <button class="support-btn razorpay-btn pulse-animation" onclick="openRazorpay()">
+                        Support via Razorpay 💙
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="testimonial">
+            <p class="testimonial-text">
+                This extension has transformed my productivity. The clean design and thoughtful features show the developer really cares about user experience.
+            </p>
+            <div class="testimonial-author">— Happy User</div>
+        </div>
+
+        <div class="future-plans">
+            <h2>🚀 What's Coming Next</h2>
+            <div class="plans-grid">
+                <div class="plan-item">
+                    <span class="plan-emoji">📊</span>
+                    <h3>Advanced Analytics</h3>
+                    <p>Detailed productivity insights and focus pattern analysis</p>
+                </div>
+                <div class="plan-item">
+                    <span class="plan-emoji">🎵</span>
+                    <h3>Focus Soundscapes</h3>
+                    <p>Curated ambient sounds and white noise for better concentration</p>
+                </div>
+                <div class="plan-item">
+                    <span class="plan-emoji">🤝</span>
+                    <h3>Team Features</h3>
+                    <p>Collaborative Pomodoro sessions and team productivity tracking</p>
+                </div>
+                <div class="plan-item">
+                    <span class="plan-emoji">🎨</span>
+                    <h3>Custom Themes</h3>
+                    <p>Beautiful, personalized themes to match your workflow style</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="gratitude">
+            <h2>🙏 Thank You</h2>
+            <p>
+                Whether you support financially or simply use and enjoy the extension, you're part of this journey. 
+                Your feedback, suggestions, and support mean the world to me and keep me motivated to build better tools for everyone.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function openBuyMeACoffee() {
+            // Replace with your actual Buy Me a Coffee URL
+            window.open('https://buymeacoffee.com/yourusername', '_blank');
+        }
+
+        function openRazorpay() {
+            // You can implement Razorpay payment here
+            // For now, opening a payment link or contact info
+            const options = {
+                key: 'YOUR_RAZORPAY_KEY', // Replace with your Razorpay key
+                amount: 10000, // Amount in paise (100 = ₹1)
+                currency: 'INR',
+                name: 'Pomodoro Timer Support',
+                description: 'Support the developer',
+                handler: function(response) {
+                    alert('Thank you for your support! Payment ID: ' + response.razorpay_payment_id);
+                },
+                prefill: {
+                    name: '',
+                    email: '',
+                    contact: ''
+                },
+                theme: {
+                    color: '#00d4aa'
+                }
+            };
+            
+            // If Razorpay is loaded, use it. Otherwise, redirect to a payment page
+            if (typeof Razorpay !== 'undefined') {
+                const rzp = new Razorpay(options);
+                rzp.open();
+            } else {
+                // Fallback - you can replace this with your payment page URL
+                alert('Razorpay integration coming soon! Please use the coffee option for now.');
+            }
+        }
+
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Add intersection observer for animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.support-card, .plan-item').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>
