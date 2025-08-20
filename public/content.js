@@ -40,11 +40,11 @@ class YouTubeIntegration {
   }
 
   async initialize() {
-    console.log("[v0] Initializing YouTube integration")
+    console.log("Initializing YouTube integration")
     
     // Check if we're on YouTube
     if (!this.isYouTubePage()) {
-      console.log("[v0] Not on YouTube, skipping integration")
+      console.log("Not on YouTube, skipping integration")
       return
     }
 
@@ -67,7 +67,7 @@ class YouTubeIntegration {
 
     // Listen for YouTube's own navigation events for faster updates
     document.addEventListener('yt-navigate-finish', () => {
-      console.log('[v0] YouTube navigation finished, re-running setup.');
+      console.log('YouTube navigation finished, re-running setup.');
       this.setupYouTubeIntegration();
     });
   }
@@ -86,11 +86,11 @@ class YouTubeIntegration {
         currentMode: result.currentMode || 'focus',
         settings: result.settings || {}
       }
-      console.log("[v0] Timer state loaded:", this.timerState)
+      console.log("Timer state loaded:", this.timerState)
     } catch (error) {
-      console.error("[v0] Error loading timer state:", error)
+      console.error("Error loading timer state:", error)
       if (error.message?.includes("Extension context invalidated")) {
-        console.log("[ContentScript] Context invalidated, reloading page to re-establish connection.");
+        console.log("Context invalidated, reloading page to re-establish connection.");
         window.location.reload();
       }
     }
@@ -106,12 +106,12 @@ class YouTubeIntegration {
 
   setupYouTubeIntegration() {
     if (!this.timerState) {
-      console.log("[v0] YouTube integration disabled")
+      console.log("YouTube integration disabled")
       this.showDistractions() // Show distractions if integration is disabled
       return
     }
 
-    console.log("[v0] Setting up YouTube integration")
+    console.log("Setting up YouTube integration")
     
     // Apply distraction hiding based on current state
     if (this.shouldHideDistractions()) {
@@ -147,7 +147,7 @@ class YouTubeIntegration {
       })
       
       if (shouldUpdate) {
-        console.log("[v0] New content detected, updating distractions")
+        console.log("New content detected, updating distractions")
         setTimeout(() => {
           if (this.shouldHideDistractions()) {
             this.hideDistractions()
@@ -193,7 +193,7 @@ class YouTubeIntegration {
       return
     }
 
-    console.log("[v0] Hiding YouTube distractions")
+    console.log("Hiding YouTube distractions")
 
     // Comments
     if (this.timerState.settings.hideYoutubeComments) {
@@ -218,7 +218,7 @@ class YouTubeIntegration {
   }
 
   showDistractions() {
-    console.log("[v0] Showing YouTube distractions")
+    console.log("Showing YouTube distractions")
     
     // Remove all distraction hiding styles
     const existingStyles = document.getElementById('pomodoro-youtube-styles')
@@ -282,7 +282,7 @@ class YouTubeIntegration {
   }
 
   hideShorts() {
-    console.log("[v0] Hiding all YouTube Shorts with enhanced selectors")
+    console.log("Hiding all YouTube Shorts with enhanced selectors")
 
     const styleId = 'pomodoro-youtube-styles';
     let style = document.getElementById(styleId);
@@ -362,7 +362,6 @@ class YouTubeIntegration {
         align-items: center;
         gap: 8px;
       ">
-        <span>🍅</span>
         <span>Focus Mode</span>
       </div>
     `
@@ -383,7 +382,7 @@ class YouTubeIntegration {
   }
 
   async handleMessage(message, sender, sendResponse) {
-    console.log("[v0] YouTube content script received message:", message.type)
+    console.log("YouTube content script received message:", message.type)
     
     switch (message.type) {
       case "TIMER_STARTED":
@@ -407,7 +406,7 @@ class YouTubeIntegration {
         break
         
       case "SETTINGS_UPDATED":
-        console.log("[v0] Settings updated, reloading timer state")
+        console.log("Settings updated, reloading timer state")
         await this.loadTimerState()
         this.setupYouTubeIntegration()
         break
@@ -436,15 +435,15 @@ class YouTubeIntegration {
         break
         
       default:
-        console.log("[v0] Unknown message type:", message.type)
+        console.log("Unknown message type:", message.type)
     }
   }
 
   enforceBreak(mode, settings, nextSessionInfo) {
-    console.log("[v0] Enforcing break:", mode)
+    console.log("Enforcing break:", mode)
     
     if (!settings.breakOverlay) {
-      console.log("[v0] Break overlay disabled")
+      console.log("Break overlay disabled")
       return
     }
 
@@ -461,7 +460,7 @@ class YouTubeIntegration {
     const video = document.querySelector('video')
     if (video && !video.paused) {
       video.pause()
-      console.log("[v0] YouTube video paused")
+      console.log("YouTube video paused")
     }
   }
 
@@ -475,9 +474,6 @@ class YouTubeIntegration {
     
     let overlayContent = `
       <div class="pomodoro-overlay-content">
-        <div class="pomodoro-overlay-icon">
-          ${mode === "shortBreak" ? "☕" : "🏖️"}
-        </div>
         <h1>${mode === "shortBreak" ? "Short Break" : "Long Break"}</h1>
         <p>
           It's time to relax and recharge. Take a moment away from your screen.
@@ -506,14 +502,6 @@ class YouTubeIntegration {
     }
     
     overlayContent += `
-        <div class="pomodoro-overlay-actions">
-          <button id="pomodoro-skip-break" class="pomodoro-btn pomodoro-btn-secondary">
-            Skip Break
-          </button>
-          <button id="pomodoro-start-focus" class="pomodoro-btn pomodoro-btn-primary">
-            Start Focus Now
-          </button>
-        </div>
       </div>
     `
     
@@ -653,14 +641,6 @@ class YouTubeIntegration {
     document.head.appendChild(style)
     document.body.appendChild(this.overlayElement)
 
-    // Add event listeners using event delegation
-    this.overlayElement.addEventListener('click', (e) => {
-      const target = e.target
-      
-      if (target.id === 'pomodoro-skip-break' || target.id === 'pomodoro-start-focus') {
-        chrome.runtime.sendMessage({ type: "SKIP_BREAK" })
-      }
-    })
 
     this.overlayElement.addEventListener('keydown', (e) => {
       e.preventDefault();
@@ -672,7 +652,7 @@ class YouTubeIntegration {
       this.startBreakCountdown()
     }
     
-    console.log("[v0] Break overlay displayed")
+    console.log("Break overlay displayed")
   }
 
   updateBreakCountdown(currentTime) {
@@ -688,9 +668,26 @@ class YouTubeIntegration {
     if (this.breakCountdownInterval) {
       clearInterval(this.breakCountdownInterval);
     }
-
-    // Immediately update the countdown with the current time
     this.updateBreakCountdown(this.timerState.currentTime);
+    this.breakCountdownInterval = setInterval(() => {
+        // We cannot trust the local state's time, as it can be stale.
+        // Instead, we just decrement the displayed time.
+        const countdownElement = document.getElementById("break-countdown-timer");
+        if (!countdownElement) return;
+        const parts = countdownElement.textContent.split(":");
+        let minutes = parseInt(parts[0], 10);
+        let seconds = parseInt(parts[1], 10);
+        if (seconds > 0) {
+            seconds--;
+        } else if (minutes > 0) {
+            minutes--;
+            seconds = 59;
+        } else {
+            clearInterval(this.breakCountdownInterval);
+            return;
+        }
+        countdownElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    }, 1000);
   }
 
   removeBreakOverlay() {

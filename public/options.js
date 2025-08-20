@@ -472,7 +472,7 @@ class ModernPomodoroOptions {
     this.saveWebsiteLists();
     this.renderWebsiteList(listType);
     
-    this.showStatus(`✅ "${cleanedWebsite}" added to ${listType}`, "success");
+    this.showStatus(`"${cleanedWebsite}" added to ${listType}`, "success");
     console.log(`[v0] Website added to ${listType}:`, cleanedWebsite);
   }
 
