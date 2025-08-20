@@ -394,6 +394,9 @@ class YouTubeIntegration {
         await this.loadTimerState()
         this.hideFocusModeIndicator()
         this.showDistractions()
+        if (this.breakCountdownInterval) {
+          clearInterval(this.breakCountdownInterval);
+        }
         break
         
       case "ENFORCE_BREAK":
@@ -643,6 +646,11 @@ class YouTubeIntegration {
 
 
     this.overlayElement.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    this.overlayElement.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
     });
