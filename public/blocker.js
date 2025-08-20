@@ -11,7 +11,7 @@ class AdvancedWebsiteBlocker {
   }
 
   async init() {
-    console.log("[Blocker] Initializing advanced website blocker");
+    console.log("Initializing advanced website blocker");
     
     try {
       // Wait for chrome runtime to be available
@@ -33,7 +33,7 @@ class AdvancedWebsiteBlocker {
       });
       
     } catch (error) {
-      console.error("[Blocker] Error initializing:", error);
+      console.error("Error initializing:", error);
       this.retryInitialization();
     }
   }
@@ -66,17 +66,17 @@ class AdvancedWebsiteBlocker {
   retryInitialization() {
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
-      console.log(`[Blocker] Retrying initialization (${this.retryCount}/${this.maxRetries})`);
+      console.log(`Retrying initialization (${this.retryCount}/${this.maxRetries})`);
       setTimeout(() => this.init(), 1000 * this.retryCount);
     } else {
-      console.error("[Blocker] Max retries reached, blocker initialization failed");
+      console.error("Max retries reached, blocker initialization failed");
     }
   }
 
   async checkAndBlock() {
     try {
       if (!chrome?.runtime?.sendMessage) {
-        console.error("[Blocker] Chrome runtime not available");
+        console.error("Chrome runtime not available");
         return;
       }
 
@@ -101,20 +101,20 @@ class AdvancedWebsiteBlocker {
       }
 
     } catch (error) {
-      console.error("[Blocker] Error checking block status:", error.message);
+      console.error("Error checking block status:", error.message);
       
       if (error.message?.includes("Extension context invalidated")) {
-        console.log("[Blocker] Context invalidated, reloading page to re-establish connection.");
+        console.log("Context invalidated, reloading page to re-establish connection.");
         window.location.reload();
       } else if (error.message?.includes("Could not establish connection")) {
-        console.log("[Blocker] Connection failed, retrying...");
+        console.log("Connection failed, retrying...");
         this.retryInitialization(); // Use the existing retry logic
       }
     }
   }
 
   blockWebsite() {
-    console.log("[Blocker] Blocking website:", window.location.hostname);
+    console.log("Blocking website:", window.location.hostname);
     
     this.isBlocked = true;
     this.createBlockingOverlay();
@@ -122,7 +122,7 @@ class AdvancedWebsiteBlocker {
   }
 
   unblockWebsite() {
-    console.log("[Blocker] Unblocking website:", window.location.hostname);
+    console.log("Unblocking website:", window.location.hostname);
     
     this.isBlocked = false;
     this.removeBlockingOverlay();
@@ -146,7 +146,7 @@ class AdvancedWebsiteBlocker {
     // Bind event listeners
     this.bindOverlayEvents();
 
-    console.log("[Blocker] Blocking overlay created");
+    console.log("Blocking overlay created");
   }
 
   getOverlayHTML() {
@@ -285,7 +285,7 @@ class AdvancedWebsiteBlocker {
     if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        console.log("[Blocker] Closing tab");
+        console.log("Closing tab");
         this.closeTab();
       });
     }
@@ -310,22 +310,7 @@ class AdvancedWebsiteBlocker {
   }
 
   closeTab() {
-    try {
-      // Try to close the tab
-      window.close();
-      
-      // If window.close() doesn't work (e.g., not opened by script), 
-      // try to navigate to a neutral page after a brief delay
-      setTimeout(() => {
-        if (!window.closed) {
-          window.location.href = "about:blank";
-        }
-      }, 100);
-    } catch (error) {
-      console.error("[Blocker] Error closing tab:", error);
-      // Fallback: navigate to blank page
-      window.location.href = "about:blank";
-    }
+    chrome.runtime.sendMessage({ type: "CLOSE_CURRENT_TAB" });
   }
 
   removeBlockingOverlay() {
@@ -364,7 +349,7 @@ class AdvancedWebsiteBlocker {
       this.overlay.style.visibility = "visible";
     }
 
-    console.log("[Blocker] Page content hidden");
+    console.log("Page content hidden");
   }
 
   showPageContent() {
@@ -375,7 +360,7 @@ class AdvancedWebsiteBlocker {
     // Remove blocked class
     document.documentElement.classList.remove("pomodoro-blocked");
 
-    console.log("[Blocker] Page content shown");
+    console.log("Page content shown");
   }
 
   showError(message) {
@@ -402,12 +387,12 @@ class AdvancedWebsiteBlocker {
       this.unblockWebsite();
     }
     
-    console.log("[Blocker] Cleanup completed");
+    console.log("Cleanup completed");
   }
 }
 
 // Initialize the advanced website blocker
-console.log("[Blocker] Initializing AdvancedWebsiteBlocker");
+console.log("Initializing AdvancedWebsiteBlocker");
 const blocker = new AdvancedWebsiteBlocker();
 
 // Cleanup on page unload
