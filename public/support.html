@@ -421,6 +421,81 @@
             }
         }
 
+        .contact-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .contact-section h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .contact-section p {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 1.1rem;
+        }
+
+        .contact-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            text-decoration: none;
+            transition: all var(--transition-normal);
+            color: var(--text-primary);
+        }
+
+        .contact-link:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px var(--primary-light);
+        }
+
+        .contact-icon {
+            font-size: 2rem;
+            min-width: 40px;
+        }
+
+        .contact-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .contact-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .contact-value {
+            font-size: 1rem;
+            color: var(--primary);
+            font-weight: 600;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
+
+        .email-link:hover {
+            border-color: #ea4335;
+            box-shadow: 0 8px 24px rgba(234, 67, 53, 0.2);
+        }
+
         .pulse-animation {
             animation: pulse-glow 2s infinite;
         }
@@ -442,7 +517,7 @@
         </a>
 
         <div class="hero">
-            <span class="hero-emoji">🚀</span>
+            <span class="hero-emoji"></span>
             <h1>Support Innovation</h1>
             <p class="hero-subtitle">Help a passionate developer build amazing productivity tools</p>
         </div>
@@ -456,10 +531,12 @@
                 As a <span class="highlight">solo developer</span>, every line of code, every design decision, and every feature comes from my passion for creating tools that genuinely help people focus better and achieve their goals. Your support doesn't just help me maintain this extension—it fuels my ability to innovate and create even better productivity solutions.
             </p>
             <p>
-                When you support my work, you're not just buying me coffee (though I do love good coffee! ☕). You're <span class="highlight">investing in the future of productivity tools</span> and helping me dedicate more time to building features that matter to real users like you.
+                When you support my work, you're not just buying me coffee. You're <span class="highlight">investing in the future of productivity tools</span> and helping me dedicate more time to building features that matter to real users like you.
             </p>
         </div>
 
+        <!-- Impact section commented out for now -->
+        <!-- 
         <div class="impact-section">
             <h2>🌟 Your Impact</h2>
             <p>Every contribution, no matter the size, makes a real difference in my development journey</p>
@@ -479,6 +556,7 @@
                 </div>
             </div>
         </div>
+        -->
 
         <div class="support-options">
             <div class="support-card">
@@ -494,11 +572,15 @@
 
             <div class="support-card">
                 <div class="support-card-content">
-                    <span class="support-icon">🇮🇳</span>
-                    <h3>Razorpay (India)</h3>
-                    <p>Support me directly through Razorpay. Quick, secure, and helps fund future innovations!</p>
-                    <button class="support-btn razorpay-btn pulse-animation" onclick="openRazorpay()">
-                        Support via Razorpay 💙
+                    <span class="support-icon">💳</span>
+                    <h3>UPI Payment (India)</h3>
+                    <p>Support me directly through UPI. Copy the UPI ID below or click to open your UPI app!</p>
+                    <div class="upi-id-display">
+                        <code>tanish.sharma06@ybl</code>
+                        <button class="copy-upi-btn" onclick="copyUPIId()">📋</button>
+                    </div>
+                    <button class="support-btn razorpay-btn pulse-animation" onclick="openUPI()">
+                        Pay via UPI 
                     </button>
                 </div>
             </div>
@@ -512,7 +594,7 @@
         </div>
 
         <div class="future-plans">
-            <h2>🚀 What's Coming Next</h2>
+            <h2> What's Coming Next</h2>
             <div class="plans-grid">
                 <div class="plan-item">
                     <span class="plan-emoji">📊</span>
@@ -544,44 +626,60 @@
                 Your feedback, suggestions, and support mean the world to me and keep me motivated to build better tools for everyone.
             </p>
         </div>
+
+        <!-- Contact & Connect Section -->
+        <div class="contact-section">
+            <h2>🤝 Let's Connect</h2>
+            <p>Have questions, suggestions, or just want to say hi? I'd love to hear from you!</p>
+            
+            <div class="contact-links">
+                <a href="mailto:tanish41813@gmail.com" class="contact-link email-link">
+                    <span class="contact-icon">📧</span>
+                    <div class="contact-info">
+                        <div class="contact-label">Email Me</div>
+                        <div class="contact-value">tanish41813@gmail.com</div>
+                    </div>
+                </a>
+                
+                <a href="https://github.com/tanish4181" target="_blank" class="contact-link github-link">
+                    <span class="contact-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                    </span>
+                    <div class="contact-info">
+                        <div class="contact-label">GitHub</div>
+                        <div class="contact-value">@tanish4181</div>
+                    </div>
+                </a>
+            </div>
+        </div>
     </div>
 
     <script>
         function openBuyMeACoffee() {
             // Replace with your actual Buy Me a Coffee URL
-            window.open('https://buymeacoffee.com/yourusername', '_blank');
+            window.open('https://buymeacoffee.com/tanish4181', '_blank');
         }
 
-        function openRazorpay() {
-            // You can implement Razorpay payment here
-            // For now, opening a payment link or contact info
-            const options = {
-                key: 'YOUR_RAZORPAY_KEY', // Replace with your Razorpay key
-                amount: 10000, // Amount in paise (100 = ₹1)
-                currency: 'INR',
-                name: 'Pomodoro Timer Support',
-                description: 'Support the developer',
-                handler: function(response) {
-                    alert('Thank you for your support! Payment ID: ' + response.razorpay_payment_id);
-                },
-                prefill: {
-                    name: '',
-                    email: '',
-                    contact: ''
-                },
-                theme: {
-                    color: '#00d4aa'
-                }
-            };
+        function openUPI() {
+            // Create UPI payment link
+            const upiId = 'tanish.sharma06@ybl';
+            const amount = ''; // Leave empty so user can choose
+            const note = 'Support Pomodoro Timer Development';
             
-            // If Razorpay is loaded, use it. Otherwise, redirect to a payment page
-            if (typeof Razorpay !== 'undefined') {
-                const rzp = new Razorpay(options);
-                rzp.open();
-            } else {
-                // Fallback - you can replace this with your payment page URL
-                alert('Razorpay integration coming soon! Please use the coffee option for now.');
-            }
+            // Create UPI intent URL
+            const upiUrl = `upi://pay?pa=${upiId}&pn=Tanish Sharma&tn=${encodeURIComponent(note)}`;
+            
+            // Try to open UPI app
+            const tempLink = document.createElement('a');
+            tempLink.href = upiUrl;
+            tempLink.click();
+            
+            // Fallback: Show UPI ID for manual payment
+            setTimeout(() => {
+                alert(`UPI ID: ${upiId}\n\nIf the UPI app didn't open automatically, you can copy this UPI ID and use it in any UPI app like PhonePe, GPay, or Paytm.\n\nThank you for your support! 💙`);
+            }, 1000);
         }
 
         // Add some interactive elements

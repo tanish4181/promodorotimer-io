@@ -694,10 +694,88 @@ body {
   border-color: var(--border-hover);
 }
 
+/* Support Button Styles */
+.support-section {
+  padding: 0 24px;
+  margin-bottom: 24px;
+}
+
+.support-btn-popup {
+  width: 100%;
+  background: linear-gradient(135deg, #ff6b6b, #ff8e53, #ff6b35);
+  border: none;
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: var(--blur);
+  animation: subtle-glow 3s ease-in-out infinite;
+}
+
+.support-btn-popup::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left var(--transition-normal);
+}
+
+.support-btn-popup:hover::before {
+  left: 100%;
+}
+
+.support-btn-popup:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.4);
+}
+
+.support-btn-popup:active {
+  transform: translateY(-1px) scale(1.01);
+}
+
+.support-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.support-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.support-subtext {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.2);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+  }
+}
+
 /* Footer */
 .footer {
-  text-align: center;
-  padding: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 24px;
   border-top: 1px solid var(--border);
   margin-top: auto;
   backdrop-filter: var(--blur);
@@ -755,7 +833,7 @@ body {
   
   .header, .timer-display, .controls, .session-info, 
   .quick-toggles, .todo-section, .blocking-section, 
-  .quick-settings {
+  .quick-settings, .support-section {
     padding-left: 20px;
     padding-right: 20px;
   }
@@ -783,8 +861,189 @@ body {
 .secondary-btn:focus,
 .toggle-btn:focus,
 .add-btn:focus,
+.support-btn-popup:focus,
+.text-btn:focus,
 input:focus,
 select:focus {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Additional animations for enhanced UX */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Apply entrance animations */
+.session-info {
+  animation: slideInUp 0.4s ease-out;
+}
+
+.todo-section {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.quick-settings {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.support-section {
+  animation: slideInUp 0.7s ease-out;
+}
+
+.footer {
+  animation: fadeIn 0.8s ease-out;
+}
+
+/* Improved button interactions */
+.primary-btn, .secondary-btn, .support-btn-popup {
+  position: relative;
+  overflow: hidden;
+}
+
+.primary-btn:active, .secondary-btn:active {
+  transform: scale(0.98);
+}
+
+/* Enhanced timer circle states */
+#timer-circle.paused {
+  border-color: var(--accent-warning);
+  box-shadow: 0 0 20px rgba(255, 176, 32, 0.2);
+}
+
+#timer-circle.completed {
+  border-color: var(--accent-success);
+  box-shadow: 0 0 30px rgba(0, 208, 132, 0.3);
+  animation: completePulse 1s ease-out;
+}
+
+@keyframes completePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 40px rgba(0, 208, 132, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 30px rgba(0, 208, 132, 0.3);
+  }
+}
+
+/* Loading states */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top: 2px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Improved hover states for better feedback */
+.info-item:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--primary-light);
+}
+
+/* Better visual hierarchy */
+.section-header h3::after {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 2px;
+  background: var(--primary);
+  margin-top: 8px;
+  border-radius: 1px;
+}
+
+/* Enhanced support button with more premium feel */
+.support-btn-popup {
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.support-btn-popup:hover {
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.4), 
+              0 4px 16px rgba(255, 107, 53, 0.2);
+}
+
+/* Improved text button styling in footer */
+.text-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-btn:hover {
+  transform: translateY(-1px);
+  background: var(--primary-light);
+}
+
+/* Accessibility: Focus visible improvements */
+@media (prefers-reduced-motion: no-preference) {
+  .support-btn-popup {
+    transition: all var(--transition-normal), 
+                box-shadow var(--transition-slow);
+  }
+}
+
+/* Dark mode optimizations for better contrast */
+@media (prefers-color-scheme: dark) {
+  .support-text {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  
+  .support-subtext {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Print styles (if someone wants to print) */
+@media print {
+  .support-section,
+  .footer {
+    display: none;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
 }
