@@ -392,10 +392,16 @@ class PomodoroBackground {
       return;
     }
 
+    const now = Date.now();
+    const elapsed = Math.round((now - this.lastTickTime) / 1000);
+    this.lastTickTime = now;
+
     if (this.state.currentTime > 0) {
-      this.state.currentTime -= 1;
+      this.state.currentTime = Math.max(0, this.state.currentTime - elapsed);
       this.broadcastUpdate();
-    } else {
+    }
+
+    if (this.state.currentTime === 0) {
       this.handleTimerComplete();
     }
   }
@@ -504,7 +510,7 @@ class PomodoroBackground {
     try {
       await chrome.notifications.create({
         type: "basic",
-        iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsSAAALEgHS3X78AAABMElEQVRoge2YwQ2CMBBF3xgTQk7gQYyAAg0QWgQ2gAQZJgYQFgf2lKxHkrq6b0xj8r3mKp4l2b7q5w1o1r0w8m5B4mSBH0H9bGgq8x8wWw2z2Vn2kJ6kA5dVq0s7Q2qU7CwQv6+K0Nqj1z4GJ6MZrXv1OewmQmVqg0C6ZQq2gJz0qgqg8iQ3r2Q8zq8p0u5h5U2mvl8p4tJ5Jp4gqgqgk5dQdnm3Kq4m7y7m8lE6fBfJ6Q5c8H3Ww3qv3wQ9cSqGxq7gk0JHn0C3qQx9w5XoAq8GxZmdx9H8t3yJrC1g3y4o3s9f5f0S8d1l4z7Tz2n3j0QySX2p7iH8h6zGZSYwXQAAAABJRU5ErkJggg==",
+        iconUrl: "icons/icon128.png",
         title: "Pomodoro Timer",
         message: message,
         priority: 2,
@@ -614,6 +620,12 @@ class PomodoroBackground {
 
     const { isRunning, currentMode, settings } = this.state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
+    const isYouTube = url.includes("youtube.com");
+
+    // Don't use generic blocker on youtube during breaks, let content script handle it
+    if (isYouTube && isBreak) {
+      return false;
+    }
 
     // 2. Break-time blocking logic
     if (isRunning && isBreak) {
