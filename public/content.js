@@ -423,7 +423,16 @@ class YouTubeIntegration {
           if (!isBreak && this.overlayElement) {
             this.removeBreakOverlay();
           }
+
+          // If the overlay is visible, update the countdown
+          if (this.overlayElement && isBreak) {
+            this.updateBreakCountdown(this.timerState.currentTime);
+          }
         }
+        break
+
+      case "PAUSE_ALL_YOUTUBE_TABS":
+        this.pauseYouTubeVideo();
         break
         
       default:
@@ -661,34 +670,22 @@ class YouTubeIntegration {
     console.log("[v0] Break overlay displayed")
   }
 
+  updateBreakCountdown(currentTime) {
+    const countdownElement = document.getElementById("break-countdown-timer");
+    if (!countdownElement) return;
+
+    const minutes = Math.floor(currentTime / 60);
+    const seconds = currentTime % 60;
+    countdownElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  }
+
   startBreakCountdown() {
     if (this.breakCountdownInterval) {
-      clearInterval(this.breakCountdownInterval)
+      clearInterval(this.breakCountdownInterval);
     }
-    
-    const countdownElement = document.getElementById("break-countdown-timer")
-    if (!countdownElement) return
-    
-    const breakDuration = this.timerState.currentMode === "longBreak" 
-      ? this.timerState.settings.longBreak * 60 
-      : this.timerState.settings.shortBreak * 60
-    
-    let timeLeft = breakDuration
-    
-    const updateCountdown = () => {
-      const minutes = Math.floor(timeLeft / 60)
-      const seconds = timeLeft % 60
-      countdownElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-      timeLeft--
-      
-      if (timeLeft < 0) {
-        clearInterval(this.breakCountdownInterval)
-        countdownElement.textContent = "00:00"
-      }
-    }
-    
-    updateCountdown()
-    this.breakCountdownInterval = setInterval(updateCountdown, 1000)
+
+    // Immediately update the countdown with the current time
+    this.updateBreakCountdown(this.timerState.currentTime);
   }
 
   removeBreakOverlay() {
