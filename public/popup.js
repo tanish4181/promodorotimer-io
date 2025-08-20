@@ -2,7 +2,7 @@
 
 class PomodoroPopup {
     constructor() {
-        console.log("[v0] Initializing PomodoroPopup");
+        console.log("Initializing PomodoroPopup");
 
         this.elements = {
             timerText: document.getElementById("timer-text"),
@@ -152,12 +152,12 @@ class PomodoroPopup {
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
 
-        console.log("[v0] All event listeners initialized.");
+        console.log("All event listeners initialized.");
     }
     
     async toggleSetting(settingName) {
         if (!this.state || !this.state.settings) {
-            console.error("[v0] No state or settings available");
+            console.error("No state or settings available");
             return;
         }
 
@@ -170,9 +170,9 @@ class PomodoroPopup {
             const newSettings = { [settingName]: newValue };
             await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
             
-            console.log(`[v0] Setting ${settingName} successfully toggled to ${newValue}`);
+            console.log(`Setting ${settingName} successfully toggled to ${newValue}`);
         } catch (error) {
-            console.error(`[v0] Error toggling setting ${settingName}:`, error);
+            console.error(`Error toggling setting ${settingName}:`, error);
             this.state.settings[settingName] = !newValue;
             this.updateDisplay();
         }
@@ -184,22 +184,58 @@ class PomodoroPopup {
     }
 
     async loadState() {
-        console.log("[v0] Loading state from background script.");
+        console.log("Loading state from background script.");
         try {
             const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
             if (response && response.state) {
                 this.state = response.state;
                 this.updateDisplay();
                 this.renderTodos();
-                console.log("[v0] State loaded and rendered successfully.");
-            } else {
-                throw new Error("Invalid state response from background");
+                console.log("State loaded and rendered successfully.");
             }
         } catch (error) {
-            console.error("[v0] Error loading state:", error);
-            this.elements.timerText.textContent = "Error";
-            this.elements.timerLabel.textContent = "Could not load timer";
+            console.error("Error loading state:", error);
+            this.initializeDefaultState();
+            this.updateDisplay();
+            this.renderTodos();
         }
+    }
+
+    initializeDefaultState() {
+      this.state = {
+        timerState: "focus",
+        currentTime: 25 * 60,
+        isRunning: false,
+        currentMode: "focus",
+        sessionCount: 1,
+        settings: {
+          focusTime: 25,
+          shortBreak: 5,
+          longBreak: 15,
+          sessionsUntilLongBreak: 4,
+          autoStartBreaks: true,
+          autoStartPomodoros: false,
+          autoSwitchModes: true,
+          notifications: true,
+          sounds: true,
+          breakReminders: true,
+          enforceBreaks: true,
+          youtubeIntegration: true,
+          breakOverlay: true,
+          breakCountdown: true,
+          nextSessionInfo: true,
+          focusOverlay: false,
+          hideDistractions: true,
+          focusIndicator: true,
+          websiteBlocking: true,
+          hideYoutubeComments: true,
+          hideYoutubeRecommendations: true,
+          hideYoutubeShorts: true,
+          pauseYoutubeBreaks: true,
+          collectStats: true,
+        },
+        todos: [],
+      };
     }
 
     updateDisplay() {

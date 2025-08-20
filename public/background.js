@@ -700,21 +700,21 @@ class PomodoroBackground {
 
       for (const tab of tabs) {
         try {
-          await chrome.tabs.sendMessage(tab.id, message);
+          chrome.tabs.sendMessage(tab.id, message);
         } catch (error) {
           console.log(
-            "[v0] Could not send message to tab:",
+            "Could not send message to tab:",
             tab.id,
             error.message
           );
         }
       }
     } catch (error) {
-      console.error("[v0] Error notifying content scripts:", error);
+      console.error("Error notifying content scripts:", error);
     }
   }
 }
 
 // Initialize background script
-console.log("[v0] Creating PomodoroBackground instance");
+console.log("Creating PomodoroBackground instance");
 new PomodoroBackground();
