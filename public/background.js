@@ -446,6 +446,10 @@ class PomodoroBackground {
 
       this.state.sessionCount++;
 
+      if (this.state.settings.pauseYoutubeBreaks) {
+        this.notifyContentScripts({ type: "PAUSE_ALL_YOUTUBE_TABS" });
+      }
+
       if (this.state.settings.enforceBreaks) {
         this.notifyContentScripts({
           type: "ENFORCE_BREAK",
@@ -608,40 +612,43 @@ class PomodoroBackground {
       return false;
     }
 
-    // 2. Allowlist is the highest priority and always overrides blocking
+    const { isRunning, currentMode, settings } = this.state;
+    const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
+
+    // 2. Break-time blocking logic
+    if (isRunning && isBreak) {
+      if (settings.breakBlockAll) {
+        // Block ALL websites during break, ignoring allowlist
+        return true;
+      }
+      if (settings.breakUseAllowlist && !this._isUrlInList(url, this.state.allowedWebsites)) {
+        // Block all sites EXCEPT those on the allowlist
+        return true;
+      }
+      // If no break blocking is enabled, don't block during breaks.
+      return false;
+    }
+
+    // 3. Allowlist is the highest priority for focus and idle modes
     if (this._isUrlInList(url, this.state.allowedWebsites)) {
       return false;
     }
 
-    const { isRunning, currentMode, settings } = this.state;
+    // 4. Focus-time blocking logic
+    if (isRunning && currentMode === 'focus') {
+      // Block everything that is not on the allowlist (which is already checked)
+      return true;
+    }
 
-    // 3. Logic for when the timer is active (Focus or Break)
-    if (isRunning) {
-      if (currentMode === 'focus') {
-        // During focus, block everything that is not on the allowlist.
-        return true;
-      }
-
-      if (currentMode === 'shortBreak' || currentMode === 'longBreak') {
-        // During breaks, check user's break blocking preferences.
-        if (settings.breakBlockAll) {
-          // Option 1: Block all websites.
-          return true;
-        }
-        if (settings.breakUseAllowlist) {
-          // Option 2: Use allowlist (block everything else).
-          return true;
-        }
-      }
-    } else {
-      // 4. Logic for when the timer is OFF (Idle state)
-      // Block sites that are on the blocklist.
+    // 5. Idle-time blocking logic (timer is not running)
+    if (!isRunning) {
+      // Block sites that are on the manual blocklist
       if (this._isUrlInList(url, this.state.blockedWebsites)) {
         return true;
       }
     }
 
-    // 5. Default case: If no other rule applies, do not block the site.
+    // 6. Default case: If no other rule applies, do not block the site.
     return false;
   }
 
