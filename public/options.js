@@ -403,30 +403,11 @@ class ModernPomodoroOptions {
     };
 
     try {
-      // Save to storage
-      await chrome.storage.local.set({ settings: newSettings });
-      
-      // Update background script if available
-      if (this.backgroundAvailable) {
-        await chrome.runtime.sendMessage({
-          type: "SETTINGS_UPDATED",
-          settings: newSettings
-        });
-      }
-
-      // Proactively notify all tabs so changes apply immediately without refresh
-      try {
-        const tabs = await chrome.tabs.query({});
-        for (const tab of tabs) {
-          try {
-            await chrome.tabs.sendMessage(tab.id, { type: "SETTINGS_UPDATED", settings: newSettings });
-          } catch (e) {
-            // Ignore tabs without our content scripts
-          }
-        }
-      } catch (e) {
-        // Ignore if tabs permission is restricted in some contexts
-      }
+      // Update background script
+      await chrome.runtime.sendMessage({
+        type: "SETTINGS_UPDATED",
+        settings: newSettings
+      });
       
       this.currentSettings = newSettings;
       this.updateHeaderStats();
@@ -668,19 +649,11 @@ class ModernPomodoroOptions {
 
   async saveWebsiteLists() {
     try {
-      await chrome.storage.local.set({
-        allowedWebsites: this.allowlist,
-        blockedWebsites: this.blocklist
+      await chrome.runtime.sendMessage({
+        type: "WEBSITE_LISTS_UPDATED",
+        allowlist: this.allowlist,
+        blocklist: this.blocklist
       });
-      
-      // Update background script if available
-      if (this.backgroundAvailable) {
-        await chrome.runtime.sendMessage({
-          type: "WEBSITE_LISTS_UPDATED",
-          allowlist: this.allowlist,
-          blocklist: this.blocklist
-        });
-      }
       
       console.log("[v0] Website lists saved");
     } catch (error) {

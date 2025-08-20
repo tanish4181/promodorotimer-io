@@ -662,6 +662,11 @@ class YouTubeIntegration {
       }
     })
 
+    this.overlayElement.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
     // Start countdown if enabled
     if (settings.breakCountdown) {
       this.startBreakCountdown()

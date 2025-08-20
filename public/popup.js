@@ -192,50 +192,14 @@ class PomodoroPopup {
                 this.updateDisplay();
                 this.renderTodos();
                 console.log("[v0] State loaded and rendered successfully.");
+            } else {
+                throw new Error("Invalid state response from background");
             }
         } catch (error) {
             console.error("[v0] Error loading state:", error);
-            this.initializeDefaultState();
-            this.updateDisplay();
-            this.renderTodos();
+            this.elements.timerText.textContent = "Error";
+            this.elements.timerLabel.textContent = "Could not load timer";
         }
-    }
-
-    initializeDefaultState() {
-      this.state = {
-        timerState: "focus",
-        currentTime: 25 * 60,
-        isRunning: false,
-        currentMode: "focus",
-        sessionCount: 1,
-        settings: {
-          focusTime: 25,
-          shortBreak: 5,
-          longBreak: 15,
-          sessionsUntilLongBreak: 4,
-          autoStartBreaks: true,
-          autoStartPomodoros: false,
-          autoSwitchModes: true,
-          notifications: true,
-          sounds: true,
-          breakReminders: true,
-          enforceBreaks: true,
-          youtubeIntegration: true,
-          breakOverlay: true,
-          breakCountdown: true,
-          nextSessionInfo: true,
-          focusOverlay: false,
-          hideDistractions: true,
-          focusIndicator: true,
-          websiteBlocking: true,
-          hideYoutubeComments: true,
-          hideYoutubeRecommendations: true,
-          hideYoutubeShorts: true,
-          pauseYoutubeBreaks: true,
-          collectStats: true,
-        },
-        todos: [],
-      };
     }
 
     updateDisplay() {
@@ -338,7 +302,6 @@ class PomodoroPopup {
   
     async saveTodos() {
       try {
-        await chrome.storage.local.set({ todos: this.state.todos });
         await chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos });
         this.renderTodos();
       } catch (error) {
