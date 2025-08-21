@@ -338,19 +338,19 @@ class PomodoroStats {
     return `
       <div class="navigation">
         <button class="nav-btn ${this.currentView === 'overview' ? 'active' : ''}" data-view="overview">
-          <span class="nav-icon">📈</span>
+          <span class="nav-icon"></span>
           <span class="nav-label">Overview</span>
         </button>
         <button class="nav-btn ${this.currentView === 'heatmap' ? 'active' : ''}" data-view="heatmap">
-          <span class="nav-icon">🔥</span>
+          <span class="nav-icon"></span>
           <span class="nav-label">Activity</span>
         </button>
         <button class="nav-btn ${this.currentView === 'trends' ? 'active' : ''}" data-view="trends">
-          <span class="nav-icon">📊</span>
+          <span class="nav-icon"></span>
           <span class="nav-label">Trends</span>
         </button>
         <button class="nav-btn ${this.currentView === 'goals' ? 'active' : ''}" data-view="goals">
-          <span class="nav-icon">🎯</span>
+          <span class="nav-icon"></span>
           <span class="nav-label">Goals</span>
         </button>
       </div>
@@ -395,7 +395,7 @@ class PomodoroStats {
       <div class="stats-grid">
         <div class="stat-card primary">
           <div class="stat-header">
-            <h3>🍅 Focus Sessions</h3>
+            <h3>Focus Sessions</h3>
             <div class="stat-trend ${this.stats.trend > 0 ? 'positive' : this.stats.trend < 0 ? 'negative' : 'neutral'}">
               ${this.stats.trend > 0 ? '📈' : this.stats.trend < 0 ? '📉' : '➡️'}
             </div>
@@ -415,7 +415,7 @@ class PomodoroStats {
         
         <div class="stat-card secondary">
           <div class="stat-header">
-            <h3>⏱️ Focus Time</h3>
+            <h3>Focus Time</h3>
           </div>
           <div class="stat-value">${focusHours}h ${focusMinutes}m</div>
           <div class="stat-details">
@@ -432,7 +432,7 @@ class PomodoroStats {
         
         <div class="stat-card accent">
           <div class="stat-header">
-            <h3>🔥 Current Streak</h3>
+            <h3>Current Streak</h3>
           </div>
           <div class="stat-value">${this.stats.currentStreak}</div>
           <div class="stat-details">
@@ -449,7 +449,7 @@ class PomodoroStats {
         
         <div class="stat-card success">
           <div class="stat-header">
-            <h3>📊 Productivity</h3>
+            <h3>Productivity</h3>
           </div>
           <div class="stat-value">${this.stats.productivityScore}%</div>
           <div class="stat-details">
@@ -477,7 +477,7 @@ class PomodoroStats {
     return `
       <div class="quick-heatmap-container">
         <div class="section-header">
-          <h2>📅 Recent Activity (Last 30 Days)</h2>
+          <h2>Recent Activity (Last 30 Days)</h2>
           <button class="view-full-btn" data-view="heatmap">View Full Heatmap</button>
         </div>
         <div class="quick-heatmap">
@@ -505,7 +505,7 @@ class PomodoroStats {
       <div class="view-content">
         <div class="heatmap-container">
           <div class="section-header">
-            <h2>🔥 Activity Heatmap - Last 12 Months</h2>
+            <h2>Activity Heatmap - Last 12 Months</h2>
             <div class="heatmap-stats">
               <span class="heatmap-stat">
                 <strong>${this.stats.totalSessions}</strong> sessions in the last year
@@ -637,7 +637,7 @@ class PomodoroStats {
       <div class="view-content">
         <div class="trends-container">
           <div class="section-header">
-            <h2>📈 Productivity Trends</h2>
+            <h2>Productivity Trends</h2>
           </div>
           ${this.renderTrendCharts()}
           ${this.renderInsights()}
@@ -653,7 +653,7 @@ class PomodoroStats {
     return `
       <div class="charts-grid">
         <div class="chart-container">
-          <h3>📊 Weekly Sessions Trend</h3>
+          <h3>Weekly Sessions Trend</h3>
           <div class="simple-chart weekly-chart">
             ${weeklyData.map((week, index) => `
               <div class="chart-bar" style="height: ${(week.sessions / Math.max(...weeklyData.map(w => w.sessions)) * 100) || 0}%">
@@ -668,7 +668,7 @@ class PomodoroStats {
         </div>
         
         <div class="chart-container">
-          <h3>⏰ Daily Average Sessions</h3>
+          <h3>Daily Average Sessions</h3>
           <div class="daily-averages">
             ${this.renderDailyAverages()}
           </div>
@@ -906,7 +906,7 @@ class PomodoroStats {
       <div class="view-content">
         <div class="goals-container">
           <div class="section-header">
-            <h2>🎯 Goals & Progress</h2>
+            <h2>Goals & Progress</h2>
             <button class="edit-goals-btn" id="editGoalsBtn">Edit Goals</button>
           </div>
           ${this.renderGoalProgress()}
@@ -936,7 +936,7 @@ class PomodoroStats {
         
         <div class="goal-item">
           <div class="goal-header">
-            <h3>📊 Weekly Goal</h3>
+            <h3>Weekly Goal</h3>
             <span class="goal-value">${this.stats.weeklyStats.focusSessions} / ${this.goals.weekly}</span>
           </div>
           <div class="progress-bar">
@@ -947,7 +947,7 @@ class PomodoroStats {
         
         <div class="goal-item">
           <div class="goal-header">
-            <h3>📈 Monthly Goal</h3>
+            <h3>Monthly Goal</h3>
             <span class="goal-value">${this.stats.monthlyStats.focusSessions} / ${this.goals.monthly}</span>
           </div>
           <div class="progress-bar">
@@ -962,7 +962,7 @@ class PomodoroStats {
   renderGoalSettings() {
     return `
       <div class="goal-settings" style="display: none;">
-        <h3>⚙️ Goal Settings</h3>
+        <h3>Goal Settings</h3>
         <div class="goal-inputs">
           <div class="goal-input">
             <label for="dailyGoal">Daily Sessions</label>
@@ -997,7 +997,7 @@ class PomodoroStats {
     if (recentActivity.length === 0) {
       return `
         <div class="recent-activity-container">
-          <h2>📋 Recent Activity</h2>
+          <h2> Recent Activity</h2>
           <div class="empty-activity">
             <div class="empty-icon">📊</div>
             <h3>No recent activity</h3>
@@ -1010,7 +1010,7 @@ class PomodoroStats {
     return `
       <div class="recent-activity-container">
         <div class="section-header">
-          <h2>📋 Recent Activity</h2>
+          <h2> Recent Activity</h2>
         </div>
         <div class="activity-timeline">
           ${recentActivity.map(activity => `
@@ -1096,7 +1096,7 @@ class PomodoroStats {
   renderEmptyState() {
     return `
       <div class="empty-state">
-        <div class="empty-state-icon">🍅</div>
+        <div class="empty-state-icon"></div>
         <h3>Start Your Productivity Journey</h3>
         <p>Complete your first Pomodoro session to see detailed statistics and insights about your productivity.</p>
         <button class="start-session-btn" onclick="chrome.tabs.create({url: chrome.runtime.getURL('popup.html')})">
