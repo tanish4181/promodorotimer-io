@@ -30,7 +30,10 @@ class PomodoroPopup {
             todoList: document.getElementById("todo-list"),
 
             // Support button
-            supportBtn: document.getElementById("support-btn")
+            supportBtn: document.getElementById("support-btn"),
+            supportBtnMain: document.getElementById("support-btn-main"),
+            openStatsBtn: document.getElementById("open-stats"),
+            openSettingsBtn: document.getElementById("open-settings")
         };
 
         this.state = {};
@@ -140,6 +143,9 @@ class PomodoroPopup {
 
         // Support button event listener
         this.elements.supportBtn?.addEventListener("click", () => this.openSupportPage());
+        this.elements.supportBtnMain?.addEventListener("click", () => this.openSupportPage());
+        this.elements.openStatsBtn?.addEventListener("click", () => this.openStats());
+        this.elements.openSettingsBtn?.addEventListener("click", () => this.openSettings());
 
         this.elements.focusTimeSelect?.addEventListener("change", () => this.updateSettings());
         this.elements.breakTimeSelect?.addEventListener("change", () => this.updateSettings());
