@@ -67,6 +67,7 @@ class ModernPomodoroOptions {
     // Header stats
     this.elements.headerFocusTime = document.getElementById("header-focus-time");
     this.elements.headerBreakTime = document.getElementById("header-break-time");
+    this.elements.autoSwitchOptions = document.getElementById("auto-switch-options");
 
     console.log("[v0] All DOM elements initialized");
   }
@@ -195,6 +196,10 @@ class ModernPomodoroOptions {
         }
         this.saveSettings();
       });
+    }
+
+    if (this.elements.autoSwitchModes) {
+      this.elements.autoSwitchModes.addEventListener("change", () => this.toggleAutoSwitchOptions());
     }
 
     console.log("[v0] All event listeners bound");
@@ -367,7 +372,14 @@ class ModernPomodoroOptions {
       this.elements.soundType.value = this.currentSettings.soundType || "ding";
     }
 
+    this.toggleAutoSwitchOptions();
+
     console.log("[v0] Settings populated in UI");
+  }
+
+  toggleAutoSwitchOptions() {
+    if (!this.elements.autoSwitchOptions) return;
+    this.elements.autoSwitchOptions.style.display = this.elements.autoSwitchModes.checked ? "" : "none";
   }
 
   async saveSettings() {

@@ -95,7 +95,7 @@ class AdvancedWebsiteBlocker {
       });
 
       if (response?.blocked && !this.isBlocked) {
-        this.blockWebsite();
+        this.blockWebsite(response.reason);
       } else if (!response?.blocked && this.isBlocked) {
         this.unblockWebsite();
       }
@@ -113,11 +113,11 @@ class AdvancedWebsiteBlocker {
     }
   }
 
-  blockWebsite() {
-    console.log("Blocking website:", window.location.hostname);
+  blockWebsite(reason) {
+    console.log("Blocking website:", window.location.hostname, `Reason: ${reason}`);
     
     this.isBlocked = true;
-    this.createBlockingOverlay();
+    this.createBlockingOverlay(reason);
     this.hidePageContent();
   }
 
@@ -129,13 +129,13 @@ class AdvancedWebsiteBlocker {
     this.showPageContent();
   }
 
-  createBlockingOverlay() {
+  createBlockingOverlay(reason) {
     // Don't create multiple overlays
     if (this.overlay) return;
 
     this.overlay = document.createElement("div");
     this.overlay.id = "pomodoro-block-overlay";
-    this.overlay.innerHTML = this.getOverlayHTML();
+    this.overlay.innerHTML = this.getOverlayHTML(reason);
 
     // Add styles
     this.injectOverlayStyles();
@@ -149,14 +149,37 @@ class AdvancedWebsiteBlocker {
     console.log("Blocking overlay created");
   }
 
-  getOverlayHTML() {
-    const currentMode = this.getCurrentMode();
-    const modeConfig = this.getModeConfig(currentMode);
-    
+  getOverlayHTML(reason) {
+    const messages = {
+      'focus': {
+        title: 'Focus Mode is On',
+        message: 'This website is blocked to help you stay focused. If you need to access it during focus sessions, please add it to your allowlist in the extension options.'
+      },
+      'blocklist': {
+        title: 'Website Blocked',
+        message: 'This website is in your blocklist.'
+      },
+      'break-all': {
+        title: 'Break Time',
+        message: 'All websites are blocked during your break to help you disconnect.'
+      },
+      'break-allowlist': {
+        title: 'Break Time',
+        message: 'This website is not in your allowlist and is blocked during your break.'
+      },
+      'default': {
+        title: 'Website Blocked',
+        message: 'This website is currently blocked by the Pomodoro Timer extension.'
+      }
+    };
+
+    const config = messages[reason] || messages['default'];
+
     return `
       <div class="pomodoro-block-container">
         <div class="pomodoro-block-content">
-          <h1 class="pomodoro-block-title">${modeConfig.title}</h1>
+          <h1 class="pomodoro-block-title">${config.title}</h1>
+          <p class="pomodoro-block-message">${config.message}</p>
           <div class="pomodoro-block-actions">
             <button id="pomodoro-close-tab" class="pomodoro-btn pomodoro-btn-primary">
               Close Tab
@@ -165,35 +188,6 @@ class AdvancedWebsiteBlocker {
         </div>
       </div>
     `;
-  }
-
-  getCurrentMode() {
-    // Try to get current mode from URL or default to focus
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('pomodoroMode') || 'focus';
-    } catch {
-      return 'focus';
-    }
-  }
-
-  getModeConfig(mode) {
-    const configs = {
-      focus: {
-        title: 'Focus mode is on',
-      },
-      shortBreak: {
-        title: 'Break Time',
-      },
-      longBreak: {
-        title: 'Break Time',
-      },
-      idle: {
-        title: 'Website is blocked',
-      }
-    };
-    
-    return configs[mode] || configs.focus;
   }
 
   injectOverlayStyles() {
@@ -244,7 +238,14 @@ class AdvancedWebsiteBlocker {
         font-weight: 600 !important;
         color: #ffffff !important;
         text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+        margin-bottom: 16px !important;
+      }
+
+      .pomodoro-block-message {
+        font-size: 16px !important;
+        color: rgba(255, 255, 255, 0.8) !important;
         margin-bottom: 24px !important;
+        line-height: 1.5 !important;
       }
 
       .pomodoro-block-actions {
