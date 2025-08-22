@@ -33,7 +33,15 @@ class PomodoroPopup {
             supportBtn: document.getElementById("support-btn"),
             supportBtnMain: document.getElementById("support-btn-main"),
             openStatsBtn: document.getElementById("open-stats"),
-            openSettingsBtn: document.getElementById("open-settings")
+            openSettingsBtn: document.getElementById("open-settings"),
+
+            // Pet section
+            petSection: document.getElementById("pet-section"),
+            petHeader: document.querySelector(".pet-header"),
+            petContent: document.getElementById("pet-content"),
+            petImage: document.getElementById("pet-image"),
+            interactBtn: document.getElementById("interact-btn"),
+            petToggleBtn: document.getElementById("pet-toggle-btn")
         };
 
         this.state = {};
@@ -157,6 +165,10 @@ class PomodoroPopup {
             if (e.key === "Enter") this.addTodo();
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
+
+        // Pet section listeners
+        this.elements.petHeader?.addEventListener("click", () => this.togglePetContent());
+        this.elements.interactBtn?.addEventListener("click", () => this.interactWithPet());
 
         console.log("All event listeners initialized.");
     }
@@ -301,6 +313,37 @@ class PomodoroPopup {
         // Update quick settings
         if (this.elements.focusTimeSelect) this.elements.focusTimeSelect.value = this.state.settings.focusTime;
         if (this.elements.breakTimeSelect) this.elements.breakTimeSelect.value = this.state.settings.shortBreak;
+
+        // Update pet section
+        this.updatePetDisplay();
+    }
+
+    togglePetContent() {
+        this.elements.petContent.style.display = this.elements.petContent.style.display === "none" ? "flex" : "none";
+        this.elements.petToggleBtn.classList.toggle("collapsed");
+    }
+
+    interactWithPet() {
+        this.sendMessageToBackground("INTERACT_WITH_PET");
+    }
+
+    updatePetDisplay() {
+        if (!this.state.settings.petEnabled) {
+            this.elements.petSection.style.display = "none";
+            return;
+        }
+
+        this.elements.petSection.style.display = "block";
+
+        if (this.state.pet) {
+            let mood = "neutral";
+            if (this.state.pet.happiness > 75) {
+                mood = "happy";
+            } else if (this.state.pet.happiness < 25) {
+                mood = "sad";
+            }
+            this.elements.petImage.src = `icons/pet/${mood}.svg`;
+        }
     }
 
     async updateSettings() {

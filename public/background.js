@@ -39,10 +39,15 @@ class PomodoroBackground {
         hideYoutubeShorts: true,
         pauseYoutubeBreaks: true,
         collectStats: true,
+        petEnabled: true,
       },
       blockedWebsites: [],
       allowedWebsites: [],
       todos: [],
+      pet: {
+        happiness: 50,
+        lastInteractionTime: Date.now(),
+      },
     };
 
     this.lastTickTime = 0; // Keep for time drift calculation on load
@@ -119,6 +124,7 @@ class PomodoroBackground {
         "blockedWebsites",
         "allowedWebsites",
         "todos",
+        "pet",
       ]);
 
       if (result.timerState) {
@@ -199,6 +205,10 @@ class PomodoroBackground {
       blockedWebsites: [],
       allowedWebsites: [],
       todos: [],
+      pet: {
+        happiness: 50,
+        lastInteractionTime: Date.now(),
+      },
     };
     await this.saveState();
   }
@@ -290,6 +300,11 @@ class PomodoroBackground {
           if (sender.tab) {
             chrome.tabs.remove(sender.tab.id);
           }
+          break;
+
+        case "INTERACT_WITH_PET":
+          this.interactWithPet();
+          sendResponse({ success: true });
           break;
 
         default:
@@ -425,6 +440,7 @@ class PomodoroBackground {
     if (this.state.currentMode === "focus") {
       this.state.totalSessions++;
       await this.recordSession();
+      this.updatePetHappiness(10);
     }
 
     await this.switchToNextMode();
@@ -681,6 +697,21 @@ class PomodoroBackground {
     } catch (error) {
       // Popup might not be open
     }
+  }
+
+  updatePetHappiness(change) {
+    if (!this.state.settings.petEnabled) return;
+    this.state.pet.happiness = Math.max(0, Math.min(100, this.state.pet.happiness + change));
+    this.saveState();
+    this.broadcastUpdate();
+  }
+
+  interactWithPet() {
+    if (!this.state.settings.petEnabled) return;
+    this.updatePetHappiness(5);
+    this.state.pet.lastInteractionTime = Date.now();
+    this.saveState();
+    this.broadcastUpdate();
   }
 
   async notifyContentScripts(message) {

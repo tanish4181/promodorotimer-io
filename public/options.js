@@ -67,6 +67,9 @@ class ModernPomodoroOptions {
     this.elements.headerFocusTime = document.getElementById("header-focus-time");
     this.elements.headerBreakTime = document.getElementById("header-break-time");
 
+    // Pet settings
+    this.elements.petEnabled = document.getElementById("pet-enabled");
+
     console.log("[v0] All DOM elements initialized");
   }
 
@@ -129,7 +132,8 @@ class ModernPomodoroOptions {
       this.elements.hideYoutubeRecommendations,
       this.elements.hideYoutubeShorts,
       this.elements.pauseYoutubeBreaks,
-      this.elements.collectStats
+      this.elements.collectStats,
+      this.elements.petEnabled
     ];
 
     toggleInputs.forEach(input => {
@@ -328,6 +332,7 @@ class ModernPomodoroOptions {
       hideYoutubeShorts: true,
       pauseYoutubeBreaks: true,
       collectStats: true,
+      petEnabled: true,
     };
   }
 
@@ -346,7 +351,7 @@ class ModernPomodoroOptions {
       "nextSessionInfo", "focusOverlay", "hideDistractions",
       "focusIndicator", "websiteBlocking", "breakBlockAll",
       "breakUseAllowlist", "hideYoutubeComments", "hideYoutubeRecommendations",
-      "hideYoutubeShorts", "pauseYoutubeBreaks", "collectStats"
+      "hideYoutubeShorts", "pauseYoutubeBreaks", "collectStats", "petEnabled"
     ];
 
     toggleSettings.forEach(setting => {
@@ -396,6 +401,7 @@ class ModernPomodoroOptions {
       hideYoutubeShorts: this.elements.hideYoutubeShorts?.checked || false,
       pauseYoutubeBreaks: this.elements.pauseYoutubeBreaks?.checked || false,
       collectStats: this.elements.collectStats?.checked || false,
+      petEnabled: this.elements.petEnabled?.checked || false,
     };
 
     try {
