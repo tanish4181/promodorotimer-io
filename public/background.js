@@ -18,7 +18,6 @@ class PomodoroBackground {
         sessionsUntilLongBreak: 4,
         autoStartBreaks: true,
         autoStartPomodoros: false,
-        autoSwitchModes: true,
         notifications: true,
         sounds: true,
         soundType: "ding",
@@ -177,7 +176,6 @@ class PomodoroBackground {
         sessionsUntilLongBreak: 4,
         autoStartBreaks: true,
         autoStartPomodoros: false,
-        autoSwitchModes: true,
         notifications: true,
         sounds: true,
         soundType: "ding",
@@ -487,8 +485,6 @@ class PomodoroBackground {
   }
 
   shouldAutoStart() {
-    if (!this.state.settings.autoSwitchModes) return false;
-
     return (
       (this.state.currentMode === "focus" &&
         this.state.settings.autoStartPomodoros) ||
