@@ -284,8 +284,8 @@ class PomodoroBackground {
           break;
 
         case "CHECK_WEBSITE_BLOCKED":
-          const isBlocked = this.isUrlBlocked(message.url);
-          sendResponse({ blocked: isBlocked });
+          const blockStatus = this.isUrlBlocked(message.url);
+          sendResponse(blockStatus);
           break;
 
         case "CLOSE_CURRENT_TAB":
@@ -615,7 +615,7 @@ class PomodoroBackground {
   isUrlBlocked(url) {
     // 1. Master switch for the entire feature
     if (!this.state.settings.websiteBlocking) {
-      return false;
+      return { blocked: false };
     }
 
     const { isRunning, currentMode, settings } = this.state;
@@ -624,44 +624,39 @@ class PomodoroBackground {
 
     // Don't use generic blocker on youtube during breaks, let content script handle it
     if (isYouTube && isBreak) {
-      return false;
+      return { blocked: false };
     }
 
     // 2. Break-time blocking logic
     if (isRunning && isBreak) {
       if (settings.breakBlockAll) {
-        // Block ALL websites during break, ignoring allowlist
-        return true;
+        return { blocked: true, reason: 'break-all' };
       }
       if (settings.breakUseAllowlist && !this._isUrlInList(url, this.state.allowedWebsites)) {
-        // Block all sites EXCEPT those on the allowlist
-        return true;
+        return { blocked: true, reason: 'break-allowlist' };
       }
-      // If no break blocking is enabled, don't block during breaks.
-      return false;
+      return { blocked: false };
     }
 
     // 3. Allowlist is the highest priority for focus and idle modes
     if (this._isUrlInList(url, this.state.allowedWebsites)) {
-      return false;
+      return { blocked: false };
     }
 
     // 4. Focus-time blocking logic
     if (isRunning && currentMode === 'focus') {
-      // Block everything that is not on the allowlist (which is already checked)
-      return true;
+      return { blocked: true, reason: 'focus' };
     }
 
     // 5. Idle-time blocking logic (timer is not running)
     if (!isRunning) {
-      // Block sites that are on the manual blocklist
       if (this._isUrlInList(url, this.state.blockedWebsites)) {
-        return true;
+        return { blocked: true, reason: 'blocklist' };
       }
     }
 
     // 6. Default case: If no other rule applies, do not block the site.
-    return false;
+    return { blocked: false };
   }
 
   broadcastUpdate() {

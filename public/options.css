@@ -274,6 +274,10 @@ body {
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
 }
 
+.input-group:hover {
+  border-color: var(--border-hover);
+}
+
 .input-group input[type="number"] {
   flex: 1;
   padding: 16px;
@@ -298,6 +302,7 @@ body {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+  cursor: pointer;
 }
 
 .input-group select:focus {
@@ -309,12 +314,13 @@ body {
   position: relative;
 }
 
-.input-group::after {
+.input-group:has(select)::after {
   content: '\25BE';
   position: absolute;
-  right: 12px;
+  right: 16px;
   color: var(--text-secondary);
   pointer-events: none;
+  transition: var(--transition);
 }
 
 .input-group:hover::after {
