@@ -25,7 +25,6 @@ class ModernPomodoroOptions {
     // Toggle settings
     this.elements.autoStartBreaks = document.getElementById("auto-start-breaks");
     this.elements.autoStartPomodoros = document.getElementById("auto-start-pomodoros");
-    this.elements.autoSwitchModes = document.getElementById("auto-switch-modes");
     this.elements.notifications = document.getElementById("notifications");
     this.elements.sounds = document.getElementById("sounds");
     this.elements.soundType = document.getElementById("sound-type");
@@ -67,7 +66,6 @@ class ModernPomodoroOptions {
     // Header stats
     this.elements.headerFocusTime = document.getElementById("header-focus-time");
     this.elements.headerBreakTime = document.getElementById("header-break-time");
-    this.elements.autoSwitchOptions = document.getElementById("auto-switch-options");
 
     console.log("[v0] All DOM elements initialized");
   }
@@ -114,7 +112,6 @@ class ModernPomodoroOptions {
     const toggleInputs = [
       this.elements.autoStartBreaks,
       this.elements.autoStartPomodoros,
-      this.elements.autoSwitchModes,
       this.elements.notifications,
       this.elements.sounds,
       this.elements.breakReminders,
@@ -196,10 +193,6 @@ class ModernPomodoroOptions {
         }
         this.saveSettings();
       });
-    }
-
-    if (this.elements.autoSwitchModes) {
-      this.elements.autoSwitchModes.addEventListener("change", () => this.toggleAutoSwitchOptions());
     }
 
     console.log("[v0] All event listeners bound");
@@ -315,7 +308,6 @@ class ModernPomodoroOptions {
       sessionsUntilLongBreak: 4,
       autoStartBreaks: true,
       autoStartPomodoros: false,
-      autoSwitchModes: true,
       notifications: true,
       sounds: true,
       breakReminders: true,
@@ -348,7 +340,7 @@ class ModernPomodoroOptions {
 
     // Toggle inputs
     const toggleSettings = [
-      "autoStartBreaks", "autoStartPomodoros", "autoSwitchModes",
+      "autoStartBreaks", "autoStartPomodoros",
       "notifications", "sounds", "breakReminders", "enforceBreaks",
       "breakOverlay", "breakCountdown",
       "nextSessionInfo", "focusOverlay", "hideDistractions",
@@ -372,14 +364,7 @@ class ModernPomodoroOptions {
       this.elements.soundType.value = this.currentSettings.soundType || "ding";
     }
 
-    this.toggleAutoSwitchOptions();
-
     console.log("[v0] Settings populated in UI");
-  }
-
-  toggleAutoSwitchOptions() {
-    if (!this.elements.autoSwitchOptions) return;
-    this.elements.autoSwitchOptions.style.display = this.elements.autoSwitchModes.checked ? "" : "none";
   }
 
   async saveSettings() {
@@ -390,7 +375,6 @@ class ModernPomodoroOptions {
       sessionsUntilLongBreak: parseInt(this.elements.sessionsUntilLongBreak?.value) || 4,
       autoStartBreaks: this.elements.autoStartBreaks?.checked || false,
       autoStartPomodoros: this.elements.autoStartPomodoros?.checked || false,
-      autoSwitchModes: this.elements.autoSwitchModes?.checked || false,
       notifications: this.elements.notifications?.checked || false,
       sounds: this.elements.sounds?.checked || false,
       soundType: this.elements.soundType?.value || "ding",
