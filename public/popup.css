@@ -1047,3 +1047,54 @@ select:focus {
     color: black;
   }
 }
+
+/* Pet Section */
+.pet-section {
+  padding: 0 24px;
+  margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.pet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+}
+
+.pet-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+#pet-toggle-btn {
+  transition: transform var(--transition-fast);
+}
+
+#pet-toggle-btn.collapsed {
+  transform: rotate(180deg);
+}
+
+.pet-content {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#pet-image {
+  width: 80px;
+  height: 80px;
+}
+
+#interact-btn {
+  height: 40px;
+  min-width: 120px;
+}
