@@ -37,69 +37,152 @@
             color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
-            overflow-x: hidden;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow-strong);
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+            backdrop-filter: blur(20px);
         }
 
-        .hero {
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all var(--transition-normal);
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary);
+            transform: translateX(-4px);
+        }
+
+        .header {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 40px;
             position: relative;
         }
 
-        .hero::before {
+        .header::before {
             content: '';
             position: absolute;
             top: -20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             background: radial-gradient(circle, var(--primary-light), transparent);
             border-radius: 50%;
             z-index: -1;
         }
 
-        .hero h1 {
-            font-size: 3.5rem;
+        .header h1 {
+            font-size: 2.5rem;
             font-weight: 800;
             background: linear-gradient(135deg, var(--primary), var(--accent-purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             letter-spacing: -0.02em;
         }
 
-        .hero-subtitle {
-            font-size: 1.3rem;
+        .header p {
             color: var(--text-secondary);
-            margin-bottom: 24px;
-            font-weight: 400;
+            font-size: 1.1rem;
+            font-weight: 500;
         }
 
-        .hero-emoji {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            display: block;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .story-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px;
+        .section {
             margin-bottom: 40px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .section-icon {
+            width: 24px;
+            height: 24px;
+            fill: var(--primary);
+        }
+
+        /* Contact Section */
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            transition: all var(--transition-normal);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .contact-item:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--primary-light);
+        }
+
+        .contact-icon {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-secondary);
+            transition: fill var(--transition-normal);
+            flex-shrink: 0;
+        }
+
+        .contact-item:hover .contact-icon {
+            fill: var(--primary);
+        }
+
+        .contact-text {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: color var(--transition-normal);
+        }
+
+        .contact-item:hover .contact-text {
+            color: var(--primary);
+        }
+
+        /* Story Section */
+        .story-section {
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--surface));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 32px;
             position: relative;
             overflow: hidden;
         }
@@ -110,48 +193,45 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--accent-purple), var(--accent-gold));
-        }
-
-        .story-section h2 {
-            font-size: 2rem;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-            font-weight: 700;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent-purple));
         }
 
         .story-section p {
-            font-size: 1.1rem;
             color: var(--text-secondary);
-            margin-bottom: 20px;
+            font-size: 1rem;
+            margin-bottom: 16px;
             line-height: 1.7;
         }
 
-        .story-section .highlight {
+        .story-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .highlight {
             color: var(--primary);
             font-weight: 600;
         }
 
-        .support-options {
+        /* Support Section */
+        .support-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: 1fr;
             gap: 24px;
-            margin-bottom: 40px;
         }
 
-        .support-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
+        /* UPI Section - Fixed positioning */
+        .upi-section {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
             border-radius: 20px;
             padding: 32px;
             text-align: center;
-            transition: all var(--transition-normal);
             position: relative;
             overflow: hidden;
         }
 
-        .support-card::before {
+        .upi-section::before {
             content: '';
             position: absolute;
             top: -50%;
@@ -159,529 +239,347 @@
             width: 200%;
             height: 200%;
             background: radial-gradient(circle, var(--primary-light), transparent 50%);
-            opacity: 0;
-            transition: opacity var(--transition-normal);
+            opacity: 0.5;
+            z-index: 0;
         }
 
-        .support-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: var(--primary);
-            box-shadow: 0 20px 40px rgba(0, 212, 170, 0.2);
-        }
-
-        .support-card:hover::before {
-            opacity: 1;
-        }
-
-        .support-card-content {
+        .upi-content {
             position: relative;
             z-index: 1;
         }
 
-        .support-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        .support-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-            font-weight: 700;
-        }
-
-        .support-card p {
-            color: var(--text-secondary);
+        .upi-header {
             margin-bottom: 24px;
-            font-size: 1rem;
-        }
-
-        .support-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: var(--text-primary);
-            border: none;
-            padding: 16px 32px;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-normal);
-            width: 100%;
             position: relative;
-            overflow: hidden;
+            z-index: 2;
         }
 
-        .support-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
+        .upi-header h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .upi-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 24px auto;
+            border: 2px solid var(--primary);
+            display: inline-block;
+            box-shadow: 0 4px 20px var(--primary-light);
+            position: relative;
+            z-index: 2;
+            max-width: 200px;
+        }
+
+        .qr-code {
+            display: block;
+            width: 160px;
+            height: 160px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .qr-code img {
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left var(--transition-normal);
+            object-fit: contain;
+            border-radius: 8px;
         }
 
-        .support-btn:hover::before {
-            left: 100%;
-        }
-
-        .support-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 32px var(--primary-light);
-        }
-
-        .razorpay-btn {
-            background: linear-gradient(135deg, #3395ff, #2563eb);
-        }
-
-        .razorpay-btn:hover {
-            box-shadow: 0 12px 32px rgba(51, 149, 255, 0.3);
-        }
-
-        .impact-section {
-            background: linear-gradient(135deg, var(--surface), var(--bg-tertiary));
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .impact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 32px;
-            margin-top: 32px;
-        }
-
-        .impact-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .impact-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-
-        .impact-label {
-            color: var(--text-secondary);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 0.9rem;
-        }
-
-        .testimonial {
+        .upi-id-display {
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 24px 0 0 0;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 2;
+        }
+
+        .copy-btn {
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 80px;
+            justify-content: center;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Coffee Button */
+        .coffee-section {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
             border-radius: 20px;
             padding: 32px;
-            margin-bottom: 40px;
             text-align: center;
-            position: relative;
         }
 
-        .testimonial::before {
-            content: '"';
-            font-size: 4rem;
-            color: var(--primary);
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            font-family: serif;
-        }
-
-        .testimonial-text {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            font-style: italic;
-            margin-bottom: 16px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .testimonial-author {
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .future-plans {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px;
-            margin-bottom: 40px;
-        }
-
-        .future-plans h2 {
-            text-align: center;
-            margin-bottom: 32px;
-            font-size: 2rem;
-            color: var(--text-primary);
-        }
-
-        .plans-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-        }
-
-        .plan-item {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
+        .coffee-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--accent-gold), #e6c200);
+            border: none;
             border-radius: 16px;
-            padding: 24px;
+            color: var(--bg-primary);
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 700;
             transition: all var(--transition-normal);
+            box-shadow: 0 4px 16px rgba(255, 221, 0, 0.3);
+            width: 100%;
         }
 
-        .plan-item:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
+        .coffee-btn:hover {
+            background: linear-gradient(135deg, #e6c200, #ccac00);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(255, 221, 0, 0.4);
+            text-decoration: none;
+            color: var(--bg-primary);
         }
 
-        .plan-emoji {
-            font-size: 2rem;
-            margin-bottom: 16px;
-            display: block;
+        .coffee-icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
         }
 
-        .plan-item h3 {
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-
-        .plan-item p {
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
             color: var(--text-secondary);
             font-size: 0.95rem;
         }
 
-        .gratitude {
-            text-align: center;
-            background: linear-gradient(135deg, var(--primary-light), rgba(139, 92, 246, 0.1));
-            border: 1px solid var(--primary);
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 40px;
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
 
-        .gratitude h2 {
-            font-size: 2rem;
-            margin-bottom: 16px;
-            color: var(--primary);
+        .floating {
+            animation: float 3s ease-in-out infinite;
         }
 
-        .gratitude p {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 12px 20px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: all var(--transition-normal);
-            margin-bottom: 20px;
-        }
-
-        .back-link:hover {
-            background: var(--surface-hover);
-            border-color: var(--primary);
-            transform: translateX(-4px);
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
-                padding: 20px 16px;
-            }
-            
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .support-options {
-                grid-template-columns: 1fr;
-            }
-            
-            .story-section, .impact-section, .future-plans, .testimonial, .gratitude {
                 padding: 24px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .qr-container {
+                padding: 16px;
+                max-width: 180px;
+            }
+            
+            .qr-code {
+                width: 140px;
+                height: 140px;
+            }
+            
+            .upi-id-display {
+                font-size: 1rem;
+                padding: 12px 16px;
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .coffee-btn {
+                padding: 16px 24px;
             }
         }
 
-        .contact-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px;
-            margin-bottom: 40px;
-            text-align: center;
+        /* Success animation */
+        .copy-success {
+            background: #28a745 !important;
+            transform: scale(1.1) !important;
         }
 
-        .contact-section h2 {
-            font-size: 2rem;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-
-        .contact-section p {
-            color: var(--text-secondary);
-            margin-bottom: 32px;
-            font-size: 1.1rem;
-        }
-
-        .contact-links {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .contact-link {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 20px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            text-decoration: none;
-            transition: all var(--transition-normal);
-            color: var(--text-primary);
-        }
-
-        .contact-link:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
-            box-shadow: 0 8px 24px var(--primary-light);
-        }
-
-        .contact-icon {
-            font-size: 2rem;
-            min-width: 40px;
-        }
-
-        .contact-info {
-            flex: 1;
-            text-align: left;
-        }
-
-        .contact-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .contact-value {
-            font-size: 1rem;
-            color: var(--primary);
-            font-weight: 600;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-        }
-
-        .email-link:hover {
-            border-color: #ea4335;
-            box-shadow: 0 8px 24px rgba(234, 67, 53, 0.2);
-        }
-
-        .pulse-animation {
-            animation: pulse-glow 2s infinite;
-        }
-
-        @keyframes pulse-glow {
-            0%, 100% {
-                box-shadow: 0 0 20px var(--primary-light);
-            }
-            50% {
-                box-shadow: 0 0 40px var(--primary-light), 0 0 60px var(--primary-light);
-            }
+        .copy-success::before {
+            content: '✓';
+            margin-right: 4px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <a href="#" class="back-link" onclick="window.close()">
-            Back to Timer
+            ← Back to Timer
         </a>
 
-        <div class="hero">
-            <h1>Support Innovation</h1>
-            <p class="hero-subtitle">Help a passionate developer build amazing productivity tools</p>
+        <div class="header">
+            <h1>Support & Contact</h1>
+            <p>Help improve Pomodoro Timer & connect with the developer</p>
         </div>
 
+        <!-- Contact Section -->
+        <div class="section">
+            <div class="section-header">
+                <svg class="section-icon" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                Contact
+            </div>
+            
+            <a href="https://github.com/tanish4181" target="_blank" class="contact-item">
+                <svg class="contact-icon" viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                <span class="contact-text">github.com/tanish4181</span>
+            </a>
+            
+            <a href="mailto:tanish41813@gmail.com" class="contact-item">
+                <svg class="contact-icon" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                <span class="contact-text">tanish41813@gmail.com</span>
+            </a>
+        </div>
+
+        <!-- Story Section -->
         <div class="story-section">
-            <h2>My Journey as a Solo Developer</h2>
             <p>
                 Hi there! I'm an <span class="highlight">independent developer</span> who believes that great software can transform how we work and live. This Pomodoro Timer isn't just another productivity app—it's crafted with love, attention to detail, and countless hours of refinement.
             </p>
             <p>
-                As a <span class="highlight">solo developer</span>, every line of code, every design decision, and every feature comes from my passion for creating tools that genuinely help people focus better and achieve their goals. Your support doesn't just help me maintain this extension—it fuels my ability to innovate and create even better productivity solutions.
-            </p>
-            <p>
-                When you support my work, you're not just buying me coffee. You're <span class="highlight">investing in the future of productivity tools</span> and helping me dedicate more time to building features that matter to real users like you.
+                As a <span class="highlight">solo developer</span>, every line of code, every design decision, and every feature comes from my passion for creating tools that genuinely help people focus better and achieve their goals. Your support helps me dedicate more time to building features that matter to real users like you.
             </p>
         </div>
 
-        <!-- Impact section commented out for now -->
-        <!-- 
-        <div class="impact-section">
-            <h2>🌟 Your Impact</h2>
-            <p>Every contribution, no matter the size, makes a real difference in my development journey</p>
+        <!-- Support Section -->
+        <div class="section">
+            <div class="section-header">
+                <svg class="section-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Support Development
+            </div>
             
-            <div class="impact-grid">
-                <div class="impact-item">
-                    <div class="impact-number">10K+</div>
-                    <div class="impact-label">Users Helped</div>
-                </div>
-                <div class="impact-item">
-                    <div class="impact-number">500+</div>
-                    <div class="impact-label">Hours Coded</div>
-                </div>
-                <div class="impact-item">
-                    <div class="impact-number">24/7</div>
-                    <div class="impact-label">Passion Driven</div>
-                </div>
-            </div>
-        </div>
-        -->
-
-        <div class="support-options">
-            <div class="support-card">
-                <div class="support-card-content">
-                    <h3>Buy Me a Coffee</h3>
-                    <p>Support my late-night coding sessions with a virtual coffee. Perfect for saying thanks!</p>
-                    <button class="support-btn" onclick="openBuyMeACoffee()">
-                        Support via Coffee
-                    </button>
-                </div>
-            </div>
-
-            <div class="support-card">
-                <div class="support-card-content">
-                    <h3>UPI Payment (India)</h3>
-                    <p>Support me directly through UPI. Copy the UPI ID below or click to open your UPI app!</p>
-                    <div class="upi-id-display">
-                        <code>tanish.sharma06@ybl</code>
-                        <button class="copy-upi-btn" onclick="copyUPIId()"></button>
+            <div class="support-grid">
+                <!-- UPI Section -->
+                <div class="upi-section">
+                    <div class="upi-content">
+                        <div class="upi-header">
+                            <h3>UPI Payment</h3>
+                            <p>Scan QR code or copy UPI ID for quick payment</p>
+                        </div>
+                        
+                        <div class="qr-container floating">
+                            <div class="qr-code">
+                                <img src="icons/upi_1755860222943.png" alt="UPI QR Code">
+                            </div>
+                        </div>
+                        
+                        <div class="upi-id-display">
+                            <span id="upiId">tanish.sharma06@ybl</span>
+                            <button id="copyBtn" class="copy-btn">
+                                📋 Copy
+                            </button>
+                        </div>
                     </div>
-                    <button class="support-btn razorpay-btn pulse-animation" onclick="openUPI()">
-                        Pay via UPI
-                    </button>
+                </div>
+
+                <!-- Coffee Section -->
+                <div class="coffee-section">
+                    <h3 style="margin-bottom: 16px; color: var(--text-primary);">Buy Me a Coffee ☕</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px;">Support my late-night coding sessions with a virtual coffee</p>
+                    <a href="https://buymeacoffee.com/tanish4181" target="_blank" class="coffee-btn">
+                        <svg class="coffee-icon" viewBox="0 0 24 24">
+                            <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2a2 2 0 0 0 2-2V4a1 1 0 0 0-1-1zM7.5 7C8.33 7 9 7.67 9 8.5S8.33 10 7.5 10 6 9.33 6 8.5 6.67 7 7.5 7zm4 0C12.33 7 13 7.67 13 8.5S12.33 10 11.5 10 10 9.33 10 8.5 10.67 7 11.5 7zm4 0C16.33 7 17 7.67 17 8.5S16.33 10 15.5 10 14 9.33 14 8.5 14.67 7 15.5 7z"/>
+                        </svg>
+                        Buy me a coffee
+                    </a>
                 </div>
             </div>
         </div>
 
-        <div class="testimonial">
-            <p class="testimonial-text">
-                This extension has transformed my productivity. The clean design and thoughtful features show the developer really cares about user experience.
-            </p>
-            <div class="testimonial-author">— Happy User</div>
-        </div>
-
-        <div class="future-plans">
-            <h2>What's Coming Next</h2>
-            <div class="plans-grid">
-                <div class="plan-item">
-                    <h3>Advanced Analytics</h3>
-                    <p>Detailed productivity insights and focus pattern analysis</p>
-                </div>
-                <div class="plan-item">
-                    <h3>Focus Soundscapes</h3>
-                    <p>Curated ambient sounds and white noise for better concentration</p>
-                </div>
-                <div class="plan-item">
-                    <h3>Team Features</h3>
-                    <p>Collaborative Pomodoro sessions and team productivity tracking</p>
-                </div>
-                <div class="plan-item">
-                    <h3>Custom Themes</h3>
-                    <p>Beautiful, personalized themes to match your workflow style</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="gratitude">
-            <h2>Thank You</h2>
-            <p>
-                Whether you support financially or simply use and enjoy the extension, you're part of this journey. 
-                Your feedback, suggestions, and support mean the world to me and keep me motivated to build better tools for everyone.
-            </p>
-        </div>
-
-        <!-- Contact & Connect Section -->
-        <div class="contact-section">
-            <h2>Let's Connect</h2>
-            <p>Have questions, suggestions, or just want to say hi? I'd love to hear from you!</p>
-            
-            <div class="contact-links">
-                <a href="mailto:tanish41813@gmail.com" class="contact-link email-link">
-                    <div class="contact-info">
-                        <div class="contact-label">Email Me</div>
-                        <div class="contact-value">tanish41813@gmail.com</div>
-                    </div>
-                </a>
-                
-                <a href="https://github.com/tanish4181" target="_blank" class="contact-link github-link">
-                    <div class="contact-info">
-                        <div class="contact-label">GitHub</div>
-                        <div class="contact-value">@tanish4181</div>
-                    </div>
-                </a>
-            </div>
+        <div class="footer">
+            <p>Your support helps keep this extension free and motivates new features! 🚀</p>
         </div>
     </div>
 
     <script>
-        function openBuyMeACoffee() {
-            // Replace with your actual Buy Me a Coffee URL
-            window.open('https://buymeacoffee.com/tanish4181', '_blank');
+        async function copyUpiId() {
+            const upiId = document.getElementById('upiId').textContent;
+            const button = document.getElementById('copyBtn');
+            const originalHTML = button.innerHTML;
+            
+            try {
+                await navigator.clipboard.writeText(upiId);
+                button.innerHTML = '✓ Copied!';
+                button.classList.add('copy-success');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('copy-success');
+                }, 2500);
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = upiId;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                button.innerHTML = '✓ Copied!';
+                button.classList.add('copy-success');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('copy-success');
+                }, 2500);
+            }
         }
 
-        function openUPI() {
-            // Create UPI payment link
-            const upiId = 'tanish.sharma06@ybl';
-            const amount = ''; // Leave empty so user can choose
-            const note = 'Support Pomodoro Timer Development';
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('copyBtn').addEventListener('click', copyUpiId);
             
-            // Create UPI intent URL
-            const upiUrl = `upi://pay?pa=${upiId}&pn=Tanish Sharma&tn=${encodeURIComponent(note)}`;
-            
-            // Try to open UPI app
-            const tempLink = document.createElement('a');
-            tempLink.href = upiUrl;
-            tempLink.click();
-            
-            // Fallback: Show UPI ID for manual payment
-            setTimeout(() => {
-                alert(`UPI ID: ${upiId}\n\nIf the UPI app didn't open automatically, you can copy this UPI ID and use it in any UPI app like PhonePe, GPay, or Paytm.\n\nThank you for your support!`);
-            }, 1000);
-        }
-
-        // Add some interactive elements
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add smooth scrolling
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    document.querySelector(this.getAttribute('href')).scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                });
-            });
-
-            // Add intersection observer for animations
+            // Add subtle entrance animations
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -691,7 +589,7 @@
                 });
             }, { threshold: 0.1 });
 
-            document.querySelectorAll('.support-card, .plan-item').forEach(el => {
+            document.querySelectorAll('.contact-item, .upi-section, .coffee-section').forEach(el => {
                 el.style.opacity = '0';
                 el.style.transform = 'translateY(20px)';
                 el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
