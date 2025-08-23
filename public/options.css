@@ -289,43 +289,6 @@ body {
   text-align: center;
 }
 
-/* Match select inside input group look (for YouTube mode selector) */
-.input-group select {
-  flex: 1;
-  padding: 12px 14px;
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  font-size: 14px;
-  border-radius: var(--radius);
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  cursor: pointer;
-}
-
-.input-group select:focus {
-  outline: none;
-}
-
-/* Custom dropdown arrow for select to match theme */
-.input-group {
-  position: relative;
-}
-
-.input-group:has(select)::after {
-  content: '\25BE';
-  position: absolute;
-  right: 16px;
-  color: var(--text-secondary);
-  pointer-events: none;
-  transition: var(--transition);
-}
-
-.input-group:hover::after {
-  color: var(--text-primary);
-}
 
 .input-group input[type="number"]:focus {
   outline: none;
