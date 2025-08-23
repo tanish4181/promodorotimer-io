@@ -393,7 +393,7 @@ class AdvancedWebsiteBlocker {
   handleBreakOverlay(state) {
     const { currentMode, isRunning, settings } = state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
-    const showOverlay = isRunning && isBreak && (settings.globalBreakOverlay || settings.breakOverlay);
+    const showOverlay = isRunning && isBreak && settings.breakOverlayEnabled;
 
     if (showOverlay && !this.breakOverlayVisible) {
       this.createBreakOverlay(state);

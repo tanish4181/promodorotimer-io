@@ -392,17 +392,6 @@ class YouTubeIntegration {
         if (message.state) {
           this.timerState = message.state;
           this.setupYouTubeIntegration();
-
-          // If the mode is no longer a break, ensure the overlay is removed.
-          const isBreak = this.timerState.currentMode === 'shortBreak' || this.timerState.currentMode === 'longBreak';
-          if (!isBreak && this.overlayElement) {
-            this.removeBreakOverlay();
-          }
-
-          // If the overlay is visible, update the countdown
-          if (this.overlayElement && isBreak) {
-            this.updateBreakCountdown(this.timerState.currentTime);
-          }
         }
         break
 
