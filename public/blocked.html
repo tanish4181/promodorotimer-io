@@ -6,113 +6,70 @@
   <title>Website Blocked - Pomodoro Timer</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-      color: white;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(15, 23, 42, 0.8) !important;
+      z-index: 2147483647 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif !important;
+      animation: pomodoroFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
       margin: 0;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
+    }
+
+    @keyframes pomodoroFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .pomodoro-block-container {
+      max-width: 500px !important;
+      margin: 0 auto !important;
+      padding: 40px !important;
+      position: relative !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-radius: 24px !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+      text-align: center !important;
+      color: white;
     }
     
-    .container {
-      max-width: 500px;
-      padding: 2rem;
-    }
-    
-    .icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-    
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
+    .pomodoro-block-icon {
+      margin-bottom: 24px;
       color: #059669;
     }
-    
-    p {
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
-      color: #d1d5db;
-      line-height: 1.6;
+
+    .pomodoro-block-title {
+      font-size: 24px !important;
+      font-weight: 700 !important;
+      color: #ffffff !important;
+      margin-bottom: 16px !important;
     }
-    
-    .actions {
-      margin-top: 2rem;
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      display: inline-block;
-    }
-    
-    .btn-primary {
-      background: #059669;
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background: #047857;
-      transform: translateY(-1px);
-    }
-    
-    .btn-secondary {
-      background: #374151;
-      color: white;
-      border: 1px solid #4b5563;
-    }
-    
-    .btn-secondary:hover {
-      background: #4b5563;
-      transform: translateY(-1px);
+
+    .pomodoro-block-message {
+      font-size: 16px !important;
+      color: rgba(255, 255, 255, 0.8) !important;
+      line-height: 1.6 !important;
+      margin-bottom: 0 !important;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="icon">🍅</div>
-    <h1>Website Blocked</h1>
-    <p>This website is blocked during your focus session.</p>
-    <p>Stay focused and get back to work!</p>
-    <div class="actions">
-      <button class="btn btn-primary" id="close-tab">Close Tab</button>
-      <button class="btn btn-secondary" id="pause-timer">Pause Timer</button>
+  <div class="pomodoro-block-container">
+    <div class="pomodoro-block-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shield">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
     </div>
+    <h1 class="pomodoro-block-title">Website Blocked</h1>
+    <p class="pomodoro-block-message">This website has been blocked by the Pomodoro Timer extension.</p>
   </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Close tab button
-      document.getElementById('close-tab').addEventListener('click', function() {
-        chrome.runtime.sendMessage({ type: "CLOSE_CURRENT_TAB" });
-      });
-
-      // Pause timer button
-      document.getElementById('pause-timer').addEventListener('click', async function() {
-        try {
-          if (chrome && chrome.runtime) {
-            await chrome.runtime.sendMessage({ type: "PAUSE_TIMER" });
-            window.close();
-          }
-        } catch (error) {
-          console.error("Error pausing timer:", error);
-        }
-      });
-    });
-  </script>
 </body>
 </html>

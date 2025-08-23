@@ -178,13 +178,13 @@ class AdvancedWebsiteBlocker {
     return `
       <div class="pomodoro-block-container">
         <div class="pomodoro-block-content">
+          <div class="pomodoro-block-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shield">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
           <h1 class="pomodoro-block-title">${config.title}</h1>
           <p class="pomodoro-block-message">${config.message}</p>
-          <div class="pomodoro-block-actions">
-            <button id="pomodoro-close-tab" class="pomodoro-btn pomodoro-btn-primary">
-              Close Tab
-            </button>
-          </div>
         </div>
       </div>
     `;
@@ -202,72 +202,54 @@ class AdvancedWebsiteBlocker {
         left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        background: rgba(15, 23, 42, 0.75) !important;
+        background: rgba(15, 23, 42, 0.8) !important;
         z-index: 2147483647 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif !important;
-        animation: pomodoroFadeIn 0.3s ease-out !important;
+        animation: pomodoroFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
       }
 
       @keyframes pomodoroFadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
       }
 
       .pomodoro-block-container {
-        max-width: 600px !important;
+        max-width: 500px !important;
         margin: 0 auto !important;
-        padding: 20px !important;
+        padding: 40px !important;
         position: relative !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
       }
 
       .pomodoro-block-content {
         text-align: center !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
+      }
+
+      .pomodoro-block-icon {
+        margin-bottom: 24px;
+        color: #059669;
       }
 
       .pomodoro-block-title {
-        font-size: 28px !important;
-        font-weight: 600 !important;
+        font-size: 24px !important;
+        font-weight: 700 !important;
         color: #ffffff !important;
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
         margin-bottom: 16px !important;
       }
 
       .pomodoro-block-message {
         font-size: 16px !important;
         color: rgba(255, 255, 255, 0.8) !important;
-        margin-bottom: 24px !important;
-        line-height: 1.5 !important;
-      }
-
-      .pomodoro-block-actions {
-        display: flex !important;
-        justify-content: center !important;
-      }
-
-      .pomodoro-btn {
-        padding: 12px 24px !important;
-        border: 1px solid rgba(255, 255, 255, 0.5) !important;
-        border-radius: 8px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-        background: rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-      }
-
-      .pomodoro-btn:hover {
-        background: rgba(255, 255, 255, 0.2) !important;
-        border-color: rgba(255, 255, 255, 0.8) !important;
+        line-height: 1.6 !important;
+        margin-bottom: 0 !important;
       }
 
       /* Hide page scroll */
