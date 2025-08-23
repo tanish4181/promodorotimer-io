@@ -552,6 +552,12 @@ class PomodoroBackground {
 
     // 2. Break-time blocking logic
     if (isRunning && isBreak) {
+      // If the break overlay is enabled, it handles the visual "blocking", so the generic blocker should not be active.
+      if (settings.enforceBreaks && settings.breakOverlayEnabled) {
+        return { blocked: false };
+      }
+
+      // If the overlay is NOT enabled, then apply break-time blocking rules.
       if (settings.breakBlockAll) {
         return { blocked: true, reason: 'break-all' };
       }
