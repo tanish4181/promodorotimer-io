@@ -26,8 +26,8 @@ class BreakEnforcer {
   handleBreakOverlay(state) {
     const { currentMode, isRunning, settings } = state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
-    // The key change: The setting is now breakOverlayEnabled
-    const shouldShowOverlay = isRunning && isBreak && settings.breakOverlayEnabled;
+    // The key change: The setting is now enforceBreaks and breakOverlayEnabled
+    const shouldShowOverlay = isRunning && isBreak && settings.enforceBreaks && settings.breakOverlayEnabled;
 
     if (shouldShowOverlay && !this.breakOverlayVisible) {
       this.createBreakOverlay(state);

@@ -139,52 +139,6 @@
             </div>
           </div>
 
-          <!-- Break Enforcement Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>Break Enforcement</h3>
-              <p>Control the break experience</p>
-            </div>
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-overlay-enabled">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Enable Break Overlay</div>
-                  <div class="toggle-description">Show a full-screen reminder on all websites during breaks.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-overlay-enabled" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-block-all">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Block all websites during breaks</div>
-                  <div class="toggle-description">Requires "Enable Website Blocking" to be active.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-block-all">
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-use-allowlist">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Use allowlist during breaks</div>
-                  <div class="toggle-description">Only allowlisted sites accessible. Requires "Enable Website Blocking".</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-use-allowlist" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -237,15 +191,15 @@
           <!-- Break Enforcement Card -->
           <div class="settings-card">
             <div class="card-header">
-              <h3> Break Enforcement</h3>
-              <p>Control how strictly breaks are enforced</p>
+              <h3>Break Enforcement</h3>
+              <p>Control what happens during break time</p>
             </div>
-            
+
             <div class="setting-group">
               <label class="toggle-setting" for="enforce-breaks">
                 <div class="toggle-text-content">
-                  <div class="toggle-text">Enforce breaks</div>
-                  <div class="toggle-description">Show overlay and pause videos during break time</div>
+                  <div class="toggle-text">Enforce Breaks</div>
+                  <div class="toggle-description">Master switch for all break-related features.</div>
                 </div>
                 <div class="toggle-switch">
                   <input type="checkbox" id="enforce-breaks" checked>
@@ -254,11 +208,24 @@
               </label>
             </div>
 
-            <div class="setting-group">
+            <div class="setting-group sub-setting">
+              <label class="toggle-setting" for="break-overlay-enabled">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Show full-screen break reminder</div>
+                  <div class="toggle-description">Displays an overlay on all tabs during breaks.</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-overlay-enabled" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group sub-setting">
               <label class="toggle-setting" for="break-countdown">
                 <div class="toggle-text-content">
-                  <div class="toggle-text">Break countdown timer</div>
-                  <div class="toggle-description">Show countdown timer on break overlay</div>
+                  <div class="toggle-text">Show countdown on overlay</div>
+                  <div class="toggle-description">Shows a timer for the remaining break time.</div>
                 </div>
                 <div class="toggle-switch">
                   <input type="checkbox" id="break-countdown" checked>
@@ -267,11 +234,11 @@
               </label>
             </div>
 
-            <div class="setting-group">
+            <div class="setting-group sub-setting">
               <label class="toggle-setting" for="next-session-info">
                 <div class="toggle-text-content">
-                  <div class="toggle-text">Next session info</div>
-                  <div class="toggle-description">Show information about the next focus session</div>
+                  <div class="toggle-text">Show next session info</div>
+                  <div class="toggle-description">Displays details about the upcoming focus session.</div>
                 </div>
                 <div class="toggle-switch">
                   <input type="checkbox" id="next-session-info" checked>
@@ -280,14 +247,40 @@
               </label>
             </div>
 
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-reminders">
+            <div class="setting-group sub-setting">
+              <label class="toggle-setting" for="pause-youtube-breaks">
                 <div class="toggle-text-content">
-                  <div class="toggle-text">Break reminders</div>
-                  <div class="toggle-description">Show reminders to take breaks during long focus sessions</div>
+                  <div class="toggle-text">Pause YouTube videos</div>
+                  <div class="toggle-description">Automatically pauses any playing YouTube videos.</div>
                 </div>
                 <div class="toggle-switch">
-                  <input type="checkbox" id="break-reminders" checked>
+                  <input type="checkbox" id="pause-youtube-breaks" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group sub-setting">
+              <label class="toggle-setting" for="break-block-all">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Block all websites</div>
+                  <div class="toggle-description">Requires "Enable Website Blocking" on the Blocking tab.</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-block-all">
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group sub-setting">
+              <label class="toggle-setting" for="break-use-allowlist">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Use allowlist during breaks</div>
+                  <div class="toggle-description">Requires "Enable Website Blocking" on the Blocking tab.</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-use-allowlist" checked>
                   <span class="toggle-slider"></span>
                 </div>
               </label>
@@ -442,19 +435,6 @@
             </div>
             
             
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="pause-youtube-breaks">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Pause videos on breaks</div>
-                  <div class="toggle-description">Automatically pause YouTube videos during breaks</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="pause-youtube-breaks" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
 
             <div class="setting-group">
               <label class="toggle-setting" for="youtube-distraction-mode">

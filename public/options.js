@@ -181,17 +181,47 @@ class ModernPomodoroOptions {
     if (this.elements.websiteBlocking) {
       this.elements.websiteBlocking.addEventListener("change", () => this.updateBreakBlockingToggles());
     }
+
+    // Add logic to enable/disable sub-break settings based on enforce-breaks toggle
+    if (this.elements.enforceBreaks) {
+      this.elements.enforceBreaks.addEventListener("change", () => this.updateBreakEnforcementToggles());
+    }
+  }
+
+  updateBreakEnforcementToggles() {
+    const isEnforced = this.elements.enforceBreaks.checked;
+    const subSettings = [
+      this.elements.breakOverlayEnabled,
+      this.elements.breakCountdown,
+      this.elements.nextSessionInfo,
+      this.elements.pauseYoutubeBreaks,
+      this.elements.breakBlockAll,
+      this.elements.breakUseAllowlist
+    ];
+
+    subSettings.forEach(element => {
+      if (element) {
+        element.disabled = !isEnforced;
+        element.closest('.toggle-setting').classList.toggle('disabled', !isEnforced);
+      }
+    });
+
+    // After updating, re-run the logic for the website blocking dependency
+    this.updateBreakBlockingToggles();
   }
 
   updateBreakBlockingToggles() {
-    const isBlockingEnabled = this.elements.websiteBlocking.checked;
+    const isMasterBlockingEnabled = this.elements.websiteBlocking.checked;
+    const areBreaksEnforced = this.elements.enforceBreaks.checked;
+    const isBreakBlockingEnabled = isMasterBlockingEnabled && areBreaksEnforced;
+
     if (this.elements.breakBlockAll && this.elements.breakUseAllowlist) {
-      this.elements.breakBlockAll.disabled = !isBlockingEnabled;
-      this.elements.breakUseAllowlist.disabled = !isBlockingEnabled;
+      this.elements.breakBlockAll.disabled = !isBreakBlockingEnabled;
+      this.elements.breakUseAllowlist.disabled = !isBreakBlockingEnabled;
 
       // Also update the parent container class for styling
-      this.elements.breakBlockAll.closest('.toggle-setting').classList.toggle('disabled', !isBlockingEnabled);
-      this.elements.breakUseAllowlist.closest('.toggle-setting').classList.toggle('disabled', !isBlockingEnabled);
+      this.elements.breakBlockAll.closest('.toggle-setting').classList.toggle('disabled', !isBreakBlockingEnabled);
+      this.elements.breakUseAllowlist.closest('.toggle-setting').classList.toggle('disabled', !isBreakBlockingEnabled);
     }
   }
 
@@ -341,7 +371,7 @@ class ModernPomodoroOptions {
       this.elements.soundType.value = this.currentSettings.soundType || "ding";
     }
 
-    this.updateBreakBlockingToggles();
+    this.updateBreakEnforcementToggles();
     console.log("[v0] Settings populated in UI");
   }
 
