@@ -29,21 +29,20 @@ class ModernPomodoroOptions {
     this.elements.notifications = document.getElementById("notifications");
     this.elements.sounds = document.getElementById("sounds");
     this.elements.soundType = document.getElementById("sound-type");
-    this.elements.breakReminders = document.getElementById("break-reminders");
     this.elements.enforceBreaks = document.getElementById("enforce-breaks");
     this.elements.breakOverlayEnabled = document.getElementById("break-overlay-enabled");
+    this.elements.breakCountdown = document.getElementById("break-countdown");
+    this.elements.nextSessionInfo = document.getElementById("next-session-info");
+    this.elements.pauseYoutubeBreaks = document.getElementById("pause-youtube-breaks");
+    this.elements.collectStats = document.getElementById("collect-stats");
 
     // YouTube specific settings
     this.elements.youtubeDistractionMode = document.getElementById("youtube-distraction-mode");
-    this.elements.breakCountdown = document.getElementById("break-countdown");
-    this.elements.nextSessionInfo = document.getElementById("next-session-info");
     this.elements.hideDistractions = document.getElementById("hide-distractions");
     this.elements.focusIndicator = document.getElementById("focus-indicator");
     this.elements.hideYoutubeComments = document.getElementById("hide-youtube-comments");
     this.elements.hideYoutubeRecommendations = document.getElementById("hide-youtube-recommendations");
     this.elements.hideYoutubeShorts = document.getElementById("hide-youtube-shorts");
-    this.elements.pauseYoutubeBreaks = document.getElementById("pause-youtube-breaks");
-    this.elements.collectStats = document.getElementById("collect-stats");
 
     // Website blocking elements
     this.elements.websiteBlocking = document.getElementById("website-blocking");
@@ -109,9 +108,8 @@ class ModernPomodoroOptions {
     const toggleInputs = [
       this.elements.autoStartBreaks, this.elements.autoStartPomodoros,
       this.elements.notifications, this.elements.sounds,
-      this.elements.breakReminders, this.elements.breakOverlayEnabled,
-      this.elements.breakCountdown,
-      this.elements.nextSessionInfo,
+      this.elements.enforceBreaks, this.elements.breakOverlayEnabled,
+      this.elements.breakCountdown, this.elements.nextSessionInfo,
       this.elements.hideDistractions, this.elements.focusIndicator,
       this.elements.websiteBlocking, this.elements.breakBlockAll,
       this.elements.breakUseAllowlist, this.elements.hideYoutubeComments,
@@ -177,52 +175,45 @@ class ModernPomodoroOptions {
       });
     }
 
-    // Add logic to enable/disable break blocking toggles based on master switch
-    if (this.elements.websiteBlocking) {
-      this.elements.websiteBlocking.addEventListener("change", () => this.updateBreakBlockingToggles());
-    }
-
-    // Add logic to enable/disable sub-break settings based on enforce-breaks toggle
+    // Add logic to enable/disable toggles based on master switches
     if (this.elements.enforceBreaks) {
-      this.elements.enforceBreaks.addEventListener("change", () => this.updateBreakEnforcementToggles());
+      this.elements.enforceBreaks.addEventListener("change", () => this.updateAllToggleStates());
+    }
+    if (this.elements.websiteBlocking) {
+      this.elements.websiteBlocking.addEventListener("change", () => this.updateAllToggleStates());
     }
   }
 
-  updateBreakEnforcementToggles() {
-    const isEnforced = this.elements.enforceBreaks.checked;
-    const subSettings = [
-      this.elements.breakOverlayEnabled,
-      this.elements.breakCountdown,
-      this.elements.nextSessionInfo,
-      this.elements.pauseYoutubeBreaks,
-      this.elements.breakBlockAll,
-      this.elements.breakUseAllowlist
-    ];
+  updateAllToggleStates() {
+    const enforceBreaks = this.elements.enforceBreaks.checked;
+    const websiteBlocking = this.elements.websiteBlocking.checked;
 
-    subSettings.forEach(element => {
-      if (element) {
-        element.disabled = !isEnforced;
-        element.closest('.toggle-setting').classList.toggle('disabled', !isEnforced);
-      }
+    // These depend only on enforceBreaks
+    const breakSubToggles = [
+        this.elements.breakOverlayEnabled,
+        this.elements.breakCountdown,
+        this.elements.nextSessionInfo,
+        this.elements.pauseYoutubeBreaks,
+    ];
+    breakSubToggles.forEach(toggle => {
+        if (toggle) {
+            toggle.disabled = !enforceBreaks;
+            toggle.closest('.toggle-setting').classList.toggle('disabled', !enforceBreaks);
+        }
     });
 
-    // After updating, re-run the logic for the website blocking dependency
-    this.updateBreakBlockingToggles();
-  }
-
-  updateBreakBlockingToggles() {
-    const isMasterBlockingEnabled = this.elements.websiteBlocking.checked;
-    const areBreaksEnforced = this.elements.enforceBreaks.checked;
-    const isBreakBlockingEnabled = isMasterBlockingEnabled && areBreaksEnforced;
-
-    if (this.elements.breakBlockAll && this.elements.breakUseAllowlist) {
-      this.elements.breakBlockAll.disabled = !isBreakBlockingEnabled;
-      this.elements.breakUseAllowlist.disabled = !isBreakBlockingEnabled;
-
-      // Also update the parent container class for styling
-      this.elements.breakBlockAll.closest('.toggle-setting').classList.toggle('disabled', !isBreakBlockingEnabled);
-      this.elements.breakUseAllowlist.closest('.toggle-setting').classList.toggle('disabled', !isBreakBlockingEnabled);
-    }
+    // These depend on BOTH enforceBreaks and websiteBlocking
+    const breakBlockingToggles = [
+        this.elements.breakBlockAll,
+        this.elements.breakUseAllowlist
+    ];
+    breakBlockingToggles.forEach(toggle => {
+        if (toggle) {
+            const shouldBeDisabled = !enforceBreaks || !websiteBlocking;
+            toggle.disabled = shouldBeDisabled;
+            toggle.closest('.toggle-setting').classList.toggle('disabled', shouldBeDisabled);
+        }
+    });
   }
 
   // Sets up event listeners for website blocking inputs and buttons.
@@ -348,7 +339,7 @@ class ModernPomodoroOptions {
     // Toggle inputs
     const toggleSettings = [
       "autoStartBreaks", "autoStartPomodoros",
-      "notifications", "sounds", "breakReminders",
+      "notifications", "sounds", "enforceBreaks",
       "breakOverlayEnabled", "breakCountdown",
       "nextSessionInfo", "hideDistractions",
       "focusIndicator", "websiteBlocking", "breakBlockAll",
@@ -371,7 +362,7 @@ class ModernPomodoroOptions {
       this.elements.soundType.value = this.currentSettings.soundType || "ding";
     }
 
-    this.updateBreakEnforcementToggles();
+    this.updateAllToggleStates();
     console.log("[v0] Settings populated in UI");
   }
 
@@ -386,8 +377,7 @@ class ModernPomodoroOptions {
       notifications: this.elements.notifications?.checked || false,
       sounds: this.elements.sounds?.checked || false,
       soundType: this.elements.soundType?.value || "ding",
-      breakReminders: this.elements.breakReminders?.checked || false,
-      // youtubeIntegration toggle removed; always respect mode
+      enforceBreaks: this.elements.enforceBreaks?.checked || false,
       youtubeDistractionMode: this.elements.youtubeDistractionMode?.value || "focus",
       breakOverlayEnabled: this.elements.breakOverlayEnabled?.checked || false,
       breakCountdown: this.elements.breakCountdown?.checked || false,

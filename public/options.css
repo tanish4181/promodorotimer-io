@@ -1259,6 +1259,7 @@ input[type="number"]:focus,
 .toggle-setting.disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none; /* Prevents clicks on the label */
 }
 
 .toggle-setting.disabled .toggle-slider {
