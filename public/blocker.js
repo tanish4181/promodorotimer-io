@@ -4,6 +4,7 @@ class AdvancedWebsiteBlocker {
   constructor() {
     this.isBlocked = false;
     this.overlay = null;
+    this.breakOverlayVisible = false;
     this.checkInterval = null;
     this.retryCount = 0;
     this.maxRetries = 3;
@@ -28,6 +29,7 @@ class AdvancedWebsiteBlocker {
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.type === "TIMER_UPDATE") {
           this.checkAndBlock();
+          this.handleBreakOverlay(message.state);
         }
         return true;
       });
@@ -357,6 +359,62 @@ class AdvancedWebsiteBlocker {
         </div>
       `;
     }
+  }
+
+  handleBreakOverlay(state) {
+    const { currentMode, isRunning, settings } = state;
+    const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
+    const showOverlay = isRunning && isBreak && settings.globalBreakOverlay;
+
+    if (showOverlay && !this.breakOverlayVisible) {
+      this.createBreakOverlay(state);
+    } else if (!showOverlay && this.breakOverlayVisible) {
+      this.removeBreakOverlay();
+    }
+  }
+
+  createBreakOverlay(state) {
+    if (document.getElementById("pomodoro-break-overlay-global")) return;
+
+    this.breakOverlayVisible = true;
+    const overlay = document.createElement("div");
+    overlay.id = "pomodoro-break-overlay-global";
+
+    // Most of the styling and HTML can be reused from the YouTube content script's overlay.
+    // I will copy and adapt it here.
+    const minutes = Math.floor(state.currentTime / 60);
+    const seconds = state.currentTime % 60;
+    const timeString = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+    overlay.innerHTML = `
+      <style>
+        #pomodoro-break-overlay-global {
+          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+          background: rgba(0, 0, 0, 0.95); z-index: 2147483647;
+          display: flex; align-items: center; justify-content: center;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          color: white; text-align: center;
+        }
+        .pomodoro-break-content h1 { font-size: 2.5rem; margin-bottom: 16px; color: #059669; }
+        .pomodoro-break-content p { font-size: 1.2rem; margin-bottom: 30px; line-height: 1.6; color: #d1d5db; }
+        .pomodoro-break-countdown { font-size: 2.5rem; font-weight: 700; color: #059669; font-family: monospace; }
+      </style>
+      <div class="pomodoro-break-content">
+        <h1>${state.currentMode === "shortBreak" ? "Short Break" : "Long Break"}</h1>
+        <p>Time to relax and recharge. Step away from the screen.</p>
+        <div class="pomodoro-break-countdown">${timeString}</div>
+      </div>
+    `;
+
+    document.documentElement.appendChild(overlay);
+  }
+
+  removeBreakOverlay() {
+    const overlay = document.getElementById("pomodoro-break-overlay-global");
+    if (overlay) {
+      overlay.remove();
+    }
+    this.breakOverlayVisible = false;
   }
 
   // Cleanup method for when the content script is unloaded

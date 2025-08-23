@@ -218,19 +218,10 @@ class YouTubeIntegration {
   }
 
   showDistractions() {
-    console.log("Showing YouTube distractions")
-    
-    // Remove all distraction hiding styles
-    const existingStyles = document.getElementById('pomodoro-youtube-styles')
-    if (existingStyles) {
-      existingStyles.remove()
-    }
-    
-    // Show comments
-    this.showComments()
-    
-    // Show sidebar
-    this.showRecommendations()
+    console.log("Showing YouTube distractions");
+    this.showComments();
+    this.showRecommendations();
+    this.showShorts();
   }
 
   hideComments() {
@@ -331,14 +322,10 @@ class YouTubeIntegration {
   }
 
   showComments() {
-    const commentsSection = document.querySelector('ytd-comments, ytd-engagement-panel-section-list-renderer')
-    if (commentsSection) {
-      commentsSection.style.display = ''
-    }
-    const commentElements = document.querySelectorAll('ytd-comments, ytd-engagement-panel-section-list-renderer')
+    const commentElements = document.querySelectorAll('ytd-comments, ytd-engagement-panel-section-list-renderer');
     commentElements.forEach(el => {
-      el.style.display = ''
-    })
+      el.style.display = '';
+    });
   }
 
   showFocusModeIndicator() {

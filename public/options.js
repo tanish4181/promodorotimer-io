@@ -31,6 +31,7 @@ class ModernPomodoroOptions {
     this.elements.soundType = document.getElementById("sound-type");
     this.elements.breakReminders = document.getElementById("break-reminders");
     this.elements.enforceBreaks = document.getElementById("enforce-breaks");
+    this.elements.globalBreakOverlay = document.getElementById("global-break-overlay");
 
     // YouTube specific settings
     this.elements.youtubeDistractionMode = document.getElementById("youtube-distraction-mode");
@@ -110,7 +111,7 @@ class ModernPomodoroOptions {
     const toggleInputs = [
       this.elements.autoStartBreaks, this.elements.autoStartPomodoros,
       this.elements.notifications, this.elements.sounds,
-      this.elements.breakReminders, this.elements.enforceBreaks,
+      this.elements.breakReminders, this.elements.enforceBreaks, this.elements.globalBreakOverlay,
       this.elements.breakOverlay, this.elements.breakCountdown,
       this.elements.nextSessionInfo, this.elements.focusOverlay,
       this.elements.hideDistractions, this.elements.focusIndicator,
@@ -275,6 +276,7 @@ class ModernPomodoroOptions {
       sounds: true,
       breakReminders: true,
       enforceBreaks: true,
+      globalBreakOverlay: false,
       youtubeIntegration: true,
       youtubeDistractionMode: "focus",
       breakOverlay: true,
@@ -286,9 +288,9 @@ class ModernPomodoroOptions {
       websiteBlocking: true,
       breakBlockAll: false,
       breakUseAllowlist: true,
-      hideYoutubeComments: true,
-      hideYoutubeRecommendations: true,
-      hideYoutubeShorts: true,
+      hideYoutubeComments: false,
+      hideYoutubeRecommendations: false,
+      hideYoutubeShorts: false,
       pauseYoutubeBreaks: true,
       collectStats: true,
     };
@@ -304,7 +306,7 @@ class ModernPomodoroOptions {
     // Toggle inputs
     const toggleSettings = [
       "autoStartBreaks", "autoStartPomodoros",
-      "notifications", "sounds", "breakReminders", "enforceBreaks",
+      "notifications", "sounds", "breakReminders", "enforceBreaks", "globalBreakOverlay",
       "breakOverlay", "breakCountdown",
       "nextSessionInfo", "focusOverlay", "hideDistractions",
       "focusIndicator", "websiteBlocking", "breakBlockAll",
@@ -343,6 +345,7 @@ class ModernPomodoroOptions {
       soundType: this.elements.soundType?.value || "ding",
       breakReminders: this.elements.breakReminders?.checked || false,
       enforceBreaks: this.elements.enforceBreaks?.checked || false,
+      globalBreakOverlay: this.elements.globalBreakOverlay?.checked || false,
       // youtubeIntegration toggle removed; always respect mode
       youtubeDistractionMode: this.elements.youtubeDistractionMode?.value || "focus",
       breakOverlay: this.elements.breakOverlay?.checked || false,
