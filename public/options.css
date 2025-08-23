@@ -309,6 +309,11 @@ body {
   outline: none;
 }
 
+.input-group select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 /* Custom dropdown arrow for select to match theme */
 .input-group {
   position: relative;
