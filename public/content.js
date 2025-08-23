@@ -56,11 +56,8 @@ class YouTubeIntegration {
     // Initial setup
     this.setupYouTubeIntegration()
 
-    // Immediately enforce break if necessary on page load
-    const isBreak = this.timerState.currentMode === 'shortBreak' || this.timerState.currentMode === 'longBreak';
-    if (this.timerState.isRunning && isBreak && this.timerState.settings.enforceBreaks) {
-      this.enforceBreak(this.timerState.currentMode, this.timerState.settings, this.timerState.nextSessionInfo);
-    }
+    // Let the background script know the content script has loaded.
+    chrome.runtime.sendMessage({ type: "CONTENT_SCRIPT_LOADED" });
     
     // Set up mutation observer for dynamic content
     this.setupMutationObserver()

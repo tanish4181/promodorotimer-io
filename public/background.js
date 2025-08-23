@@ -188,6 +188,17 @@ class PomodoroBackground {
             chrome.tabs.remove(sender.tab.id);
           }
           break;
+        case "CONTENT_SCRIPT_LOADED":
+          const isBreak = this.state.currentMode === 'shortBreak' || this.state.currentMode === 'longBreak';
+          if (this.state.isRunning && isBreak && this.state.settings.enforceBreaks) {
+            this.notifyContentScripts({
+              type: "ENFORCE_BREAK",
+              mode: this.state.currentMode,
+              settings: this.state.settings,
+              nextSessionInfo: this.getNextSessionInfo(),
+            });
+          }
+          break;
         default:
           sendResponse({ error: "Unknown message type" });
       }
