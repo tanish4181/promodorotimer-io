@@ -260,6 +260,19 @@
             </div>
 
             <div class="setting-group">
+              <label class="toggle-setting" for="global-break-overlay">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Global Break Overlay</div>
+                  <div class="toggle-description">Show a full-screen overlay on all websites during breaks.</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="global-break-overlay">
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group">
               <label class="toggle-setting" for="break-reminders">
                 <div class="toggle-text-content">
                   <div class="toggle-text">Break reminders</div>
@@ -483,11 +496,13 @@
                   <div class="toggle-description">Choose when to hide YouTube distractions</div>
                 </div>
                 <div class="input-group">
-                  <select id="youtube-distraction-mode">
-                    <option value="focus">Only when focus timer is running</option>
-                    <option value="always">Always</option>
-                    <option value="off">Never</option>
-                  </select>
+                  <div class="select-wrapper">
+                    <select id="youtube-distraction-mode" class="styled-select">
+                      <option value="focus">Only when focus timer is running</option>
+                      <option value="always">Always</option>
+                      <option value="off">Never</option>
+                    </select>
+                  </div>
                 </div>
               </label>
             </div>
@@ -575,11 +590,13 @@
             <div class="setting-group number-setting">
               <label class="setting-label" for="sound-type">Sound type</label>
               <div class="input-group">
-                <select id="sound-type">
-                  <option value="ding">Ding</option>
-                  <option value="chime">Chime</option>
-                  <option value="bell">Bell</option>
-                </select>
+                <div class="select-wrapper">
+                  <select id="sound-type" class="styled-select">
+                    <option value="ding">Ding</option>
+                    <option value="chime">Chime</option>
+                    <option value="bell">Bell</option>
+                  </select>
+                </div>
               </div>
             </div>
 
