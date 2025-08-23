@@ -1254,3 +1254,13 @@ input[type="number"]:focus,
   color: var(--accent-danger);
   border-color: var(--accent-danger);
 }
+
+/* Style for disabled toggle settings */
+.toggle-setting.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-setting.disabled .toggle-slider {
+  background-color: var(--border);
+}

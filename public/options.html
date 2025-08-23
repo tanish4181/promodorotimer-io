@@ -138,6 +138,53 @@
               </label>
             </div>
           </div>
+
+          <!-- Break Enforcement Card -->
+          <div class="settings-card">
+            <div class="card-header">
+              <h3>Break Enforcement</h3>
+              <p>Control the break experience</p>
+            </div>
+
+            <div class="setting-group">
+              <label class="toggle-setting" for="break-overlay-enabled">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Enable Break Overlay</div>
+                  <div class="toggle-description">Show a full-screen reminder on all websites during breaks.</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-overlay-enabled" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group">
+              <label class="toggle-setting" for="break-block-all">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Block all websites during breaks</div>
+                  <div class="toggle-description">Requires "Enable Website Blocking" to be active.</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-block-all">
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="setting-group">
+              <label class="toggle-setting" for="break-use-allowlist">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Use allowlist during breaks</div>
+                  <div class="toggle-description">Only allowlisted sites accessible. Requires "Enable Website Blocking".</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="break-use-allowlist" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -234,19 +281,6 @@
             </div>
 
             <div class="setting-group">
-              <label class="toggle-setting" for="break-overlay-enabled">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Enable Break Overlay</div>
-                  <div class="toggle-description">Show a full-screen overlay on all websites during breaks.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-overlay-enabled">
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group">
               <label class="toggle-setting" for="break-reminders">
                 <div class="toggle-text-content">
                   <div class="toggle-text">Break reminders</div>
@@ -299,47 +333,6 @@
               <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
                 <strong>Focus Mode Logic:</strong> When the timer is running in focus mode, 
                 only websites in your allowlist will be accessible. All other websites will be blocked.
-              </p>
-            </div>
-          </div>
-
-          <!-- Break Mode Options Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>Break Mode Options</h3>
-              <p>Choose how to handle website blocking during breaks</p>
-            </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-block-all">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Block all websites during breaks</div>
-                  <div class="toggle-description">Force complete break from browser - all websites blocked</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-block-all">
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="break-use-allowlist">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Use allowlist during breaks</div>
-                  <div class="toggle-description">Same as focus mode - only allowlist websites accessible</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-use-allowlist" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-            
-            <div class="break-mode-warning">
-              <p style="font-size: 13px; color: var(--text-secondary);">
-                <strong>Note:</strong> If neither option is selected, break mode will use the blocklist (same as idle mode).
-                If both are selected, "Block all websites" takes priority.
               </p>
             </div>
           </div>

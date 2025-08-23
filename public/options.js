@@ -176,6 +176,23 @@ class ModernPomodoroOptions {
         this.saveSettings();
       });
     }
+
+    // Add logic to enable/disable break blocking toggles based on master switch
+    if (this.elements.websiteBlocking) {
+      this.elements.websiteBlocking.addEventListener("change", () => this.updateBreakBlockingToggles());
+    }
+  }
+
+  updateBreakBlockingToggles() {
+    const isBlockingEnabled = this.elements.websiteBlocking.checked;
+    if (this.elements.breakBlockAll && this.elements.breakUseAllowlist) {
+      this.elements.breakBlockAll.disabled = !isBlockingEnabled;
+      this.elements.breakUseAllowlist.disabled = !isBlockingEnabled;
+
+      // Also update the parent container class for styling
+      this.elements.breakBlockAll.closest('.toggle-setting').classList.toggle('disabled', !isBlockingEnabled);
+      this.elements.breakUseAllowlist.closest('.toggle-setting').classList.toggle('disabled', !isBlockingEnabled);
+    }
   }
 
   // Sets up event listeners for website blocking inputs and buttons.
@@ -324,6 +341,7 @@ class ModernPomodoroOptions {
       this.elements.soundType.value = this.currentSettings.soundType || "ding";
     }
 
+    this.updateBreakBlockingToggles();
     console.log("[v0] Settings populated in UI");
   }
 
