@@ -569,19 +569,13 @@ class PomodoroBackground {
 
   async notifyContentScripts(message) {
     try {
-      const tabs = await chrome.tabs.query({
-        url: ["https://www.youtube.com/*", "https://youtube.com/*"],
-      });
+      const tabs = await chrome.tabs.query({});
 
       for (const tab of tabs) {
         try {
           chrome.tabs.sendMessage(tab.id, message);
         } catch (error) {
-          console.log(
-            "Could not send message to tab:",
-            tab.id,
-            error.message
-          );
+          // Ignore errors for tabs that don't have content scripts
         }
       }
     } catch (error) {

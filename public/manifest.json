@@ -25,7 +25,8 @@
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["blocker.js"],
+      "js": ["blocker.js", "break-overlay.js"],
+      "css": ["break-overlay.css"],
       "run_at": "document_start"
     }
   ],
