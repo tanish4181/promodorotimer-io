@@ -1,96 +1,161 @@
-importScripts('settings.js');
+// Background script for Pomodoro Timer Chrome Extension
 
-// This script runs in the background and manages the core logic of the Pomodoro timer.
 class PomodoroBackground {
   constructor() {
-    // The main state object for the extension.
+    console.log("[v0] Initializing PomodoroBackground");
+
     this.state = {
-      timerState: "focus", // The current state of the timer ('focus', 'shortBreak', 'longBreak').
-      currentTime: 25 * 60, // The current time in seconds.
-      isRunning: false, // Whether the timer is currently running.
-      currentMode: "focus", // The current timer mode.
-      sessionCount: 1, // The number of focus sessions completed in the current cycle.
-      totalSessions: 0, // The total number of focus sessions completed.
-      settings: defaultSettings,
-      blockedWebsites: [], // A list of websites to block.
-      allowedWebsites: [], // A list of websites to always allow.
-      todos: [], // The user's to-do list.
+      timerState: "focus",
+      currentTime: 25 * 60,
+      isRunning: false,
+      currentMode: "focus",
+      sessionCount: 1,
+      totalSessions: 0,
+      settings: {
+        focusTime: 25,
+        shortBreak: 5,
+        longBreak: 15,
+        sessionsUntilLongBreak: 4,
+        autoStartBreaks: true,
+        autoStartPomodoros: false,
+        notifications: true,
+        sounds: true,
+        soundType: "ding",
+        breakReminders: true,
+        enforceBreaks: true,
+        youtubeIntegration: true,
+        youtubeDistractionMode: "focus",
+        breakOverlay: true,
+        breakCountdown: true,
+        nextSessionInfo: true,
+        focusOverlay: false,
+        hideDistractions: true,
+        focusIndicator: true,
+        websiteBlocking: true,
+        breakBlockAll: false,
+        breakUseAllowlist: true,
+        hideYoutubeComments: true,
+        hideYoutubeRecommendations: true,
+        hideYoutubeShorts: true,
+        pauseYoutubeBreaks: true,
+        collectStats: true,
+        petEnabled: true,
+      },
+      blockedWebsites: [],
+      allowedWebsites: [],
+      todos: [],
+      pet: {
+        happiness: 50,
+        lastInteractionTime: Date.now(),
+      },
     };
 
-    this.lastTickTime = 0; // Used to calculate time drift when the extension is inactive.
-    this.alarmName = "pomodoroTimer"; // The name of the alarm used for the timer.
+    this.lastTickTime = 0; // Keep for time drift calculation on load
+    this.alarmName = "pomodoroTimer";
 
     this.initialize();
   }
 
-  // Initializes the background script by loading the state and setting up listeners.
   async initialize() {
     try {
+      console.log("[v0] Starting background initialization");
+
+      // Load saved state first
       await this.loadState();
 
-      // Listen for messages from other parts of the extension.
+      // Set up message listener
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        console.log("[v0] Background received message:", message.type);
         this.handleMessage(message, sender, sendResponse);
-        return true; // Indicates that the response will be sent asynchronously.
+        return true; // Keep message channel open for async responses
       });
 
-      // Listen for changes to the settings in storage.
+      // Listen for offscreen audio playback acknowledgements if needed
+
+      // Listener for settings changes
       chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "local" && changes.settings) {
+          console.log("Background detected settings change, updating state.");
           this.state.settings = changes.settings.newValue;
           if (!this.state.isRunning) {
-            this.resetTimer();
+            this.resetTimer(); // Update timer if it's not running
           }
+          // Ensure all contexts update immediately when settings change via storage
           this.broadcastUpdate();
         }
       });
 
-      // Listen for the timer alarm.
+      // Set up alarm listener for the timer
       chrome.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === this.alarmName) {
           this.handleTimerTick();
         }
       });
 
-      // Handle extension lifecycle events.
-      chrome.runtime.onStartup.addListener(() => this.loadState());
-      chrome.runtime.onInstalled.addListener(() => this.initializeDefaultState());
+      // Handle extension lifecycle
+      chrome.runtime.onStartup.addListener(() => {
+        console.log("[v0] Extension startup");
+        this.loadState();
+      });
+
+      chrome.runtime.onInstalled.addListener(() => {
+        console.log("[v0] Extension installed/updated");
+        this.initializeDefaultState();
+      });
+
+      console.log("[v0] Background script initialized successfully");
     } catch (error) {
-      console.error("Error initializing background script:", error);
+      console.error("[v0] Error initializing background:", error);
     }
   }
 
-  // Loads the extension's state from local storage.
+
   async loadState() {
     try {
       const result = await chrome.storage.local.get([
-        "timerState", "currentTime", "isRunning", "currentMode",
-        "sessionCount", "totalSessions", "settings", "lastActiveTime",
-        "blockedWebsites", "allowedWebsites", "todos",
+        "timerState",
+        "currentTime",
+        "isRunning",
+        "currentMode",
+        "sessionCount",
+        "totalSessions",
+        "settings",
+        "lastActiveTime",
+        "blockedWebsites",
+        "allowedWebsites",
+        "todos",
+        "pet",
       ]);
 
       if (result.timerState) {
         const defaultSettings = this.state.settings;
         this.state = { ...this.state, ...result };
-        // Merge loaded settings with defaults to ensure new settings are not missing.
+        // Merge loaded settings with defaults to ensure new settings are not missing
         this.state.settings = { ...defaultSettings, ...this.state.settings };
 
-        // Adjust for time drift if the timer was running while the extension was inactive.
+        // Handle time drift if extension was inactive
         if (this.state.isRunning && result.lastActiveTime) {
-          const timeDrift = Math.floor((Date.now() - result.lastActiveTime) / 1000);
-          this.state.currentTime = Math.max(0, this.state.currentTime - timeDrift);
+          const timeDrift = Math.floor(
+            (Date.now() - result.lastActiveTime) / 1000
+          );
+          this.state.currentTime = Math.max(
+            0,
+            this.state.currentTime - timeDrift
+          );
+
           if (this.state.currentTime === 0) {
             await this.handleTimerComplete();
           }
         }
       }
+
+      console.log("[v0] State loaded:", this.state);
     } catch (error) {
-      console.error("Error loading state:", error);
+      console.error("[v0] Error loading state:", error);
       await this.initializeDefaultState();
     }
   }
 
-  // Saves the current state to local storage.
   async saveState() {
     try {
       await chrome.storage.local.set({
@@ -98,11 +163,10 @@ class PomodoroBackground {
         lastActiveTime: Date.now(),
       });
     } catch (error) {
-      console.error("Error saving state:", error);
+      console.error("[v0] Error saving state:", error);
     }
   }
 
-  // Initializes the default state of the extension.
   async initializeDefaultState() {
     this.state = {
       timerState: "focus",
@@ -111,121 +175,180 @@ class PomodoroBackground {
       currentMode: "focus",
       sessionCount: 1,
       totalSessions: 0,
-      settings: defaultSettings,
+      settings: {
+        focusTime: 25,
+        shortBreak: 5,
+        longBreak: 15,
+        sessionsUntilLongBreak: 4,
+        autoStartBreaks: true,
+        autoStartPomodoros: false,
+        notifications: true,
+        sounds: true,
+        soundType: "ding",
+        breakReminders: true,
+        enforceBreaks: true,
+        youtubeIntegration: true,
+        youtubeDistractionMode: "focus",
+        breakOverlay: true,
+        breakCountdown: true,
+        nextSessionInfo: true,
+        focusOverlay: false,
+        hideDistractions: true,
+        focusIndicator: true,
+        websiteBlocking: true,
+        hideYoutubeComments: true,
+        hideYoutubeRecommendations: true,
+        hideYoutubeShorts: true,
+        pauseYoutubeBreaks: true,
+        collectStats: true,
+      },
       blockedWebsites: [],
       allowedWebsites: [],
       todos: [],
+      pet: {
+        happiness: 50,
+        lastInteractionTime: Date.now(),
+      },
     };
     await this.saveState();
   }
 
-  // Handles messages from other parts of the extension.
   async handleMessage(message, sender, sendResponse) {
     try {
+      console.log("[v0] Handling message:", message.type);
+
       switch (message.type) {
         case "GET_STATE":
           sendResponse({ state: this.state });
           break;
+
         case "SETTINGS_UPDATED":
+          console.log("[v0] Updating settings:", message.settings);
           await this.updateSettings(message.settings);
           sendResponse({ success: true });
           break;
+
         case "START_TIMER":
           await this.startTimer();
           sendResponse({ success: true });
           break;
+
         case "PAUSE_TIMER":
           await this.pauseTimer();
           sendResponse({ success: true });
           break;
+
         case "RESET_TIMER":
           await this.resetTimer();
           sendResponse({ success: true });
           break;
+
         case "SKIP_BREAK":
           await this.skipBreak();
           sendResponse({ success: true });
           break;
+
         case "TEST_NOTIFICATION":
           await this.showNotification();
           sendResponse({ success: true });
           break;
+
         case "TEST_SOUND":
           await this.playSound(message.soundType);
           sendResponse({ success: true });
           break;
+
         case "ADD_BLOCKED_WEBSITE":
           await this.addBlockedWebsite(message.website);
           sendResponse({ success: true });
           break;
+
         case "REMOVE_BLOCKED_WEBSITE":
           await this.removeBlockedWebsite(message.website);
           sendResponse({ success: true });
           break;
+
         case "GET_BLOCKED_WEBSITES":
           sendResponse({ websites: this.state.blockedWebsites });
           break;
+
         case "TODOS_UPDATED":
           this.state.todos = message.todos;
           await this.saveState();
           sendResponse({ success: true });
           break;
+
         case "GET_TODOS":
           sendResponse({ todos: this.state.todos });
           break;
+
         case "WEBSITE_LISTS_UPDATED":
           this.state.allowedWebsites = message.allowlist || [];
           this.state.blockedWebsites = message.blocklist || [];
           this.saveState();
+          // Notify all contexts so blocking reflects immediately
           this.broadcastUpdate();
           sendResponse({ success: true });
           break;
+
         case "CHECK_WEBSITE_BLOCKED":
-          sendResponse(this.isUrlBlocked(message.url));
+          const blockStatus = this.isUrlBlocked(message.url);
+          sendResponse(blockStatus);
           break;
+
         case "CLOSE_CURRENT_TAB":
           if (sender.tab) {
             chrome.tabs.remove(sender.tab.id);
           }
           break;
-        case "CONTENT_SCRIPT_LOADED":
-          const isBreak = this.state.currentMode === 'shortBreak' || this.state.currentMode === 'longBreak';
-          if (this.state.isRunning && isBreak && this.state.settings.enforceBreaks) {
-            this.notifyContentScripts({
-              type: "ENFORCE_BREAK",
-              mode: this.state.currentMode,
-              settings: this.state.settings,
-              nextSessionInfo: this.getNextSessionInfo(),
-            });
-          }
+
+        case "INTERACT_WITH_PET":
+          this.interactWithPet();
+          sendResponse({ success: true });
           break;
+
         default:
+          console.warn("[v0] Unknown message type:", message.type);
           sendResponse({ error: "Unknown message type" });
       }
     } catch (error) {
-      console.error("Error handling message:", error);
+      console.error("[v0] Error handling message:", error);
       sendResponse({ error: error.message });
     }
   }
 
-  // Updates the settings and broadcasts the changes.
   async updateSettings(newSettings) {
+    console.log("[v0] Updating settings in background:", newSettings);
+
+    // Merge new settings with existing settings
     this.state.settings = { ...this.state.settings, ...newSettings };
+
+    // Update current time if timer is not running and we're in focus mode
     if (!this.state.isRunning && this.state.currentMode === "focus") {
       this.state.currentTime = this.state.settings.focusTime * 60;
     }
+
+    // Save to storage
     await this.saveState();
+
+    console.log("[v0] Settings updated successfully:", this.state.settings);
+
+    // Broadcast update to all connected clients
     this.broadcastUpdate();
-    this.notifyContentScripts({ type: "SETTINGS_UPDATED", settings: this.state.settings });
   }
 
-  // Starts the timer.
   async startTimer() {
+    console.log("[v0] Starting timer with chrome.alarms");
     this.state.isRunning = true;
     this.lastTickTime = Date.now();
-    chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 }); // Fire every second.
+    chrome.alarms.create(this.alarmName, {
+        periodInMinutes: 1 / 60, // Fire every second
+    });
 
-    if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
+    if (
+      this.state.settings.youtubeIntegration &&
+      this.state.currentMode === "focus"
+    ) {
       this.notifyContentScripts({ type: "TIMER_STARTED" });
     }
 
@@ -233,8 +356,8 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Pauses the timer.
   async pauseTimer() {
+    console.log("[v0] Pausing timer");
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
@@ -246,8 +369,8 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Resets the timer to the beginning of the current mode.
   async resetTimer() {
+    console.log("[v0] Resetting timer");
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
@@ -256,14 +379,16 @@ class PomodoroBackground {
       shortBreak: this.state.settings.shortBreak * 60,
       longBreak: this.state.settings.longBreak * 60,
     };
+
     this.state.currentTime = timeMap[this.state.currentMode];
 
     await this.saveState();
     this.broadcastUpdate();
   }
 
-  // Skips the current break and starts the next focus session.
   async skipBreak() {
+    console.log("[v0] Skipping break");
+
     this.state.currentMode = "focus";
     this.state.currentTime = this.state.settings.focusTime * 60;
     this.state.isRunning = false;
@@ -274,7 +399,6 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Called by the alarm to update the timer every second.
   handleTimerTick() {
     if (!this.state.isRunning) {
       chrome.alarms.clear(this.alarmName);
@@ -295,26 +419,28 @@ class PomodoroBackground {
     }
   }
 
-  // Handles the completion of a timer.
   async handleTimerComplete() {
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
+    // Notifications
     if (this.state.settings.notifications) {
       await this.showNotification();
     }
 
+    // Sound alert
     if (this.state.settings.sounds) {
       try {
         await this.playSound();
       } catch (e) {
-        console.error("Error playing sound:", e);
+        console.error("[v0] Error playing sound:", e);
       }
     }
 
     if (this.state.currentMode === "focus") {
       this.state.totalSessions++;
       await this.recordSession();
+      this.updatePetHappiness(10);
     }
 
     await this.switchToNextMode();
@@ -452,6 +578,7 @@ class PomodoroBackground {
       dailyStats[today].focusTime += this.state.settings.focusTime;
 
       await chrome.storage.local.set({ dailyStats });
+      console.log("[v0] Session recorded for", today);
       try {
         chrome.runtime.sendMessage({ type: "STATS_UPDATED" });
       } catch (e) {
@@ -466,6 +593,7 @@ class PomodoroBackground {
     if (!this.state.blockedWebsites.includes(website)) {
       this.state.blockedWebsites.push(website);
       await this.saveState();
+      console.log("[v0] Website blocked:", website);
     }
   }
 
@@ -474,6 +602,7 @@ class PomodoroBackground {
       (w) => w !== website
     );
     await this.saveState();
+    console.log("[v0] Website unblocked:", website);
   }
 
   _isUrlInList(url, list) {
@@ -512,7 +641,13 @@ class PomodoroBackground {
 
     // 2. Break-time blocking logic
     if (isRunning && isBreak) {
-      return { blocked: false }; // Let break-overlay.js handle it
+      if (settings.breakBlockAll) {
+        return { blocked: true, reason: 'break-all' };
+      }
+      if (settings.breakUseAllowlist && !this._isUrlInList(url, this.state.allowedWebsites)) {
+        return { blocked: true, reason: 'break-allowlist' };
+      }
+      return { blocked: false };
     }
 
     // 3. Allowlist is the highest priority for focus and idle modes
@@ -537,6 +672,8 @@ class PomodoroBackground {
   }
 
   broadcastUpdate() {
+    console.log("[v0] Broadcasting update");
+
     // Send update to all tabs
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
@@ -562,15 +699,36 @@ class PomodoroBackground {
     }
   }
 
+  updatePetHappiness(change) {
+    if (!this.state.settings.petEnabled) return;
+    this.state.pet.happiness = Math.max(0, Math.min(100, this.state.pet.happiness + change));
+    this.saveState();
+    this.broadcastUpdate();
+  }
+
+  interactWithPet() {
+    if (!this.state.settings.petEnabled) return;
+    this.updatePetHappiness(5);
+    this.state.pet.lastInteractionTime = Date.now();
+    this.saveState();
+    this.broadcastUpdate();
+  }
+
   async notifyContentScripts(message) {
     try {
-      const tabs = await chrome.tabs.query({});
+      const tabs = await chrome.tabs.query({
+        url: ["https://www.youtube.com/*", "https://youtube.com/*"],
+      });
 
       for (const tab of tabs) {
         try {
           chrome.tabs.sendMessage(tab.id, message);
         } catch (error) {
-          // Ignore errors for tabs that don't have content scripts
+          console.log(
+            "Could not send message to tab:",
+            tab.id,
+            error.message
+          );
         }
       }
     } catch (error) {
@@ -580,4 +738,5 @@ class PomodoroBackground {
 }
 
 // Initialize background script
+console.log("Creating PomodoroBackground instance");
 new PomodoroBackground();
