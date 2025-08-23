@@ -31,14 +31,12 @@ class ModernPomodoroOptions {
     this.elements.soundType = document.getElementById("sound-type");
     this.elements.breakReminders = document.getElementById("break-reminders");
     this.elements.enforceBreaks = document.getElementById("enforce-breaks");
-    this.elements.globalBreakOverlay = document.getElementById("global-break-overlay");
+    this.elements.breakOverlayEnabled = document.getElementById("break-overlay-enabled");
 
     // YouTube specific settings
     this.elements.youtubeDistractionMode = document.getElementById("youtube-distraction-mode");
-    this.elements.breakOverlay = document.getElementById("break-overlay");
     this.elements.breakCountdown = document.getElementById("break-countdown");
     this.elements.nextSessionInfo = document.getElementById("next-session-info");
-    this.elements.focusOverlay = document.getElementById("focus-overlay");
     this.elements.hideDistractions = document.getElementById("hide-distractions");
     this.elements.focusIndicator = document.getElementById("focus-indicator");
     this.elements.hideYoutubeComments = document.getElementById("hide-youtube-comments");
@@ -111,9 +109,9 @@ class ModernPomodoroOptions {
     const toggleInputs = [
       this.elements.autoStartBreaks, this.elements.autoStartPomodoros,
       this.elements.notifications, this.elements.sounds,
-      this.elements.breakReminders, this.elements.enforceBreaks, this.elements.globalBreakOverlay,
-      this.elements.breakOverlay, this.elements.breakCountdown,
-      this.elements.nextSessionInfo, this.elements.focusOverlay,
+      this.elements.breakReminders, this.elements.breakOverlayEnabled,
+      this.elements.breakCountdown,
+      this.elements.nextSessionInfo,
       this.elements.hideDistractions, this.elements.focusIndicator,
       this.elements.websiteBlocking, this.elements.breakBlockAll,
       this.elements.breakUseAllowlist, this.elements.hideYoutubeComments,
@@ -275,14 +273,11 @@ class ModernPomodoroOptions {
       notifications: true,
       sounds: true,
       breakReminders: true,
-      enforceBreaks: true,
-      globalBreakOverlay: false,
       youtubeIntegration: true,
       youtubeDistractionMode: "focus",
-      breakOverlay: true,
+      breakOverlayEnabled: true,
       breakCountdown: true,
       nextSessionInfo: true,
-      focusOverlay: false,
       hideDistractions: true,
       focusIndicator: true,
       websiteBlocking: true,
@@ -306,9 +301,9 @@ class ModernPomodoroOptions {
     // Toggle inputs
     const toggleSettings = [
       "autoStartBreaks", "autoStartPomodoros",
-      "notifications", "sounds", "breakReminders", "enforceBreaks", "globalBreakOverlay",
-      "breakOverlay", "breakCountdown",
-      "nextSessionInfo", "focusOverlay", "hideDistractions",
+      "notifications", "sounds", "breakReminders",
+      "breakOverlayEnabled", "breakCountdown",
+      "nextSessionInfo", "hideDistractions",
       "focusIndicator", "websiteBlocking", "breakBlockAll",
       "breakUseAllowlist", "hideYoutubeComments", "hideYoutubeRecommendations",
       "hideYoutubeShorts", "pauseYoutubeBreaks", "collectStats"
@@ -344,14 +339,11 @@ class ModernPomodoroOptions {
       sounds: this.elements.sounds?.checked || false,
       soundType: this.elements.soundType?.value || "ding",
       breakReminders: this.elements.breakReminders?.checked || false,
-      enforceBreaks: this.elements.enforceBreaks?.checked || false,
-      globalBreakOverlay: this.elements.globalBreakOverlay?.checked || false,
       // youtubeIntegration toggle removed; always respect mode
       youtubeDistractionMode: this.elements.youtubeDistractionMode?.value || "focus",
-      breakOverlay: this.elements.breakOverlay?.checked || false,
+      breakOverlayEnabled: this.elements.breakOverlayEnabled?.checked || false,
       breakCountdown: this.elements.breakCountdown?.checked || false,
       nextSessionInfo: this.elements.nextSessionInfo?.checked || false,
-      focusOverlay: this.elements.focusOverlay?.checked || false,
       hideDistractions: this.elements.hideDistractions?.checked || false,
       focusIndicator: this.elements.focusIndicator?.checked || false,
       websiteBlocking: this.elements.websiteBlocking?.checked || false,

@@ -388,16 +388,6 @@ class PomodoroBackground {
         this.notifyContentScripts({ type: "PAUSE_ALL_YOUTUBE_TABS" });
       }
 
-      // The ENFORCE_BREAK message is now only for the YouTube-specific video pausing.
-      // The universal overlay is handled by blocker.js via TIMER_UPDATE.
-      if (this.state.settings.enforceBreaks) {
-        this.notifyContentScripts({
-          type: "ENFORCE_BREAK",
-          mode: this.state.currentMode,
-          settings: this.state.settings,
-          nextSessionInfo: this.state.nextSessionInfo,
-        });
-      }
     } else {
       this.state.currentMode = "focus";
       this.state.currentTime = this.state.settings.focusTime * 60;
