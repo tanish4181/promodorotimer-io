@@ -41,6 +41,7 @@ class PomodoroBackground {
       blockedWebsites: [], // A list of websites to block.
       allowedWebsites: [], // A list of websites to always allow.
       todos: [], // The user's to-do list.
+      nextSessionInfo: null,
     };
 
     this.lastTickTime = 0; // Used to calculate time drift when the extension is inactive.
@@ -167,6 +168,7 @@ class PomodoroBackground {
       blockedWebsites: [],
       allowedWebsites: [],
       todos: [],
+      nextSessionInfo: null,
     };
     await this.saveState();
   }
@@ -307,6 +309,7 @@ class PomodoroBackground {
     this.state.currentMode = "focus";
     this.state.currentTime = this.state.settings.focusTime * 60;
     this.state.isRunning = false;
+    this.state.nextSessionInfo = null; // Clear next session info
 
     this.notifyContentScripts({ type: "BREAK_SKIPPED" });
 
@@ -379,22 +382,26 @@ class PomodoroBackground {
         : this.state.settings.shortBreak * 60;
 
       this.state.sessionCount++;
+      this.state.nextSessionInfo = this.getNextSessionInfo(); // Store next session info in state
 
       if (this.state.settings.pauseYoutubeBreaks) {
         this.notifyContentScripts({ type: "PAUSE_ALL_YOUTUBE_TABS" });
       }
 
+      // The ENFORCE_BREAK message is now only for the YouTube-specific video pausing.
+      // The universal overlay is handled by blocker.js via TIMER_UPDATE.
       if (this.state.settings.enforceBreaks) {
         this.notifyContentScripts({
           type: "ENFORCE_BREAK",
           mode: this.state.currentMode,
           settings: this.state.settings,
-          nextSessionInfo: this.getNextSessionInfo(),
+          nextSessionInfo: this.state.nextSessionInfo,
         });
       }
     } else {
       this.state.currentMode = "focus";
       this.state.currentTime = this.state.settings.focusTime * 60;
+      this.state.nextSessionInfo = null; // Clear next session info
     }
   }
 
