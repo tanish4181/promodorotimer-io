@@ -1,8 +1,8 @@
-// Enhanced Options Page Script for Pomodoro Timer Chrome Extension with Website Blocking
-
+// Manages the options page for the Pomodoro Timer extension.
 class ModernPomodoroOptions {
   constructor() {
-    console.log("[v0] Initializing Modern PomodoroOptions");
+    // Initializes the options page by caching DOM elements, setting up tabs,
+    // binding event listeners, and loading the current settings.
     this.elements = {};
     this.currentSettings = {};
     this.backgroundAvailable = false;
@@ -15,6 +15,7 @@ class ModernPomodoroOptions {
     this.initializeOptions();
   }
 
+  // Caches all necessary DOM elements for quick access.
   initializeElements() {
     // Timer settings
     this.elements.focusTime = document.getElementById("focus-time");
@@ -22,7 +23,7 @@ class ModernPomodoroOptions {
     this.elements.longBreak = document.getElementById("long-break");
     this.elements.sessionsUntilLongBreak = document.getElementById("sessions-until-long-break");
 
-    // Toggle settings
+    // General toggle settings
     this.elements.autoStartBreaks = document.getElementById("auto-start-breaks");
     this.elements.autoStartPomodoros = document.getElementById("auto-start-pomodoros");
     this.elements.notifications = document.getElementById("notifications");
@@ -30,7 +31,8 @@ class ModernPomodoroOptions {
     this.elements.soundType = document.getElementById("sound-type");
     this.elements.breakReminders = document.getElementById("break-reminders");
     this.elements.enforceBreaks = document.getElementById("enforce-breaks");
-    // YouTube options
+
+    // YouTube specific settings
     this.elements.youtubeDistractionMode = document.getElementById("youtube-distraction-mode");
     this.elements.breakOverlay = document.getElementById("break-overlay");
     this.elements.breakCountdown = document.getElementById("break-countdown");
@@ -57,22 +59,18 @@ class ModernPomodoroOptions {
     this.elements.blocklistContainer = document.getElementById("blocklist-container");
     this.elements.blocklistEmpty = document.getElementById("blocklist-empty");
 
-    // Action buttons
+    // Data and action buttons
     this.elements.exportDataBtn = document.getElementById("export-data");
     this.elements.viewStatsBtn = document.getElementById("view-stats");
     this.elements.resetDefaultsBtn = document.getElementById("reset-defaults");
     this.elements.clearDataBtn = document.getElementById("clear-data");
 
-    // Header stats
+    // Header statistics display
     this.elements.headerFocusTime = document.getElementById("header-focus-time");
     this.elements.headerBreakTime = document.getElementById("header-break-time");
-
-    // Pet settings
-    this.elements.petEnabled = document.getElementById("pet-enabled");
-
-    console.log("[v0] All DOM elements initialized");
   }
 
+  // Sets up the tab navigation functionality.
   setupTabNavigation() {
     const navTabs = document.querySelectorAll(".nav-tab");
     const tabContents = document.querySelectorAll(".tab-content");
@@ -81,22 +79,19 @@ class ModernPomodoroOptions {
       tab.addEventListener("click", () => {
         const targetTab = tab.dataset.tab;
         
-        // Update active tab
         navTabs.forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         
-        // Update active content
         tabContents.forEach(content => {
           content.classList.toggle("active", content.id === targetTab);
         });
-        
-        console.log(`[v0] Switched to tab: ${targetTab}`);
       });
     });
   }
 
+  // Binds event listeners to all interactive elements.
   bindEventListeners() {
-    // Number inputs
+    // Event listeners for number input fields
     const numberInputs = [
       this.elements.focusTime,
       this.elements.shortBreak,
@@ -111,29 +106,18 @@ class ModernPomodoroOptions {
       }
     });
 
-    // Toggle inputs
+    // Event listeners for all toggle switches
     const toggleInputs = [
-      this.elements.autoStartBreaks,
-      this.elements.autoStartPomodoros,
-      this.elements.notifications,
-      this.elements.sounds,
-      this.elements.breakReminders,
-      this.elements.enforceBreaks,
-      this.elements.breakOverlay,
-      this.elements.breakCountdown,
-      this.elements.nextSessionInfo,
-      this.elements.focusOverlay,
-      this.elements.hideDistractions,
-      this.elements.focusIndicator,
-      this.elements.websiteBlocking,
-      this.elements.breakBlockAll,
-      this.elements.breakUseAllowlist,
-      this.elements.hideYoutubeComments,
-      this.elements.hideYoutubeRecommendations,
-      this.elements.hideYoutubeShorts,
-      this.elements.pauseYoutubeBreaks,
-      this.elements.collectStats,
-      this.elements.petEnabled
+      this.elements.autoStartBreaks, this.elements.autoStartPomodoros,
+      this.elements.notifications, this.elements.sounds,
+      this.elements.breakReminders, this.elements.enforceBreaks,
+      this.elements.breakOverlay, this.elements.breakCountdown,
+      this.elements.nextSessionInfo, this.elements.focusOverlay,
+      this.elements.hideDistractions, this.elements.focusIndicator,
+      this.elements.websiteBlocking, this.elements.breakBlockAll,
+      this.elements.breakUseAllowlist, this.elements.hideYoutubeComments,
+      this.elements.hideYoutubeRecommendations, this.elements.hideYoutubeShorts,
+      this.elements.pauseYoutubeBreaks, this.elements.collectStats
     ];
 
     toggleInputs.forEach(input => {
@@ -142,7 +126,7 @@ class ModernPomodoroOptions {
       }
     });
 
-    // Select inputs
+    // Event listeners for dropdown select inputs
     if (this.elements.youtubeDistractionMode) {
       this.elements.youtubeDistractionMode.addEventListener("change", () => this.saveSettings());
     }
@@ -150,10 +134,9 @@ class ModernPomodoroOptions {
       this.elements.soundType.addEventListener("change", () => this.saveSettings());
     }
 
-    // Website blocking specific listeners
     this.setupWebsiteBlockingListeners();
 
-    // Action buttons
+    // Event listeners for action buttons
     if (this.elements.exportDataBtn) {
       this.elements.exportDataBtn.addEventListener("click", () => this.exportData());
     }
@@ -167,7 +150,7 @@ class ModernPomodoroOptions {
       this.elements.clearDataBtn.addEventListener("click", () => this.clearAllData());
     }
 
-    // Test buttons in notifications tab
+    // Test buttons in the notifications tab
     const testNotificationBtn = document.getElementById("test-notification");
     if (testNotificationBtn) {
       testNotificationBtn.addEventListener("click", async () => {
@@ -182,40 +165,28 @@ class ModernPomodoroOptions {
       });
     }
 
-    // Break mode mutual exclusion
+    // Ensure "Block all" and "Use allowlist" for breaks are mutually exclusive.
     if (this.elements.breakBlockAll && this.elements.breakUseAllowlist) {
       this.elements.breakBlockAll.addEventListener("change", (e) => {
-        if (e.target.checked) {
-          this.elements.breakUseAllowlist.checked = false;
-        }
+        if (e.target.checked) this.elements.breakUseAllowlist.checked = false;
         this.saveSettings();
       });
 
       this.elements.breakUseAllowlist.addEventListener("change", (e) => {
-        if (e.target.checked) {
-          this.elements.breakBlockAll.checked = false;
-        }
+        if (e.target.checked) this.elements.breakBlockAll.checked = false;
         this.saveSettings();
       });
     }
-
-    console.log("[v0] All event listeners bound");
   }
 
+  // Sets up event listeners for website blocking inputs and buttons.
   setupWebsiteBlockingListeners() {
-    // Allowlist management with real-time validation
+    // Allowlist management
     if (this.elements.addAllowlistBtn) {
-      this.elements.addAllowlistBtn.addEventListener("click", () => {
-        this.addWebsiteToList("allowlist");
-      });
+      this.elements.addAllowlistBtn.addEventListener("click", () => this.addWebsiteToList("allowlist"));
     }
-
     if (this.elements.allowlistInput) {
-      // Real-time validation
-      this.elements.allowlistInput.addEventListener("input", (e) => {
-        this.validateInputRealTime(e.target, "allowlist");
-      });
-      
+      this.elements.allowlistInput.addEventListener("input", (e) => this.validateInputRealTime(e.target, "allowlist"));
       this.elements.allowlistInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -224,19 +195,12 @@ class ModernPomodoroOptions {
       });
     }
 
-    // Blocklist management with real-time validation
+    // Blocklist management
     if (this.elements.addBlocklistBtn) {
-      this.elements.addBlocklistBtn.addEventListener("click", () => {
-        this.addWebsiteToList("blocklist");
-      });
+      this.elements.addBlocklistBtn.addEventListener("click", () => this.addWebsiteToList("blocklist"));
     }
-
     if (this.elements.blocklistInput) {
-      // Real-time validation
-      this.elements.blocklistInput.addEventListener("input", (e) => {
-        this.validateInputRealTime(e.target, "blocklist");
-      });
-      
+      this.elements.blocklistInput.addEventListener("input", (e) => this.validateInputRealTime(e.target, "blocklist"));
       this.elements.blocklistInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -246,43 +210,38 @@ class ModernPomodoroOptions {
     }
   }
 
+  // Main initialization function for the options page.
   async initializeOptions() {
-    console.log("[v0] Initializing options page");
     this.showStatus("Loading settings...", "loading");
-    
     try {
       await this.loadSettings();
       await this.loadWebsiteLists();
       this.updateHeaderStats();
       this.calculateStorageUsage();
       this.showStatus("Settings loaded successfully", "success");
-      console.log("[v0] Options initialized successfully");
     } catch (error) {
-      console.error("[v0] Error initializing options:", error);
+      console.error("Error initializing options:", error);
       this.showStatus("Error loading settings", "error");
     }
   }
 
+  // Loads settings from the background script or chrome.storage as a fallback.
   async loadSettings() {
     try {
-      // Try to get settings from background script first
+      // Prioritize getting settings from the active background script.
       const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
-      
       if (response && response.state && response.state.settings) {
         this.currentSettings = response.state.settings;
         this.backgroundAvailable = true;
-        console.log("[v0] Settings loaded from background script");
       } else {
-        throw new Error("Background not available");
+        throw new Error("Background script not available or returned invalid state.");
       }
     } catch (error) {
-      console.log("[v0] Background not available, loading from storage");
-      // Fallback to direct storage access
+      // Fallback to direct storage access if the background script is inactive.
       const result = await chrome.storage.local.get("settings");
       this.currentSettings = result.settings || this.getDefaultSettings();
       this.backgroundAvailable = false;
     }
-    
     this.populateSettings();
   }
 
@@ -332,7 +291,6 @@ class ModernPomodoroOptions {
       hideYoutubeShorts: true,
       pauseYoutubeBreaks: true,
       collectStats: true,
-      petEnabled: true,
     };
   }
 
@@ -351,7 +309,7 @@ class ModernPomodoroOptions {
       "nextSessionInfo", "focusOverlay", "hideDistractions",
       "focusIndicator", "websiteBlocking", "breakBlockAll",
       "breakUseAllowlist", "hideYoutubeComments", "hideYoutubeRecommendations",
-      "hideYoutubeShorts", "pauseYoutubeBreaks", "collectStats", "petEnabled"
+      "hideYoutubeShorts", "pauseYoutubeBreaks", "collectStats"
     ];
 
     toggleSettings.forEach(setting => {
@@ -401,7 +359,6 @@ class ModernPomodoroOptions {
       hideYoutubeShorts: this.elements.hideYoutubeShorts?.checked || false,
       pauseYoutubeBreaks: this.elements.pauseYoutubeBreaks?.checked || false,
       collectStats: this.elements.collectStats?.checked || false,
-      petEnabled: this.elements.petEnabled?.checked || false,
     };
 
     try {

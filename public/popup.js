@@ -1,47 +1,43 @@
-// Enhanced popup.js with support button functionality
-
+// Manages the popup UI for the Pomodoro Timer extension.
 class PomodoroPopup {
     constructor() {
-        console.log("Initializing PomodoroPopup");
-
+        // Initializes the popup by caching DOM elements, setting up event listeners,
+        // and loading the initial state from the background script.
         this.elements = {
+            // Timer display elements
             timerText: document.getElementById("timer-text"),
             timerLabel: document.getElementById("timer-label"),
             timerCircle: document.getElementById("timer-circle"),
+
+            // Timer control buttons
             startBtn: document.getElementById("start-btn"),
             pauseBtn: document.getElementById("pause-btn"),
             resetBtn: document.getElementById("reset-btn"),
             skipBreakBtn: document.getElementById("skip-break-btn"),
             skipBreakContainer: document.getElementById("skip-break-container"),
+
+            // Session and mode display
             sessionCount: document.getElementById("session-count"),
             currentMode: document.getElementById("current-mode"),
             
-            toggleBlockingBtn: document.getElementById("toggle-blocking"),
-            toggleBreakOverlayBtn: document.getElementById("toggle-break-overlay"),
-            toggleFocusIndicatorBtn: document.getElementById("toggle-focus-indicator"),
-            
+            // Quick settings
             focusTimeSelect: document.getElementById("focus-time"),
             breakTimeSelect: document.getElementById("break-time"),
+
+            // Header buttons
             settingsBtn: document.getElementById("settings-btn"),
             statsBtn: document.getElementById("stats-btn"),
+            supportBtn: document.getElementById("support-btn"),
 
+            // To-do list elements
             todoInput: document.getElementById("todo-input"),
             addTodoBtn: document.getElementById("add-todo-btn"),
             todoList: document.getElementById("todo-list"),
 
-            // Support button
-            supportBtn: document.getElementById("support-btn"),
+            // Footer and other buttons
             supportBtnMain: document.getElementById("support-btn-main"),
             openStatsBtn: document.getElementById("open-stats"),
             openSettingsBtn: document.getElementById("open-settings"),
-
-            // Pet section
-            petSection: document.getElementById("pet-section"),
-            petHeader: document.querySelector(".pet-header"),
-            petContent: document.getElementById("pet-content"),
-            petImage: document.getElementById("pet-image"),
-            interactBtn: document.getElementById("interact-btn"),
-            petToggleBtn: document.getElementById("pet-toggle-btn")
         };
 
         this.state = {};
@@ -49,17 +45,19 @@ class PomodoroPopup {
         this.initialize();
     }
 
+    // Sets up initial state and listeners.
     async initialize() {
         this.initializeEventListeners();
         await this.loadState();
 
+        // Listen for updates from the background script.
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.type === "TIMER_UPDATE") {
                 this.state = message.state;
                 this.updateDisplay();
             }
             if (message.type === "SETTINGS_UPDATED") {
-                // reflect settings changes immediately
+                // Reflect settings changes immediately.
                 if (message.settings) {
                     this.state.settings = { ...this.state.settings, ...message.settings };
                 }
@@ -68,6 +66,7 @@ class PomodoroPopup {
         });
     }
 
+    // Updates the timer text display.
     updateTimerDisplay() {
         if (!this.state || !this.elements.timerText) {
             return;
@@ -77,10 +76,10 @@ class PomodoroPopup {
         const seconds = this.state.currentTime % 60;
         this.elements.timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         
-        // Update progress circle
         this.updateProgressCircle();
     }
 
+    // Updates the circular progress bar.
     updateProgressCircle() {
         const circle = this.elements.timerCircle;
         if (!circle) return;
@@ -88,7 +87,7 @@ class PomodoroPopup {
         const totalTime = this.getTotalTimeForCurrentMode();
         const progress = totalTime > 0 ? (totalTime - this.state.currentTime) / totalTime : 0;
         
-        // Create or update the progress ring
+        // Create or update the progress ring SVG.
         let progressRing = circle.querySelector('.progress-ring');
         if (!progressRing) {
             progressRing = document.createElement('div');
@@ -110,6 +109,7 @@ class PomodoroPopup {
         }
     }
 
+    // Gets the total time for the current timer mode from settings.
     getTotalTimeForCurrentMode() {
         if (!this.state || !this.state.settings) return 25 * 60;
         
@@ -125,10 +125,12 @@ class PomodoroPopup {
         }
     }
 
+    // Binds event listeners to all interactive elements.
     initializeEventListeners() {
+        // Timer controls
         this.elements.startBtn?.addEventListener("click", () => {
             this.sendMessageToBackground("START_TIMER");
-            // Immediately update UI for responsiveness
+            // Immediately update UI for responsiveness.
             if (this.state) {
                 this.state.isRunning = true;
                 this.updateDisplay();
@@ -137,7 +139,7 @@ class PomodoroPopup {
         
         this.elements.pauseBtn?.addEventListener("click", () => {
             this.sendMessageToBackground("PAUSE_TIMER");
-            // Immediately update UI for responsiveness
+            // Immediately update UI for responsiveness.
             if (this.state) {
                 this.state.isRunning = false;
                 this.updateDisplay();
@@ -146,31 +148,25 @@ class PomodoroPopup {
         
         this.elements.resetBtn?.addEventListener("click", () => this.sendMessageToBackground("RESET_TIMER"));
         this.elements.skipBreakBtn?.addEventListener("click", () => this.sendMessageToBackground("SKIP_BREAK"));
+
+        // Navigation buttons
         this.elements.settingsBtn?.addEventListener("click", () => this.openSettings());
         this.elements.statsBtn?.addEventListener("click", () => this.openStats());
-
-        // Support button event listener
         this.elements.supportBtn?.addEventListener("click", () => this.openSupportPage());
         this.elements.supportBtnMain?.addEventListener("click", () => this.openSupportPage());
         this.elements.openStatsBtn?.addEventListener("click", () => this.openStats());
         this.elements.openSettingsBtn?.addEventListener("click", () => this.openSettings());
 
+        // Quick settings
         this.elements.focusTimeSelect?.addEventListener("change", () => this.updateSettings());
         this.elements.breakTimeSelect?.addEventListener("change", () => this.updateSettings());
         
-        // quick toggles removed from UI
-
+        // To-do list
         this.elements.addTodoBtn?.addEventListener("click", () => this.addTodo());
         this.elements.todoInput?.addEventListener("keypress", (e) => {
             if (e.key === "Enter") this.addTodo();
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
-
-        // Pet section listeners
-        this.elements.petHeader?.addEventListener("click", () => this.togglePetContent());
-        this.elements.interactBtn?.addEventListener("click", () => this.interactWithPet());
-
-        console.log("All event listeners initialized.");
     }
     
     async toggleSetting(settingName) {
@@ -313,37 +309,6 @@ class PomodoroPopup {
         // Update quick settings
         if (this.elements.focusTimeSelect) this.elements.focusTimeSelect.value = this.state.settings.focusTime;
         if (this.elements.breakTimeSelect) this.elements.breakTimeSelect.value = this.state.settings.shortBreak;
-
-        // Update pet section
-        this.updatePetDisplay();
-    }
-
-    togglePetContent() {
-        this.elements.petContent.style.display = this.elements.petContent.style.display === "none" ? "flex" : "none";
-        this.elements.petToggleBtn.classList.toggle("collapsed");
-    }
-
-    interactWithPet() {
-        this.sendMessageToBackground("INTERACT_WITH_PET");
-    }
-
-    updatePetDisplay() {
-        if (!this.state.settings.petEnabled) {
-            this.elements.petSection.style.display = "none";
-            return;
-        }
-
-        this.elements.petSection.style.display = "block";
-
-        if (this.state.pet) {
-            let mood = "neutral";
-            if (this.state.pet.happiness > 75) {
-                mood = "happy";
-            } else if (this.state.pet.happiness < 25) {
-                mood = "sad";
-            }
-            this.elements.petImage.src = `icons/pet/${mood}.svg`;
-        }
     }
 
     async updateSettings() {
