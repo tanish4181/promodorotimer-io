@@ -511,13 +511,7 @@ class PomodoroBackground {
 
     // 2. Break-time blocking logic
     if (isRunning && isBreak) {
-      if (settings.breakBlockAll) {
-        return { blocked: true, reason: 'break-all' };
-      }
-      if (settings.breakUseAllowlist && !this._isUrlInList(url, this.state.allowedWebsites)) {
-        return { blocked: true, reason: 'break-allowlist' };
-      }
-      return { blocked: false };
+      return { blocked: false }; // Let break-overlay.js handle it
     }
 
     // 3. Allowlist is the highest priority for focus and idle modes
@@ -527,7 +521,9 @@ class PomodoroBackground {
 
     // 4. Focus-time blocking logic
     if (isRunning && currentMode === 'focus') {
-      return { blocked: true, reason: 'focus' };
+      if (this._isUrlInList(url, this.state.blockedWebsites)) {
+        return { blocked: true, reason: 'focus' };
+      }
     }
 
     // 5. Idle-time blocking logic (timer is not running)
