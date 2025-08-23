@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Kairo – Advanced Pomodoro Timer & Productivity App",
+  "name": "Pomodoro Timer & Website Blocker",
   "version": "1.0.0",
 
-  "description": "Advanced Pomodoro + to-do, stats, goals, heatmap, smart insights, website blocking, and YouTube distraction removal all in one extension.",
+  "description": "A powerful Pomodoro timer with to-do lists, productivity stats, and website blocking to help you focus.",
   "permissions": [
     "storage",
     "activeTab",
