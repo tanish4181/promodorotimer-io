@@ -27,6 +27,11 @@
       "matches": ["<all_urls>"],
       "js": ["blocker.js"],
       "run_at": "document_start"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["break-enforcer.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
