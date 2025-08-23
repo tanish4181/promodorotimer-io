@@ -379,23 +379,13 @@ class YouTubeIntegration {
         await this.loadTimerState()
         this.hideFocusModeIndicator()
         this.showDistractions()
-        if (this.breakCountdownInterval) {
-          clearInterval(this.breakCountdownInterval);
-        }
-        break
-        
-      case "ENFORCE_BREAK":
-        await this.loadTimerState()
-        this.enforceBreak(message.mode, message.settings, message.nextSessionInfo)
-        break
-        
-      case "BREAK_SKIPPED":
-        this.removeBreakOverlay()
         break
         
       case "SETTINGS_UPDATED":
-        await this.loadTimerState()
-        this.setupYouTubeIntegration()
+        if (message.settings) {
+          this.timerState.settings = message.settings;
+          this.setupYouTubeIntegration();
+        }
         break
         
       case "TIMER_UPDATE":
@@ -403,17 +393,6 @@ class YouTubeIntegration {
         if (message.state) {
           this.timerState = message.state;
           this.setupYouTubeIntegration();
-
-          // If the mode is no longer a break, ensure the overlay is removed.
-          const isBreak = this.timerState.currentMode === 'shortBreak' || this.timerState.currentMode === 'longBreak';
-          if (!isBreak && this.overlayElement) {
-            this.removeBreakOverlay();
-          }
-
-          // If the overlay is visible, update the countdown
-          if (this.overlayElement && isBreak) {
-            this.updateBreakCountdown(this.timerState.currentTime);
-          }
         }
         break
 
@@ -425,120 +404,10 @@ class YouTubeIntegration {
     }
   }
 
-  enforceBreak(mode, settings, nextSessionInfo) {
-    if (!settings.breakOverlay) {
-      return
-    }
-
-    // Pause YouTube video if enabled
-    if (settings.pauseYoutubeBreaks) {
-      this.pauseYouTubeVideo()
-    }
-
-    // Show break overlay
-    this.showBreakOverlay(mode, settings, nextSessionInfo)
-  }
-
   pauseYouTubeVideo() {
     const video = document.querySelector('video')
     if (video && !video.paused) {
       video.pause()
-    }
-  }
-
-  showBreakOverlay(mode, settings, nextSessionInfo) {
-    // Remove existing overlay
-    this.removeBreakOverlay()
-
-    // Create overlay
-    this.overlayElement = document.createElement('div')
-    this.overlayElement.id = 'pomodoro-break-overlay'
-    
-    let overlayContent = `
-      <div class="pomodoro-overlay-content">
-        <h1>${mode === "shortBreak" ? "Short Break" : "Long Break"}</h1>
-        <p>
-          It's time to relax and recharge. Take a moment away from your screen.
-        </p>
-    `
-    
-    if (settings.breakCountdown) {
-      overlayContent += `
-        <div class="pomodoro-countdown">
-          <div class="countdown-label">Break ends in:</div>
-          <div class="countdown-timer" id="break-countdown-timer">--:--</div>
-        </div>
-      `
-    }
-    
-    if (settings.nextSessionInfo && nextSessionInfo) {
-      overlayContent += `
-        <div class="pomodoro-next-session">
-          <div class="next-session-label">Next Focus Session:</div>
-          <div class="next-session-info">
-            <span class="next-duration">${nextSessionInfo.nextDuration} minutes</span>
-            <span class="next-sessions-until-long">(${nextSessionInfo.sessionsUntilLongBreak} sessions until long break)</span>
-          </div>
-        </div>
-      `
-    }
-    
-    overlayContent += `
-      </div>
-    `
-    
-    this.overlayElement.innerHTML = overlayContent
-
-    document.body.appendChild(this.overlayElement)
-
-
-    this.overlayElement.addEventListener('keydown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-
-    this.overlayElement.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-
-    // Start countdown if enabled
-    if (settings.breakCountdown) {
-      this.startBreakCountdown()
-    }
-  }
-
-  updateBreakCountdown(currentTime) {
-    const countdownElement = document.getElementById("break-countdown-timer");
-    if (!countdownElement) return;
-
-    const minutes = Math.floor(currentTime / 60);
-    const seconds = currentTime % 60;
-    countdownElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }
-
-  startBreakCountdown() {
-    if (this.breakCountdownInterval) {
-      clearInterval(this.breakCountdownInterval);
-    }
-    this.updateBreakCountdown(this.timerState.currentTime);
-  }
-
-  removeBreakOverlay() {
-    if (this.overlayElement) {
-      this.overlayElement.remove()
-      this.overlayElement = null
-    }
-    
-    if (this.breakCountdownInterval) {
-      clearInterval(this.breakCountdownInterval)
-      this.breakCountdownInterval = null
-    }
-    
-    // Remove overlay styles
-    const overlayStyles = document.querySelector('style')
-    if (overlayStyles && overlayStyles.textContent.includes('#pomodoro-break-overlay')) {
-      overlayStyles.remove()
     }
   }
 }

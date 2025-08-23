@@ -216,6 +216,7 @@ class PomodoroBackground {
     }
     await this.saveState();
     this.broadcastUpdate();
+    this.notifyContentScripts({ type: "SETTINGS_UPDATED", settings: this.state.settings });
   }
 
   // Starts the timer.
@@ -521,9 +522,7 @@ class PomodoroBackground {
 
     // 4. Focus-time blocking logic
     if (isRunning && currentMode === 'focus') {
-      if (this._isUrlInList(url, this.state.blockedWebsites)) {
-        return { blocked: true, reason: 'focus' };
-      }
+      return { blocked: true, reason: 'focus' };
     }
 
     // 5. Idle-time blocking logic (timer is not running)
