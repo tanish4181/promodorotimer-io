@@ -11,8 +11,6 @@ class AdvancedWebsiteBlocker {
   }
 
   async init() {
-    console.log("Initializing advanced website blocker");
-    
     try {
       // Wait for chrome runtime to be available
       await this.waitForRuntime();
@@ -66,7 +64,6 @@ class AdvancedWebsiteBlocker {
   retryInitialization() {
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
-      console.log(`Retrying initialization (${this.retryCount}/${this.maxRetries})`);
       setTimeout(() => this.init(), 1000 * this.retryCount);
     } else {
       console.error("Max retries reached, blocker initialization failed");
@@ -104,26 +101,20 @@ class AdvancedWebsiteBlocker {
       console.error("Error checking block status:", error.message);
       
       if (error.message?.includes("Extension context invalidated")) {
-        console.log("Context invalidated, reloading page to re-establish connection.");
         window.location.reload();
       } else if (error.message?.includes("Could not establish connection")) {
-        console.log("Connection failed, retrying...");
         this.retryInitialization(); // Use the existing retry logic
       }
     }
   }
 
   blockWebsite(reason) {
-    console.log("Blocking website:", window.location.hostname, `Reason: ${reason}`);
-    
     this.isBlocked = true;
     this.createBlockingOverlay(reason);
     this.hidePageContent();
   }
 
   unblockWebsite() {
-    console.log("Unblocking website:", window.location.hostname);
-    
     this.isBlocked = false;
     this.removeBlockingOverlay();
     this.showPageContent();
@@ -145,8 +136,6 @@ class AdvancedWebsiteBlocker {
 
     // Bind event listeners
     this.bindOverlayEvents();
-
-    console.log("Blocking overlay created");
   }
 
   getOverlayHTML(reason) {
@@ -286,7 +275,6 @@ class AdvancedWebsiteBlocker {
     if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        console.log("Closing tab");
         this.closeTab();
       });
     }
@@ -349,8 +337,6 @@ class AdvancedWebsiteBlocker {
     if (this.overlay) {
       this.overlay.style.visibility = "visible";
     }
-
-    console.log("Page content hidden");
   }
 
   showPageContent() {
@@ -360,21 +346,6 @@ class AdvancedWebsiteBlocker {
     
     // Remove blocked class
     document.documentElement.classList.remove("pomodoro-blocked");
-
-    console.log("Page content shown");
-  }
-
-  showError(message) {
-    if (!this.overlay) return;
-
-    const reasonElement = this.overlay.querySelector("#block-reason");
-    if (reasonElement) {
-      reasonElement.innerHTML = `
-        <div style="color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
-          ⚠️ ${message}
-        </div>
-      `;
-    }
   }
 
   // Cleanup method for when the content script is unloaded
@@ -387,13 +358,10 @@ class AdvancedWebsiteBlocker {
     if (this.isBlocked) {
       this.unblockWebsite();
     }
-    
-    console.log("Cleanup completed");
   }
 }
 
 // Initialize the advanced website blocker
-console.log("Initializing AdvancedWebsiteBlocker");
 const blocker = new AdvancedWebsiteBlocker();
 
 // Cleanup on page unload

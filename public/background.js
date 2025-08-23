@@ -1,3 +1,5 @@
+importScripts('settings.js');
+
 // This script runs in the background and manages the core logic of the Pomodoro timer.
 class PomodoroBackground {
   constructor() {
@@ -9,35 +11,7 @@ class PomodoroBackground {
       currentMode: "focus", // The current timer mode.
       sessionCount: 1, // The number of focus sessions completed in the current cycle.
       totalSessions: 0, // The total number of focus sessions completed.
-      settings: {
-        focusTime: 25,
-        shortBreak: 5,
-        longBreak: 15,
-        sessionsUntilLongBreak: 4,
-        autoStartBreaks: true,
-        autoStartPomodoros: false,
-        notifications: true,
-        sounds: true,
-        soundType: "ding",
-        breakReminders: true,
-        enforceBreaks: true,
-        youtubeIntegration: true,
-        youtubeDistractionMode: "focus",
-        breakOverlay: true,
-        breakCountdown: true,
-        nextSessionInfo: true,
-        focusOverlay: false,
-        hideDistractions: true,
-        focusIndicator: true,
-        websiteBlocking: true,
-        breakBlockAll: false,
-        breakUseAllowlist: true,
-        hideYoutubeComments: true,
-        hideYoutubeRecommendations: true,
-        hideYoutubeShorts: true,
-        pauseYoutubeBreaks: true,
-        collectStats: true,
-      },
+      settings: defaultSettings,
       blockedWebsites: [], // A list of websites to block.
       allowedWebsites: [], // A list of websites to always allow.
       todos: [], // The user's to-do list.
@@ -137,33 +111,7 @@ class PomodoroBackground {
       currentMode: "focus",
       sessionCount: 1,
       totalSessions: 0,
-      settings: {
-        focusTime: 25,
-        shortBreak: 5,
-        longBreak: 15,
-        sessionsUntilLongBreak: 4,
-        autoStartBreaks: true,
-        autoStartPomodoros: false,
-        notifications: true,
-        sounds: true,
-        soundType: "ding",
-        breakReminders: true,
-        enforceBreaks: true,
-        youtubeIntegration: true,
-        youtubeDistractionMode: "focus",
-        breakOverlay: true,
-        breakCountdown: true,
-        nextSessionInfo: true,
-        focusOverlay: false,
-        hideDistractions: true,
-        focusIndicator: true,
-        websiteBlocking: true,
-        hideYoutubeComments: true,
-        hideYoutubeRecommendations: true,
-        hideYoutubeShorts: true,
-        pauseYoutubeBreaks: true,
-        collectStats: true,
-      },
+      settings: defaultSettings,
       blockedWebsites: [],
       allowedWebsites: [],
       todos: [],
@@ -492,7 +440,6 @@ class PomodoroBackground {
       dailyStats[today].focusTime += this.state.settings.focusTime;
 
       await chrome.storage.local.set({ dailyStats });
-      console.log("[v0] Session recorded for", today);
       try {
         chrome.runtime.sendMessage({ type: "STATS_UPDATED" });
       } catch (e) {
@@ -507,7 +454,6 @@ class PomodoroBackground {
     if (!this.state.blockedWebsites.includes(website)) {
       this.state.blockedWebsites.push(website);
       await this.saveState();
-      console.log("[v0] Website blocked:", website);
     }
   }
 
@@ -516,7 +462,6 @@ class PomodoroBackground {
       (w) => w !== website
     );
     await this.saveState();
-    console.log("[v0] Website unblocked:", website);
   }
 
   _isUrlInList(url, list) {
@@ -586,8 +531,6 @@ class PomodoroBackground {
   }
 
   broadcastUpdate() {
-    console.log("[v0] Broadcasting update");
-
     // Send update to all tabs
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
@@ -637,5 +580,4 @@ class PomodoroBackground {
 }
 
 // Initialize background script
-console.log("Creating PomodoroBackground instance");
 new PomodoroBackground();

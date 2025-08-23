@@ -168,44 +168,14 @@ class PomodoroPopup {
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
     }
-    
-    async toggleSetting(settingName) {
-        if (!this.state || !this.state.settings) {
-            console.error("No state or settings available");
-            return;
-        }
-
-        const newValue = !this.state.settings[settingName];
-        
-        try {
-            this.state.settings[settingName] = newValue;
-            this.updateDisplay();
-
-            const newSettings = { [settingName]: newValue };
-            await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
-            
-            console.log(`Setting ${settingName} successfully toggled to ${newValue}`);
-        } catch (error) {
-            console.error(`Error toggling setting ${settingName}:`, error);
-            this.state.settings[settingName] = !newValue;
-            this.updateDisplay();
-        }
-    }
-    
-    updateToggleButton(button, isActive) {
-        if (!button) return;
-        button.classList.toggle("active", isActive);
-    }
 
     async loadState() {
-        console.log("Loading state from background script.");
         try {
             const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
             if (response && response.state) {
                 this.state = response.state;
                 this.updateDisplay();
                 this.renderTodos();
-                console.log("State loaded and rendered successfully.");
             }
         } catch (error) {
             console.error("Error loading state:", error);
@@ -222,32 +192,7 @@ class PomodoroPopup {
         isRunning: false,
         currentMode: "focus",
         sessionCount: 1,
-        settings: {
-          focusTime: 25,
-          shortBreak: 5,
-          longBreak: 15,
-          sessionsUntilLongBreak: 4,
-          autoStartBreaks: true,
-          autoStartPomodoros: false,
-          autoSwitchModes: true,
-          notifications: true,
-          sounds: true,
-          breakReminders: true,
-          enforceBreaks: true,
-          youtubeIntegration: true,
-          breakOverlay: true,
-          breakCountdown: true,
-          nextSessionInfo: true,
-          focusOverlay: false,
-          hideDistractions: true,
-          focusIndicator: true,
-          websiteBlocking: true,
-          hideYoutubeComments: true,
-          hideYoutubeRecommendations: true,
-          hideYoutubeShorts: true,
-          pauseYoutubeBreaks: true,
-          collectStats: true,
-        },
+        settings: defaultSettings,
         todos: [],
       };
     }
@@ -298,13 +243,6 @@ class PomodoroPopup {
         if (this.state.currentMode === "shortBreak") document.body.classList.add("break-mode");
         if (this.state.currentMode === "longBreak") document.body.classList.add("long-break-mode");
         if (this.state.isRunning) document.body.classList.add("timer-running");
-        
-        // Update toggle buttons
-        if (this.state.settings) {
-            this.updateToggleButton(this.elements.toggleBlockingBtn, this.state.settings.websiteBlocking);
-            this.updateToggleButton(this.elements.toggleBreakOverlayBtn, this.state.settings.breakOverlay);
-            this.updateToggleButton(this.elements.toggleFocusIndicatorBtn, this.state.settings.focusIndicator);
-        }
 
         // Update quick settings
         if (this.elements.focusTimeSelect) this.elements.focusTimeSelect.value = this.state.settings.focusTime;

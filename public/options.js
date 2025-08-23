@@ -253,45 +253,13 @@ class ModernPomodoroOptions {
       
       this.renderWebsiteList("allowlist");
       this.renderWebsiteList("blocklist");
-      
-      console.log("[v0] Website lists loaded:", {
-        allowlist: this.allowlist.length,
-        blocklist: this.blocklist.length
-      });
     } catch (error) {
       console.error("[v0] Error loading website lists:", error);
     }
   }
 
   getDefaultSettings() {
-    return {
-      focusTime: 25,
-      shortBreak: 5,
-      longBreak: 15,
-      sessionsUntilLongBreak: 4,
-      autoStartBreaks: true,
-      autoStartPomodoros: false,
-      notifications: true,
-      sounds: true,
-      breakReminders: true,
-      enforceBreaks: true,
-      youtubeIntegration: true,
-      youtubeDistractionMode: "focus",
-      breakOverlay: true,
-      breakCountdown: true,
-      nextSessionInfo: true,
-      focusOverlay: false,
-      hideDistractions: true,
-      focusIndicator: true,
-      websiteBlocking: true,
-      breakBlockAll: false,
-      breakUseAllowlist: true,
-      hideYoutubeComments: true,
-      hideYoutubeRecommendations: true,
-      hideYoutubeShorts: true,
-      pauseYoutubeBreaks: true,
-      collectStats: true,
-    };
+    return defaultSettings;
   }
 
   populateSettings() {
@@ -326,8 +294,6 @@ class ModernPomodoroOptions {
     if (this.elements.soundType) {
       this.elements.soundType.value = this.currentSettings.soundType || "ding";
     }
-
-    console.log("[v0] Settings populated in UI");
   }
 
   async saveSettings() {
@@ -371,8 +337,6 @@ class ModernPomodoroOptions {
       this.currentSettings = newSettings;
       this.updateHeaderStats();
       this.showStatus("Settings saved successfully", "success");
-      
-      console.log("[v0] Settings saved:", newSettings);
     } catch (error) {
       console.error("[v0] Error saving settings:", error);
       this.showStatus("Error saving settings", "error");
@@ -432,7 +396,6 @@ class ModernPomodoroOptions {
     this.renderWebsiteList(listType);
     
     this.showStatus(`"${cleanedWebsite}" added to ${listType}`, "success");
-    console.log(`[v0] Website added to ${listType}:`, cleanedWebsite);
   }
 
   removeWebsiteFromList(listType, website) {
@@ -444,7 +407,6 @@ class ModernPomodoroOptions {
       this.saveWebsiteLists();
       this.renderWebsiteList(listType);
       this.showStatus(`Website removed from ${listType}`, "success");
-      console.log(`[v0] Website removed from ${listType}:`, website);
     }
   }
 
@@ -613,8 +575,6 @@ class ModernPomodoroOptions {
         allowlist: this.allowlist,
         blocklist: this.blocklist
       });
-      
-      console.log("[v0] Website lists saved");
     } catch (error) {
       console.error("[v0] Error saving website lists:", error);
     }
@@ -639,8 +599,6 @@ class ModernPomodoroOptions {
       if (storageElement) {
         storageElement.textContent = `${usageKB} KB`;
       }
-      
-      console.log(`[v0] Storage usage calculated: ${usageKB} KB`);
     } catch (error) {
       console.error("[v0] Error calculating storage usage:", error);
     }
@@ -670,8 +628,6 @@ class ModernPomodoroOptions {
       
       URL.revokeObjectURL(url);
       this.showStatus("Data exported successfully", "success");
-      
-      console.log("[v0] Data exported");
     } catch (error) {
       console.error("[v0] Error exporting data:", error);
       this.showStatus("Error exporting data", "error");
@@ -702,8 +658,6 @@ class ModernPomodoroOptions {
       this.populateSettings();
       this.updateHeaderStats();
       this.showStatus("Settings reset to defaults", "success");
-      
-      console.log("[v0] Settings reset to defaults");
     } catch (error) {
       console.error("[v0] Error resetting defaults:", error);
       this.showStatus("Error resetting defaults", "error");
@@ -733,7 +687,6 @@ class ModernPomodoroOptions {
       this.calculateStorageUsage();
       
       this.showStatus("All data cleared successfully", "success");
-      console.log("[v0] All data cleared");
     } catch (error) {
       console.error("[v0] Error clearing data:", error);
       this.showStatus("Error clearing data", "error");
@@ -754,13 +707,10 @@ class ModernPomodoroOptions {
       statusElement.style.opacity = "0";
       statusElement.style.transform = "translateY(20px)";
     }, 3000);
-    
-    console.log(`[v0] Status: ${message} (${type})`);
   }
 }
 
 // Initialize options when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[v0] DOM loaded, initializing options");
   new ModernPomodoroOptions();
 });
