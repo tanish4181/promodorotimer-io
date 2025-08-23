@@ -65,6 +65,9 @@ class BreakOverlay {
   }
 
   enforceBreak(mode, settings, nextSessionInfo) {
+    if (!settings.enforceBreaks) {
+      return;
+    }
     if (!settings.breakOverlay) {
       return;
     }

@@ -21,6 +21,7 @@
     {
       "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
       "js": ["content.js"],
+      "css": ["break-overlay.css"],
       "run_at": "document_idle"
     },
     {
