@@ -375,12 +375,22 @@ class AdvancedWebsiteBlocker {
   handleBreakOverlay(state) {
     const { currentMode, isRunning, settings } = state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
-    const showOverlay = isRunning && isBreak && settings.breakOverlayEnabled;
+    const shouldShowOverlay = isRunning && isBreak && settings.breakOverlayEnabled;
 
-    if (showOverlay && !this.breakOverlayVisible) {
+    if (shouldShowOverlay) {
+      // If the overlay should be visible, we remove any existing one and create a new one.
+      // This ensures that any changes to its appearance (like toggling the countdown)
+      // are applied immediately.
+      if (this.breakOverlayVisible) {
+        this.removeBreakOverlay();
+      }
       this.createBreakOverlay(state);
-    } else if (!showOverlay && this.breakOverlayVisible) {
-      this.removeBreakOverlay();
+    } else {
+      // Overlay should not be visible.
+      // If it is, remove it.
+      if (this.breakOverlayVisible) {
+        this.removeBreakOverlay();
+      }
     }
   }
 
