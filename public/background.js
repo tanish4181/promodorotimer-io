@@ -643,7 +643,7 @@ class PomodoroBackground {
     }
   }
 }
-
+console.log("stoping thew backgrounf task with po")
 // Initialize background script
 console.log("Creating PomodoroBackground instance");
 new PomodoroBackground();
