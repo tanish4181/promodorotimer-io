@@ -50,7 +50,7 @@ class PomodoroBackground {
 
     this.alarmName = "pomodoroTimer"; // The name of the alarm used for the timer.
 
-    this.initialize();
+    this.initializationPromise = this.initialize();
   }
 
   // Initializes the background script by loading the state and setting up listeners.
@@ -197,6 +197,7 @@ class PomodoroBackground {
 
   // Handles messages from other parts of the extension.
   async handleMessage(message, sender, sendResponse) {
+    await this.initializationPromise;
     try {
       switch (message.type) {
         case "GET_STATE":
