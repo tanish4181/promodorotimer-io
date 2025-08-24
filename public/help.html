@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help & Guide - Pomodoro Timer</title>
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+    <div class="container">
+        <a href="popup.html" class="back-link">← Back to Timer</a>
+        <div class="header">
+            <h1>Help & User Guide</h1>
+            <p>Everything you need to know about the Pomodoro Timer & Website Blocker.</p>
+        </div>
+
+        <div class="accordion">
+            <details class="accordion-item">
+                <summary class="accordion-header">
+                    <h4>The Pomodoro Technique</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>The Pomodoro Technique is a time management method that uses a timer to break work into intervals, traditionally 25 minutes in length, separated by short breaks. Each interval is known as a Pomodoro. The technique aims to improve focus and reduce mental fatigue.</p>
+                </div>
+            </details>
+
+            <details class="accordion-item" open>
+                <summary class="accordion-header">
+                    <h4>Timer Controls & Modes</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>The main popup provides all the controls you need for your sessions.</p>
+                    <ul>
+                        <li><strong>Start/Pause:</strong> Begin or pause the current timer.</li>
+                        <li><strong>Reset:</strong> Reset the current timer to its initial duration.</li>
+                        <li><strong>Skip Break:</strong> End a break early and immediately start the next focus session.</li>
+                        <li><strong>Lock-In Mode (🔒):</strong> Commit to a set number of sessions. While active, pause, reset, and skip functions are disabled to enforce focus.</li>
+                        <li><strong>Modes:</strong> The timer cycles through <strong>Focus</strong>, <strong>Short Break</strong>, and <strong>Long Break</strong> modes automatically. You can see the current mode and session count at a glance.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="accordion-item">
+                <summary class="accordion-header">
+                    <h4>Focus Tasks (To-Do List)</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>You can add tasks to a to-do list directly within the popup to keep your goals for the current session front and center. Simply type your task and press Enter or the '+' button. Click the checkbox to mark tasks as complete.</p>
+                </div>
+            </details>
+
+            <details class="accordion-item">
+                <summary class="accordion-header">
+                    <h4>Website Blocking</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>The extension includes a powerful website blocker to help you stay focused. You can configure it in <strong>Settings (⚙️) -> Blocking</strong>.</p>
+                    <ul>
+                        <li><strong>Allowlist:</strong> Websites on this list are <strong>always accessible</strong>, even during focus sessions. This is for essential work-related sites.</li>
+                        <li><strong>Blocklist:</strong> Websites on this list are blocked when the timer is <strong>not running (idle)</strong>. This helps prevent mindless browsing between sessions.</li>
+                        <li><strong>Focus Mode Behavior:</strong> During a focus session, <strong>all websites are blocked *except* for those on your Allowlist</strong>.</li>
+                    </ul>
+                </div>
+            </details>
+            
+            <details class="accordion-item">
+                <summary class="accordion-header">
+                    <h4>Break Enforcement</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>To ensure you take proper mental breaks, the extension can enforce them. When a break starts, a full-screen overlay will appear on all your tabs. This overlay reminds you to step away from the screen and can show a countdown for the remaining break time. You can customize this feature in <strong>Settings (⚙️) -> Breaks</strong>.</p>
+                </div>
+            </details>
+
+            <details class="accordion-item">
+                <summary class="accordion-header">
+                    <h4>YouTube Integration</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>To minimize distractions on YouTube, the extension can hide elements like comments, recommendations, and the Shorts feed during your focus sessions. It can also automatically pause any playing video when a break starts. These settings are available in <strong>Settings (⚙️) -> YouTube</strong>.</p>
+                </div>
+            </details>
+
+            <details class="accordion-item">
+                <summary class="accordion-header">
+                    <h4>Settings & Customization (⚙️)</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>The settings page allows you to customize nearly every aspect of the extension, including:</p>
+                    <ul>
+                        <li>Timer durations for focus, short, and long breaks.</li>
+                        <li>Automation rules, like auto-starting timers.</li>
+                        <li>Notification and sound preferences.</li>
+                        <li>All website blocking and break enforcement rules.</li>
+                        <li>Data management, including exporting your stats or clearing data.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="accordion-item">
+                <summary class="accordion-header">
+                    <h4>Statistics (📊) & Support (❤️)</h4>
+                </summary>
+                <div class="accordion-content">
+                    <p>Click the icons in the popup header to access more pages:</p>
+                    <ul>
+                        <li><strong>Statistics (📊):</strong> View a detailed dashboard of your productivity, including total focus time, session counts, streaks, and an activity heatmap.</li>
+                        <li><strong>Support (❤️):</strong> If you find this extension helpful, please consider supporting its development. Your support helps keep the extension free and ad-free!</li>
+                    </ul>
+                </div>
+            </details>
+        </div>
+
+    </div>
+    <script>
+        // Optional: Close details when another is opened
+        const details = document.querySelectorAll("details");
+        details.forEach((targetDetail) => {
+            targetDetail.addEventListener("click", () => {
+                details.forEach((detail) => {
+                    if (detail !== targetDetail) {
+                        detail.removeAttribute("open");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -84,7 +84,12 @@ class PomodoroBackground {
 
       // Handle extension lifecycle events.
       chrome.runtime.onStartup.addListener(() => this.loadState());
-      chrome.runtime.onInstalled.addListener(() => this.initializeDefaultState());
+      chrome.runtime.onInstalled.addListener((details) => {
+        this.initializeDefaultState();
+        if (details.reason === 'install') {
+          chrome.tabs.create({ url: 'welcome.html' });
+        }
+      });
     } catch (error) {
       console.error("Error initializing background script:", error);
     }

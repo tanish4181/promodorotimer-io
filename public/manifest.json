@@ -50,7 +50,16 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["blocked.html", "offscreen.html", "offscreen.js", "welcome.html", "welcome.css", "welcome.js"],
+      "resources": [
+        "blocked.html", 
+        "offscreen.html", 
+        "offscreen.js",
+        "welcome.html",
+        "welcome.css",
+        "welcome.js",
+        "help.html",
+        "help.css"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
