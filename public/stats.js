@@ -313,7 +313,7 @@ class PomodoroStats {
     return `
       <div class="header">
         <div class="header-content">
-          <h1>📊 Productivity Dashboard</h1>
+          <h1>Productivity Dashboard</h1>
           <p>Track your focus sessions and boost your productivity</p>
         </div>
         <div class="header-stats">

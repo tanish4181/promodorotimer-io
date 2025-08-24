@@ -6,9 +6,11 @@
     --surface-hover: #252525;
     --primary: #00d4aa;
     --primary-hover: #00b895;
+    --primary-light: rgba(0, 212, 170, 0.1);
     --text-primary: #ffffff;
     --text-secondary: #a1a1a1;
     --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.15);
     --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -23,15 +25,16 @@ body {
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
     color: var(--text-primary);
     min-height: 100vh;
-    line-height: 1.6;
+    line-height: 1.7; /* Increased line height for readability */
     padding: 20px;
+    font-size: 16px; /* Set a base font size */
 }
 
 .container {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 24px;
-    padding: 40px;
+    padding: 48px; /* More padding */
     max-width: 900px;
     width: 100%;
     margin: 40px auto;
@@ -49,7 +52,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 12px;
     transition: all var(--transition-normal);
-    margin-bottom: 32px;
+    margin-bottom: 40px; /* More space below */
     font-size: 14px;
 }
 
@@ -61,19 +64,21 @@ body {
 
 .header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 56px; /* Increased margin */
 }
 
 .header h1 {
-    font-size: 2.5rem;
+    font-size: 2.8rem; /* Larger title */
     font-weight: 800;
     color: var(--primary);
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .header p {
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: 1.2rem; /* Larger subtitle */
+    max-width: 650px;
+    margin: 0 auto;
 }
 
 .accordion {
@@ -87,9 +92,15 @@ body {
     border: 1px solid var(--border);
     border-radius: 16px;
     transition: all var(--transition-normal);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.accordion-item:hover {
+    border-color: var(--border-hover);
 }
 
 .accordion-item[open] {
+    background: var(--surface);
     border-color: var(--primary);
 }
 
@@ -97,9 +108,15 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
+    padding: 24px;
     cursor: pointer;
     list-style: none;
+    transition: background-color var(--transition-normal);
+}
+
+.accordion-header:hover {
+    background-color: var(--surface-hover);
+    border-radius: 16px 16px 0 0;
 }
 
 .accordion-header::-webkit-details-marker {
@@ -107,16 +124,17 @@ body {
 }
 
 .accordion-header h4 {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .accordion-header::after {
     content: '+';
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     color: var(--text-secondary);
     transition: transform var(--transition-normal);
+    font-weight: 300;
 }
 
 .accordion-item[open] .accordion-header::after {
@@ -127,24 +145,56 @@ body {
 .accordion-content {
     padding: 0 24px 24px;
     color: var(--text-secondary);
+    border-top: 1px solid var(--border);
 }
 
 .accordion-content p {
+    margin-top: 16px; /* Space above paragraphs */
     margin-bottom: 16px;
+    max-width: 70ch; /* Limit line length for readability */
 }
 
 .accordion-content ul {
-    margin-left: 20px;
+    margin-top: 20px;
+    margin-left: 24px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px; /* Increased gap between list items */
+    border-left: 2px solid var(--primary);
+    padding-left: 24px;
+}
+
+.accordion-content li {
+    padding-left: 8px;
 }
 
 .accordion-content li::marker {
     color: var(--primary);
+    font-size: 1.2em;
 }
 
 .accordion-content strong {
     color: var(--text-primary);
     font-weight: 600;
+}
+
+/* Responsive adjustments for clarity on smaller screens */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+        font-size: 15px;
+    }
+    .container {
+        padding: 24px;
+        margin: 20px auto;
+    }
+    .header h1 {
+        font-size: 2.2rem;
+    }
+    .header p {
+        font-size: 1rem;
+    }
+    .accordion-header h4 {
+        font-size: 1.1rem;
+    }
 }
