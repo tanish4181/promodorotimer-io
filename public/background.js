@@ -87,11 +87,11 @@ class PomodoroBackground {
       chrome.runtime.onInstalled.addListener((details) => {
         this.initializeDefaultState();
         if (details.reason === 'install') {
-          chrome.tabs.create({ url: 'welcome.html' });
+          chrome.tabs.create({ url: 'help.html' });
         }
       });
     } catch (error) {
-      console.error("Error initializing background script:", error);
+      // console.error("Error initializing background script:", error);
     }
   }
 
@@ -113,7 +113,7 @@ class PomodoroBackground {
 
         // Failsafe check for Lock-In Mode
         if (this.state.isLockedIn && this.state.lockInEndTime && Date.now() > this.state.lockInEndTime) {
-            console.log("Lock-in mode expired, disabling failsafe.");
+            // console.log("Lock-in mode expired, disabling failsafe.");
             this.state.isLockedIn = false;
             this.state.lockedInSessions = 0;
             this.state.lockInEndTime = null;
@@ -130,7 +130,7 @@ class PomodoroBackground {
         }
       }
     } catch (error) {
-      console.error("Error loading state:", error);
+      // console.error("Error loading state:", error);
       await this.initializeDefaultState();
     }
   }
@@ -143,7 +143,7 @@ class PomodoroBackground {
         lastActiveTime: Date.now(),
       });
     } catch (error) {
-      console.error("Error saving state:", error);
+      // console.error("Error saving state:", error);
     }
   }
 
@@ -318,7 +318,7 @@ class PomodoroBackground {
           sendResponse({ error: "Unknown message type" });
       }
     } catch (error) {
-      console.error("Error handling message:", error);
+      // console.error("Error handling message:", error);
       sendResponse({ error: error.message });
     }
   }
@@ -434,7 +434,7 @@ class PomodoroBackground {
       try {
         await this.playSound();
       } catch (e) {
-        console.error("Error playing sound:", e);
+        // console.error("Error playing sound:", e);
       }
     }
 
@@ -534,7 +534,7 @@ class PomodoroBackground {
         silent: false
       });
     } catch (error) {
-      console.error("[v0] Error showing notification:", error);
+      // console.error("[v0] Error showing notification:", error);
     }
   }
 
@@ -557,7 +557,7 @@ class PomodoroBackground {
       const sound = soundOverride || this.state.settings.soundType || 'ding'
       await chrome.runtime.sendMessage({ type: 'PLAY_SOUND', sound });
     } catch (e) {
-      console.error('[v0] playSound failed:', e);
+      // console.error('[v0] playSound failed:', e);
     }
   }
 
@@ -582,14 +582,14 @@ class PomodoroBackground {
       dailyStats[today].focusTime += this.state.settings.focusTime;
 
       await chrome.storage.local.set({ dailyStats });
-      console.log("[v0] Session recorded for", today);
+      // console.log("[v0] Session recorded for", today);
       try {
         chrome.runtime.sendMessage({ type: "STATS_UPDATED" });
       } catch (e) {
         // ignore if stats page not open
       }
     } catch (error) {
-      console.error("[v0] Error recording session:", error);
+      // console.error("[v0] Error recording session:", error);
     }
   }
 
@@ -597,7 +597,7 @@ class PomodoroBackground {
     if (!this.state.blockedWebsites.includes(website)) {
       this.state.blockedWebsites.push(website);
       await this.saveState();
-      console.log("[v0] Website blocked:", website);
+      // console.log("[v0] Website blocked:", website);
     }
   }
 
@@ -606,7 +606,7 @@ class PomodoroBackground {
       (w) => w !== website
     );
     await this.saveState();
-    console.log("[v0] Website unblocked:", website);
+    // console.log("[v0] Website unblocked:", website);
   }
 
   _isUrlInList(url, list) {
@@ -634,7 +634,7 @@ class PomodoroBackground {
         }
       }
     } catch (error) {
-      console.error(`[v0] Invalid URL format for blocking check: ${url}`, error);
+      // console.error(`[v0] Invalid URL format for blocking check: ${url}`, error);
       return false;
     }
     return false;
@@ -676,7 +676,7 @@ class PomodoroBackground {
   }
 
   broadcastUpdate() {
-    console.log("[v0] Broadcasting update");
+    // console.log("[v0] Broadcasting update");
 
     // Send update to all tabs
     chrome.tabs.query({}, (tabs) => {
@@ -713,21 +713,21 @@ class PomodoroBackground {
         try {
           chrome.tabs.sendMessage(tab.id, message);
         } catch (error) {
-          console.log(
-            "Could not send message to tab:",
-            tab.id,
-            error.message
-          );
+          // console.log(
+          //   "Could not send message to tab:",
+          //   tab.id,
+          //   error.message
+          // );
         }
       }
     } catch (error) {
-      console.error("Error notifying content scripts:", error);
+      // console.error("Error notifying content scripts:", error);
     }
   }
 }
-console.log("stoping thew backgrounf task with po")
+// console.log("stoping thew backgrounf task with po")
 // Initialize background script
-console.log("Creating PomodoroBackground instance");
+// console.log("Creating PomodoroBackground instance");
 new PomodoroBackground();
 
 // Export for testing
