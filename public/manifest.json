@@ -54,9 +54,6 @@
         "blocked.html", 
         "offscreen.html", 
         "offscreen.js",
-        "welcome.html",
-        "welcome.css",
-        "welcome.js",
         "help.html",
         "help.css"
       ],
