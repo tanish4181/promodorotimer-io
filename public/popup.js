@@ -60,6 +60,7 @@ class PomodoroPopup {
             if (message.type === "TIMER_UPDATE") {
                 this.state = message.state;
                 this.updateDisplay();
+                this.renderTodos(); // Re-render todos with the new state
             }
             if (message.type === "SETTINGS_UPDATED") {
                 // Reflect settings changes immediately.
@@ -347,45 +348,37 @@ class PomodoroPopup {
             shortBreak: Number(this.elements.breakTimeSelect.value),
         };
         try {
-            await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
-            this.state.settings = newSettings;
-            this.updateDisplay();
+            // Wait for confirmation from the background script before updating local state
+            const response = await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
+
+            if (response && response.success) {
+                // Now that the background has confirmed, update the local state
+                this.state.settings = newSettings;
+                this.updateDisplay();
+                console.log("Quick settings updated and confirmed by background script.");
+            } else {
+                console.error("Background script failed to confirm settings update.", response);
+                // NOTE: Here you could add logic to revert the UI if it were updated optimistically
+            }
         } catch (error) {
-            console.error("Error updating settings:", error);
+            console.error("Error sending settings update to background:", error);
         }
     }
     
-    async addTodo() {
+    addTodo() {
       const todoText = this.elements.todoInput.value.trim();
       if (!todoText) return;
-      const newTodo = { id: Date.now(), text: todoText, completed: false, createdAt: new Date().toISOString() };
-      if (!this.state.todos) this.state.todos = [];
-      this.state.todos.push(newTodo);
+
+      this.sendMessageToBackground("ADD_TODO", { todo: { text: todoText } });
       this.elements.todoInput.value = "";
-      this.saveTodos();
     }
   
-    async toggleTodo(todoId) {
-      const todo = this.state.todos.find(t => t.id === todoId);
-      if (todo) {
-        todo.completed = !todo.completed;
-        todo.completedAt = todo.completed ? new Date().toISOString() : null;
-        this.saveTodos();
-      }
+    toggleTodo(todoId) {
+      this.sendMessageToBackground("TOGGLE_TODO", { todoId });
     }
   
-    async deleteTodo(todoId) {
-      this.state.todos = this.state.todos.filter(t => t.id !== todoId);
-      this.saveTodos();
-    }
-  
-    async saveTodos() {
-      try {
-        await chrome.runtime.sendMessage({ type: "TODOS_UPDATED", todos: this.state.todos });
-        this.renderTodos();
-      } catch (error) {
-        console.error("Error saving todos:", error);
-      }
+    deleteTodo(todoId) {
+      this.sendMessageToBackground("DELETE_TODO", { todoId });
     }
   
     renderTodos() {

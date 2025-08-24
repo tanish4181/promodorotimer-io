@@ -16,6 +16,15 @@ class AdvancedWebsiteBlocker {
     try {
       // Wait for chrome runtime to be available
       await this.waitForRuntime();
+
+      // Listen for real-time updates from the background script
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === "TIMER_UPDATE") {
+          console.log("Blocker received TIMER_UPDATE, re-checking status.");
+          this.checkAndBlock();
+        }
+        return true; // Keep message channel open for other listeners
+      });
       
       await this.checkAndBlock();
       
