@@ -5,6 +5,7 @@ class ModernPomodoroOptions {
     // binding event listeners, and loading the current settings.
     this.elements = {};
     this.currentSettings = {};
+    this.isLockedIn = false;
     this.backgroundAvailable = false;
     this.allowlist = [];
     this.blocklist = [];
@@ -256,6 +257,7 @@ class ModernPomodoroOptions {
       this.updateHeaderStats();
       this.calculateStorageUsage();
       this.showStatus("Settings loaded successfully", "success");
+      this.updateLockInUI();
     } catch (error) {
       console.error("Error initializing options:", error);
       this.showStatus("Error loading settings", "error");
@@ -267,10 +269,11 @@ class ModernPomodoroOptions {
     try {
       // Prioritize getting settings from the active background script.
       const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
-      if (response && response.state && response.state.settings) {
+      if (response && response.state) {
         this.currentSettings = response.state.settings;
+        this.isLockedIn = response.state.isLockedIn; // Store the lock-in state
         this.backgroundAvailable = true;
-      } else {
+    } else {
         throw new Error("Background script not available or returned invalid state.");
       }
     } catch (error) {
@@ -713,6 +716,33 @@ class ModernPomodoroOptions {
 
   openStats() {
     chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") });
+  }
+
+  updateLockInUI() {
+    const lockInBanner = document.getElementById("lock-in-banner");
+    if (this.isLockedIn) {
+        if (lockInBanner) lockInBanner.style.display = 'block';
+
+        const elementsToDisable = [
+            this.elements.websiteBlocking,
+            this.elements.breakBlockAll,
+            this.elements.breakUseAllowlist,
+            this.elements.allowlistInput,
+            this.elements.addAllowlistBtn,
+            this.elements.blocklistInput,
+            this.elements.addBlocklistBtn,
+            ...document.querySelectorAll('.website-remove-btn')
+        ];
+
+        elementsToDisable.forEach(el => {
+            if (el) {
+                el.disabled = true;
+                el.closest('.setting-card, .toggle-setting, .input-group')?.classList.add('locked');
+            }
+        });
+    } else {
+        if (lockInBanner) lockInBanner.style.display = 'none';
+    }
   }
 
   async resetDefaults() {

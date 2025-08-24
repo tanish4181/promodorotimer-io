@@ -1047,3 +1047,9 @@ select:focus {
     color: black;
   }
 }
+
+#lock-in-btn.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}

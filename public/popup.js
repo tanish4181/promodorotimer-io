@@ -15,6 +15,7 @@ class PomodoroPopup {
             resetBtn: document.getElementById("reset-btn"),
             skipBreakBtn: document.getElementById("skip-break-btn"),
             skipBreakContainer: document.getElementById("skip-break-container"),
+            lockInBtn: document.getElementById("lock-in-btn"),
 
             // Session and mode display
             sessionCount: document.getElementById("session-count"),
@@ -127,9 +128,13 @@ class PomodoroPopup {
 
     // Binds event listeners to all interactive elements.
     initializeEventListeners() {
+        this.elements.lockInBtn?.addEventListener("click", () => {
+            this.elements.lockInBtn.classList.toggle("active");
+        });
         // Timer controls
         this.elements.startBtn?.addEventListener("click", () => {
-            this.sendMessageToBackground("START_TIMER");
+            const isLocked = this.elements.lockInBtn.classList.contains("active");
+            this.sendMessageToBackground(isLocked ? "START_TIMER_LOCKED" : "START_TIMER");
             // Immediately update UI for responsiveness.
             if (this.state) {
                 this.state.isRunning = true;
@@ -309,6 +314,21 @@ class PomodoroPopup {
         // Update quick settings
         if (this.elements.focusTimeSelect) this.elements.focusTimeSelect.value = this.state.settings.focusTime;
         if (this.elements.breakTimeSelect) this.elements.breakTimeSelect.value = this.state.settings.shortBreak;
+
+        // Handle Lock-In Mode UI
+        if (this.state.isLockedIn) {
+            this.elements.pauseBtn.disabled = true;
+            this.elements.resetBtn.disabled = true;
+            this.elements.skipBreakBtn.disabled = true;
+            this.elements.lockInBtn.classList.add("active");
+            this.elements.lockInBtn.disabled = true;
+        } else {
+            this.elements.pauseBtn.disabled = false;
+            this.elements.resetBtn.disabled = false;
+            this.elements.skipBreakBtn.disabled = false;
+            this.elements.lockInBtn.classList.remove("active");
+            this.elements.lockInBtn.disabled = this.state.isRunning;
+        }
     }
 
     async updateSettings() {

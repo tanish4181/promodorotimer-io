@@ -9,6 +9,8 @@ class PomodoroBackground {
       currentMode: "focus", // The current timer mode.
       sessionCount: 1, // The number of focus sessions completed in the current cycle.
       totalSessions: 0, // The total number of focus sessions completed.
+      isLockedIn: false,
+      lockedInSessions: 0,
       settings: {
         focusTime: 25,
         shortBreak: 5,
@@ -93,7 +95,7 @@ class PomodoroBackground {
       const result = await chrome.storage.local.get([
         "timerState", "currentTime", "isRunning", "currentMode",
         "sessionCount", "totalSessions", "settings", "lastActiveTime",
-        "blockedWebsites", "allowedWebsites", "todos",
+        "blockedWebsites", "allowedWebsites", "todos", "isLockedIn", "lockedInSessions"
       ]);
 
       if (result.timerState) {
@@ -190,6 +192,12 @@ class PomodoroBackground {
           await this.startTimer();
           sendResponse({ success: true });
           break;
+        case "START_TIMER_LOCKED":
+          this.state.isLockedIn = true;
+          this.state.lockedInSessions = this.state.settings.sessionsUntilLongBreak;
+          await this.startTimer();
+          sendResponse({ success: true });
+          break;
         case "PAUSE_TIMER":
           await this.pauseTimer();
           sendResponse({ success: true });
@@ -279,6 +287,7 @@ class PomodoroBackground {
 
   // Pauses the timer.
   async pauseTimer() {
+    if (this.state.isLockedIn) return;
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
@@ -292,6 +301,7 @@ class PomodoroBackground {
 
   // Resets the timer to the beginning of the current mode.
   async resetTimer() {
+    if (this.state.isLockedIn && this.state.currentMode === 'focus') return;
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
@@ -308,6 +318,7 @@ class PomodoroBackground {
 
   // Skips the current break and starts the next focus session.
   async skipBreak() {
+    if (this.state.isLockedIn) return;
     this.state.currentMode = "focus";
     this.state.currentTime = this.state.settings.focusTime * 60;
     this.state.isRunning = false;
@@ -360,6 +371,13 @@ class PomodoroBackground {
     if (this.state.currentMode === "focus") {
       this.state.totalSessions++;
       await this.recordSession();
+
+      if (this.state.isLockedIn) {
+        this.state.lockedInSessions--;
+        if (this.state.lockedInSessions <= 0) {
+          this.state.isLockedIn = false;
+        }
+      }
     }
 
     await this.switchToNextMode();

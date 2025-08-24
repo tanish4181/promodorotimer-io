@@ -1265,3 +1265,21 @@ input[type="number"]:focus,
 .toggle-setting.disabled .toggle-slider {
   background-color: var(--border);
 }
+
+/* Lock-In Mode Banner */
+.banner {
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 16px;
+  border-radius: var(--radius);
+  margin-bottom: 32px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Locked settings */
+.locked {
+  opacity: 0.5;
+  pointer-events: none;
+}
