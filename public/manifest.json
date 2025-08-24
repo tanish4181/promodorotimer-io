@@ -2,7 +2,6 @@
   "manifest_version": 3,
   "name": "Pomodoro Timer & Website Blocker",
   "version": "1.0.0",
-
   "description": "A powerful Pomodoro timer with to-do lists, productivity stats, and website blocking to help you focus.",
   "permissions": [
     "storage",
@@ -51,7 +50,7 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["blocked.html", "offscreen.html", "offscreen.js"],
+      "resources": ["blocked.html", "offscreen.html", "offscreen.js", "welcome.html", "welcome.css", "welcome.js"],
       "matches": ["<all_urls>"]
     }
   ]
