@@ -194,7 +194,7 @@ class PomodoroBackground {
           break;
         case "START_TIMER_LOCKED":
           this.state.isLockedIn = true;
-          this.state.lockedInSessions = this.state.settings.sessionsUntilLongBreak;
+          this.state.lockedInSessions = message.sessions || this.state.settings.sessionsUntilLongBreak;
           await this.startTimer();
           sendResponse({ success: true });
           break;
@@ -301,7 +301,7 @@ class PomodoroBackground {
 
   // Resets the timer to the beginning of the current mode.
   async resetTimer() {
-    if (this.state.isLockedIn && this.state.currentMode === 'focus') return;
+    if (this.state.isLockedIn) return;
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
 
@@ -355,6 +355,7 @@ class PomodoroBackground {
   async handleTimerComplete() {
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
+    let lockInJustCompleted = false; // Flag to detect when the lock ends
 
     if (this.state.settings.notifications) {
       await this.showNotification();
@@ -376,13 +377,15 @@ class PomodoroBackground {
         this.state.lockedInSessions--;
         if (this.state.lockedInSessions <= 0) {
           this.state.isLockedIn = false;
+          lockInJustCompleted = true; // Set the flag: the lock is now off
         }
       }
     }
 
     await this.switchToNextMode();
 
-    if (this.shouldAutoStart()) {
+    // Only auto-start if the lock-in mode didn't just complete
+    if (this.shouldAutoStart() && !lockInJustCompleted) {
       setTimeout(() => this.startTimer(), 1000);
     }
 

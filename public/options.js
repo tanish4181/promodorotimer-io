@@ -731,13 +731,17 @@ class ModernPomodoroOptions {
             this.elements.addAllowlistBtn,
             this.elements.blocklistInput,
             this.elements.addBlocklistBtn,
-            ...document.querySelectorAll('.website-remove-btn')
+            ...document.querySelectorAll('.website-remove-btn'),
+            this.elements.enforceBreaks,
+            this.elements.breakOverlayEnabled,
+            this.elements.resetDefaultsBtn,
+            this.elements.clearDataBtn
         ];
 
         elementsToDisable.forEach(el => {
             if (el) {
                 el.disabled = true;
-                el.closest('.setting-card, .toggle-setting, .input-group')?.classList.add('locked');
+                el.closest('.setting-card, .toggle-setting, .input-group, .btn-group')?.classList.add('locked');
             }
         });
     } else {

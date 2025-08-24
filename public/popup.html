@@ -31,7 +31,12 @@
       <button id="reset-btn" class="secondary-btn">Reset</button>
     </div>
 
-    <!-- Skip Break Button (only visible during breaks) -->
+    <div id="lock-in-settings" class="lock-in-settings" style="display: none;">
+      <label for="lock-in-sessions">Lock in for</label>
+      <input type="number" id="lock-in-sessions" value="4" min="1" max="10">
+      <label for="lock-in-sessions">sessions</label>
+    </div>
+
     <div id="skip-break-container" class="skip-break-container" style="display: none;">
       <button id="skip-break-btn" class="skip-break-btn">Skip Break & Start Focus</button>
     </div>
@@ -47,7 +52,6 @@
       </div>
     </div>
 
-    <!-- Focus Tasks Section -->
     <div class="todo-section">
       <div class="section-header">
         <h3>Focus Tasks</h3>
@@ -59,8 +63,7 @@
       </div>
       
       <div id="todo-list" class="todo-list">
-        <!-- Todo items will be populated here -->
-      </div>
+        </div>
     </div>
     
     <div class="quick-settings">
@@ -84,7 +87,6 @@
     </div>
 
 
-    <!-- Support Section -->
     <div class="support-section">
       <button id="support-btn-main" class="support-btn-popup">
         <span class="support-icon">❤️</span>

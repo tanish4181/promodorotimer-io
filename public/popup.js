@@ -17,6 +17,10 @@ class PomodoroPopup {
             skipBreakContainer: document.getElementById("skip-break-container"),
             lockInBtn: document.getElementById("lock-in-btn"),
 
+            // Lock-in settings
+            lockInSettings: document.getElementById("lock-in-settings"),
+            lockInSessions: document.getElementById("lock-in-sessions"),
+
             // Session and mode display
             sessionCount: document.getElementById("session-count"),
             currentMode: document.getElementById("current-mode"),
@@ -130,12 +134,18 @@ class PomodoroPopup {
     initializeEventListeners() {
         this.elements.lockInBtn?.addEventListener("click", () => {
             this.elements.lockInBtn.classList.toggle("active");
+            this.elements.lockInSettings.style.display = this.elements.lockInBtn.classList.contains("active") ? "flex" : "none";
         });
-        // Timer controls
+
         this.elements.startBtn?.addEventListener("click", () => {
             const isLocked = this.elements.lockInBtn.classList.contains("active");
-            this.sendMessageToBackground(isLocked ? "START_TIMER_LOCKED" : "START_TIMER");
-            // Immediately update UI for responsiveness.
+            if (isLocked) {
+                const sessions = parseInt(this.elements.lockInSessions.value, 10);
+                this.sendMessageToBackground("START_TIMER_LOCKED", { sessions });
+            } else {
+                this.sendMessageToBackground("START_TIMER");
+            }
+
             if (this.state) {
                 this.state.isRunning = true;
                 this.updateDisplay();
@@ -144,7 +154,6 @@ class PomodoroPopup {
         
         this.elements.pauseBtn?.addEventListener("click", () => {
             this.sendMessageToBackground("PAUSE_TIMER");
-            // Immediately update UI for responsiveness.
             if (this.state) {
                 this.state.isRunning = false;
                 this.updateDisplay();
@@ -322,11 +331,11 @@ class PomodoroPopup {
             this.elements.skipBreakBtn.disabled = true;
             this.elements.lockInBtn.classList.add("active");
             this.elements.lockInBtn.disabled = true;
+            this.elements.lockInSettings.style.display = 'none'; // Hide settings when running
         } else {
             this.elements.pauseBtn.disabled = false;
             this.elements.resetBtn.disabled = false;
             this.elements.skipBreakBtn.disabled = false;
-            this.elements.lockInBtn.classList.remove("active");
             this.elements.lockInBtn.disabled = this.state.isRunning;
         }
     }
