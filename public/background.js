@@ -11,6 +11,8 @@ class PomodoroBackground {
       totalSessions: 0, // The total number of focus sessions completed.
       isLockedIn: false,
       lockedInSessions: 0,
+      lockInEndTime: null, // Failsafe timestamp for lock-in mode.
+      targetCompletionTime: null, // Timestamp for when the current timer is expected to end.
       settings: {
         focusTime: 25,
         shortBreak: 5,
@@ -46,7 +48,6 @@ class PomodoroBackground {
       nextSessionInfo: null,
     };
 
-    this.lastTickTime = 0; // Used to calculate time drift when the extension is inactive.
     this.alarmName = "pomodoroTimer"; // The name of the alarm used for the timer.
 
     this.initialize();
@@ -95,7 +96,8 @@ class PomodoroBackground {
       const result = await chrome.storage.local.get([
         "timerState", "currentTime", "isRunning", "currentMode",
         "sessionCount", "totalSessions", "settings", "lastActiveTime",
-        "blockedWebsites", "allowedWebsites", "todos", "isLockedIn", "lockedInSessions"
+        "blockedWebsites", "allowedWebsites", "todos", "isLockedIn", "lockedInSessions",
+        "targetCompletionTime", "lockInEndTime"
       ]);
 
       if (result.timerState) {
@@ -104,11 +106,20 @@ class PomodoroBackground {
         // Merge loaded settings with defaults to ensure new settings are not missing.
         this.state.settings = { ...defaultSettings, ...this.state.settings };
 
-        // Adjust for time drift if the timer was running while the extension was inactive.
-        if (this.state.isRunning && result.lastActiveTime) {
-          const timeDrift = Math.floor((Date.now() - result.lastActiveTime) / 1000);
-          this.state.currentTime = Math.max(0, this.state.currentTime - timeDrift);
+        // Failsafe check for Lock-In Mode
+        if (this.state.isLockedIn && this.state.lockInEndTime && Date.now() > this.state.lockInEndTime) {
+            console.log("Lock-in mode expired, disabling failsafe.");
+            this.state.isLockedIn = false;
+            this.state.lockedInSessions = 0;
+            this.state.lockInEndTime = null;
+        }
+
+        // If the timer was running, recalculate currentTime based on the targetCompletionTime.
+        if (this.state.isRunning && this.state.targetCompletionTime) {
+          const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
+          this.state.currentTime = Math.max(0, remainingTime);
           if (this.state.currentTime === 0) {
+            // This ensures that if the timer finished while the worker was inactive, it completes.
             await this.handleTimerComplete();
           }
         }
@@ -140,6 +151,8 @@ class PomodoroBackground {
       currentMode: "focus",
       sessionCount: 1,
       totalSessions: 0,
+      lockInEndTime: null,
+      targetCompletionTime: null,
       settings: {
         focusTime: 25,
         shortBreak: 5,
@@ -194,7 +207,25 @@ class PomodoroBackground {
           break;
         case "START_TIMER_LOCKED":
           this.state.isLockedIn = true;
-          this.state.lockedInSessions = message.sessions || this.state.settings.sessionsUntilLongBreak;
+          const numSessions = message.sessions || this.state.settings.sessionsUntilLongBreak;
+          this.state.lockedInSessions = numSessions;
+
+          // Calculate lock-in end time for failsafe
+          let totalDurationInSeconds = 0;
+          const { focusTime, shortBreak, longBreak, sessionsUntilLongBreak } = this.state.settings;
+          let sessionCycle = this.state.sessionCount;
+
+          totalDurationInSeconds += numSessions * focusTime * 60;
+          for (let i = 0; i < numSessions - 1; i++) {
+            if (sessionCycle % sessionsUntilLongBreak === 0) {
+              totalDurationInSeconds += longBreak * 60;
+            } else {
+              totalDurationInSeconds += shortBreak * 60;
+            }
+            sessionCycle++;
+          }
+          this.state.lockInEndTime = Date.now() + totalDurationInSeconds * 1000;
+
           await this.startTimer();
           sendResponse({ success: true });
           break;
@@ -274,7 +305,8 @@ class PomodoroBackground {
   // Starts the timer.
   async startTimer() {
     this.state.isRunning = true;
-    this.lastTickTime = Date.now();
+    const remainingMilliseconds = this.state.currentTime * 1000;
+    this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
     chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 }); // Fire every second.
 
     if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
@@ -288,8 +320,16 @@ class PomodoroBackground {
   // Pauses the timer.
   async pauseTimer() {
     if (this.state.isLockedIn) return;
+
+    // Recalculate remaining time when pausing to get the most accurate value.
+    if (this.state.targetCompletionTime) {
+      const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
+      this.state.currentTime = Math.max(0, remainingTime);
+    }
+
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
+    this.state.targetCompletionTime = null;
 
     if (this.state.settings.youtubeIntegration) {
       this.notifyContentScripts({ type: "TIMER_PAUSED" });
@@ -304,6 +344,7 @@ class PomodoroBackground {
     if (this.state.isLockedIn) return;
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
+    this.state.targetCompletionTime = null;
 
     const timeMap = {
       focus: this.state.settings.focusTime * 60,
@@ -322,6 +363,7 @@ class PomodoroBackground {
     this.state.currentMode = "focus";
     this.state.currentTime = this.state.settings.focusTime * 60;
     this.state.isRunning = false;
+    this.state.targetCompletionTime = null;
     this.state.nextSessionInfo = null; // Clear next session info
 
     this.notifyContentScripts({ type: "BREAK_SKIPPED" });
@@ -332,21 +374,16 @@ class PomodoroBackground {
 
   // Called by the alarm to update the timer every second.
   handleTimerTick() {
-    if (!this.state.isRunning) {
+    if (!this.state.isRunning || !this.state.targetCompletionTime) {
       chrome.alarms.clear(this.alarmName);
       return;
     }
 
-    const now = Date.now();
-    const elapsed = Math.round((now - this.lastTickTime) / 1000);
-    this.lastTickTime = now;
+    const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
+    this.state.currentTime = Math.max(0, remainingTime);
+    this.broadcastUpdate();
 
-    if (this.state.currentTime > 0) {
-      this.state.currentTime = Math.max(0, this.state.currentTime - elapsed);
-      this.broadcastUpdate();
-    }
-
-    if (this.state.currentTime === 0) {
+    if (this.state.currentTime <= 0) {
       this.handleTimerComplete();
     }
   }
@@ -355,6 +392,7 @@ class PomodoroBackground {
   async handleTimerComplete() {
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
+    this.state.targetCompletionTime = null;
     let lockInJustCompleted = false; // Flag to detect when the lock ends
 
     if (this.state.settings.notifications) {
@@ -377,6 +415,7 @@ class PomodoroBackground {
         this.state.lockedInSessions--;
         if (this.state.lockedInSessions <= 0) {
           this.state.isLockedIn = false;
+          this.state.lockInEndTime = null; // Also clear the failsafe timestamp
           lockInJustCompleted = true; // Set the flag: the lock is now off
         }
       }
@@ -544,11 +583,23 @@ class PomodoroBackground {
       return false;
     }
     try {
-      const urlHostname = new URL(url).hostname.toLowerCase();
-      for (const domain of list) {
-        const lowerCaseDomain = domain.toLowerCase();
-        if (urlHostname === lowerCaseDomain || urlHostname.endsWith(`.${lowerCaseDomain}`)) {
-          return true;
+      const currentUrl = new URL(url);
+      // Normalize the current URL for comparison: lowercase hostname and pathname, remove trailing slash
+      const currentUrlStr = `${currentUrl.hostname}${currentUrl.pathname}`.toLowerCase().replace(/\/$/, "");
+
+      for (const blocked of list) {
+        const lowerCaseBlocked = blocked.toLowerCase();
+        // If the blocked entry is just a domain (no path), check if the current URL's hostname matches or is a subdomain.
+        if (!lowerCaseBlocked.includes('/')) {
+          if (currentUrl.hostname === lowerCaseBlocked || currentUrl.hostname.endsWith(`.${lowerCaseBlocked}`)) {
+            return true;
+          }
+        } else {
+          // If the blocked entry has a path, check if the normalized current URL starts with it.
+          // This allows blocking "reddit.com/r/all" without blocking "reddit.com/r/programming"
+          if (currentUrlStr.startsWith(lowerCaseBlocked)) {
+            return true;
+          }
         }
       }
     } catch (error) {
@@ -647,3 +698,10 @@ class PomodoroBackground {
 // Initialize background script
 console.log("Creating PomodoroBackground instance");
 new PomodoroBackground();
+
+// Export for testing
+try {
+  module.exports = PomodoroBackground;
+} catch (e) {
+  // Ignore, this fails in a real extension context
+}

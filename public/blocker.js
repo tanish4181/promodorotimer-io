@@ -4,7 +4,7 @@ class AdvancedWebsiteBlocker {
   constructor() {
     this.isBlocked = false;
     this.overlay = null;
-    this.checkInterval = null;
+    this.observer = null; // For MutationObserver
     this.retryCount = 0;
     this.maxRetries = 3;
     this.init();
@@ -19,15 +19,33 @@ class AdvancedWebsiteBlocker {
       
       await this.checkAndBlock();
       
-      // Set up periodic checking for dynamic blocking state changes
-      this.checkInterval = setInterval(() => {
-        this.checkAndBlock();
-      }, 2000);
+      // Listen for URL changes to handle SPAs
+      this.setupNavigationListener();
       
     } catch (error) {
       console.error("Error initializing:", error);
       this.retryInitialization();
     }
+  }
+
+  setupNavigationListener() {
+    // Listen for standard navigation events
+    window.addEventListener('popstate', () => this.checkAndBlock());
+    window.addEventListener('hashchange', () => this.checkAndBlock());
+
+    // Monkey-patch history.pushState to detect SPA navigation
+    const originalPushState = history.pushState;
+    history.pushState = (...args) => {
+        originalPushState.apply(history, args);
+        this.checkAndBlock();
+    };
+
+    // Also handle replaceState
+    const originalReplaceState = history.replaceState;
+    history.replaceState = (...args) => {
+        originalReplaceState.apply(history, args);
+        this.checkAndBlock();
+    };
   }
 
   async waitForRuntime() {
@@ -123,7 +141,7 @@ class AdvancedWebsiteBlocker {
 
   createBlockingOverlay(reason) {
     // Don't create multiple overlays
-    if (this.overlay) return;
+    if (document.getElementById("pomodoro-block-overlay")) return;
 
     this.overlay = document.createElement("div");
     this.overlay.id = "pomodoro-block-overlay";
@@ -138,7 +156,29 @@ class AdvancedWebsiteBlocker {
     // Bind event listeners
     this.bindOverlayEvents();
 
+    // Make the overlay resilient to removal
+    this.setupOverlayObserver(reason);
+
     console.log("Blocking overlay created");
+  }
+
+  setupOverlayObserver(reason) {
+    if (this.observer) this.observer.disconnect();
+
+    this.observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.removedNodes) {
+          mutation.removedNodes.forEach(node => {
+            if (node.id === 'pomodoro-block-overlay') {
+              console.log("Blocker overlay removed, re-injecting...");
+              this.createBlockingOverlay(reason);
+            }
+          });
+        }
+      }
+    });
+
+    this.observer.observe(document.documentElement, { childList: true });
   }
 
   getOverlayHTML(reason) {
@@ -289,15 +329,19 @@ class AdvancedWebsiteBlocker {
   }
 
   removeBlockingOverlay() {
-    if (this.overlay) {
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+
+    const overlayEl = document.getElementById("pomodoro-block-overlay");
+    if (overlayEl) {
       // Add fade out animation
-      this.overlay.style.animation = "pomodoroFadeOut 0.3s ease-out";
+      overlayEl.style.animation = "pomodoroFadeOut 0.3s ease-out";
       
       setTimeout(() => {
-        if (this.overlay) {
-          this.overlay.remove();
-          this.overlay = null;
-        }
+        overlayEl.remove();
+        this.overlay = null;
       }, 300);
     }
 
@@ -320,8 +364,9 @@ class AdvancedWebsiteBlocker {
     document.body.style.overflow = "hidden";
     
     // Make sure our overlay is visible
-    if (this.overlay) {
-      this.overlay.style.visibility = "visible";
+    const overlayEl = document.getElementById("pomodoro-block-overlay");
+    if (overlayEl) {
+      overlayEl.style.visibility = "visible";
     }
 
     console.log("Page content hidden");
@@ -353,9 +398,9 @@ class AdvancedWebsiteBlocker {
 
   // Cleanup method for when the content script is unloaded
   cleanup() {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
     }
     
     if (this.isBlocked) {

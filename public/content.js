@@ -236,37 +236,30 @@ class YouTubeIntegration {
   }
 
   hideRecommendations() {
-    // Hide sidebar recommendations
-    const sidebar = document.querySelector('#secondary')
-    if (sidebar) {
-      sidebar.style.display = 'none'
+    // Hide sidebar recommendations, targeting only the results renderer
+    const recommendations = document.querySelector('ytd-watch-next-secondary-results-renderer');
+    if (recommendations) {
+      recommendations.style.display = 'none';
     }
     
     // Hide end screen recommendations
-    const endScreen = document.querySelector('ytd-player ytd-player-end-slot-renderer')
+    const endScreen = document.querySelector('.videowall-endscreen');
     if (endScreen) {
-      endScreen.style.display = 'none'
-    }
-    
-    // Hide related videos
-    const relatedVideos = document.querySelector('ytd-watch-next-secondary-results-renderer')
-    if (relatedVideos) {
-      relatedVideos.style.display = 'none'
+      endScreen.style.display = 'none';
     }
   }
 
   showRecommendations() {
-    const sidebar = document.querySelector('#secondary')
-    if (sidebar) {
-      sidebar.style.display = ''
+    // Show sidebar recommendations
+    const recommendations = document.querySelector('ytd-watch-next-secondary-results-renderer');
+    if (recommendations) {
+      recommendations.style.display = '';
     }
-    const endScreen = document.querySelector('ytd-player ytd-player-end-slot-renderer')
+
+    // Show end screen recommendations
+    const endScreen = document.querySelector('.videowall-endscreen');
     if (endScreen) {
-      endScreen.style.display = ''
-    }
-    const relatedVideos = document.querySelector('ytd-watch-next-secondary-results-renderer')
-    if (relatedVideos) {
-      relatedVideos.style.display = ''
+      endScreen.style.display = '';
     }
   }
 

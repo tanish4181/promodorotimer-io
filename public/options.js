@@ -486,48 +486,39 @@ class ModernPomodoroOptions {
 
   // Enhanced URL validation
   validateWebsiteUrl(url) {
-    // Remove common prefixes
-    let cleaned = url.toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/^www\./, "")
-      .replace(/^m\./, "")  // mobile subdomain
-      .replace(/\/$/, "");  // trailing slash
-    
-    // Remove path, query, and fragment
-    cleaned = cleaned.split('/')[0].split('?')[0].split('#')[0];
-    
-    // Basic format validation
+    // Basic cleaning
+    let cleaned = url.trim().toLowerCase();
     if (!cleaned) {
-      return { isValid: false, error: "URL cannot be empty" };
+        return { isValid: false, error: "URL cannot be empty" };
+    }
+    if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+        cleaned = 'https://' + cleaned;
     }
     
-    // Must contain at least one dot for domain
-    if (!cleaned.includes('.')) {
-      return { isValid: false, error: "Please enter a valid domain (e.g., example.com)" };
+    try {
+        const urlObject = new URL(cleaned);
+
+        // We only want the hostname and path, no protocol, port, query, or hash
+        let finalUrl = `${urlObject.hostname}${urlObject.pathname}`;
+
+        // Remove trailing slash for consistency, unless it's the only thing in the path
+        if (finalUrl.endsWith('/') && finalUrl.length > 1) {
+            finalUrl = finalUrl.slice(0, -1);
+        }
+
+        // Basic format validation
+        if (!urlObject.hostname.includes('.')) {
+            return { isValid: false, error: "Please enter a valid domain (e.g., example.com/path)" };
+        }
+
+        return {
+            isValid: true,
+            cleaned: finalUrl
+        };
+
+    } catch (e) {
+        return { isValid: false, error: "Invalid URL format" };
     }
-    
-    // Check for invalid characters
-    const invalidChars = /[^a-z0-9.-]/;
-    if (invalidChars.test(cleaned)) {
-      return { isValid: false, error: "Domain contains invalid characters" };
-    }
-    
-    // Must not start or end with dot or dash
-    if (cleaned.startsWith('.') || cleaned.endsWith('.') || 
-        cleaned.startsWith('-') || cleaned.endsWith('-')) {
-      return { isValid: false, error: "Invalid domain format" };
-    }
-    
-    // Must have valid TLD (at least 2 chars after last dot)
-    const parts = cleaned.split('.');
-    if (parts.length < 2 || parts[parts.length - 1].length < 2) {
-      return { isValid: false, error: "Invalid domain extension" };
-    }
-    
-    return { 
-      isValid: true, 
-      cleaned: cleaned
-    };
   }
 
   // Enhanced website list rendering with validation and status
