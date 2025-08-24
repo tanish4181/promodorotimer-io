@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Pomodoro Timer & Website Blocker",
+  "name": "FlowLock: Pomodoro Timer, ToDO list & Website Blocker ",
   "version": "1.0.0",
-  "description": "A powerful Pomodoro timer with to-do lists, productivity stats, and website blocking to help you focus.",
+  "description": "Boost productivity with Pomodoro timer, smart website blocking, YouTube distraction control & detailed focus analytics.",
   "permissions": [
     "storage",
     "activeTab",
