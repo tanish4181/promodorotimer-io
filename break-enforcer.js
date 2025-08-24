@@ -4,6 +4,7 @@ class BreakEnforcer {
     this.breakCountdownInterval = null;
     this.observer = null;
     this.currentState = null;
+    this.activeOverlaySettings = {};
     this.init();
   }
 
@@ -58,28 +59,41 @@ class BreakEnforcer {
     const { currentMode, isRunning, settings, allowedWebsites } = state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
 
-    // Master condition for any break-time blocking.
-    if (!isRunning || !isBreak || !settings.websiteBlocking || !settings.enforceBreaks) {
-      this.removeBreakOverlay();
-      return;
-    }
+    // The overlay should appear if breaks are enforced AND the timer is running during a break.
+    const shouldShowOverlay = isRunning && isBreak && settings.enforceBreaks && settings.websiteBlocking;
 
-    let shouldBlockPage = false;
-    if (settings.breakBlockAll) {
-      shouldBlockPage = true;
-    } else if (settings.breakUseAllowlist) {
-      if (!this._isUrlInList(window.location.href, allowedWebsites)) {
-        shouldBlockPage = true;
-      }
-    }
-    
-    // Only show the stylish overlay if it's enabled and the page should be blocked.
-    const shouldShowStylishOverlay = shouldBlockPage && settings.breakOverlayEnabled;
+    if (shouldShowOverlay) {
+        // Determine if the current page should be blocked based on break settings
+        let isPageBlocked = false;
+        if (settings.breakBlockAll) {
+            isPageBlocked = true;
+        } else if (settings.breakUseAllowlist) {
+            if (!this._isUrlInList(window.location.href, allowedWebsites)) {
+                isPageBlocked = true;
+            }
+        }
 
-    if (shouldShowStylishOverlay && !this.breakOverlayVisible) {
-      this.createBreakOverlay(state);
-    } else if (!shouldShowStylishOverlay && this.breakOverlayVisible) {
-      this.removeBreakOverlay();
+        // Only show the overlay on pages that are supposed to be blocked.
+        if (!isPageBlocked) {
+            this.removeBreakOverlay();
+            return;
+        }
+
+        const newOverlaySettings = {
+            countdown: settings.breakCountdown,
+            nextSession: settings.nextSessionInfo,
+        };
+
+        if (!this.breakOverlayVisible || JSON.stringify(this.activeOverlaySettings) !== JSON.stringify(newOverlaySettings)) {
+            this.removeBreakOverlay(); // Always remove before creating to apply changes
+            this.createBreakOverlay(state);
+            this.activeOverlaySettings = newOverlaySettings;
+        } else {
+            // If overlay is already visible and settings are the same, just update the timer
+            this.updateBreakCountdown(state.currentTime);
+        }
+    } else {
+        this.removeBreakOverlay();
     }
   }
 
@@ -268,6 +282,7 @@ class BreakEnforcer {
       this.breakCountdownInterval = null;
     }
     this.breakOverlayVisible = false;
+    this.activeOverlaySettings = {};
   }
 }
 
