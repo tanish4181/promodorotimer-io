@@ -23,15 +23,50 @@ class BreakEnforcer {
     });
   }
 
-  handleBreakOverlay(state) {
-    const { currentMode, isRunning, settings } = state;
-    const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
-    // The key change: The setting is now enforceBreaks and breakOverlayEnabled
-    const shouldShowOverlay = isRunning && isBreak && settings.enforceBreaks && settings.breakOverlayEnabled;
+  _isUrlInList(url, list) {
+    if (!url || !list || list.length === 0) {
+      return false;
+    }
+    try {
+      const urlHostname = new URL(url).hostname.toLowerCase();
+      for (const domain of list) {
+        const lowerCaseDomain = domain.toLowerCase();
+        if (urlHostname === lowerCaseDomain || urlHostname.endsWith(`.${lowerCaseDomain}`)) {
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error(`[v0] Invalid URL format for blocking check: ${url}`, error);
+      return false;
+    }
+    return false;
+  }
 
-    if (shouldShowOverlay && !this.breakOverlayVisible) {
+  handleBreakOverlay(state) {
+    const { currentMode, isRunning, settings, allowedWebsites } = state;
+    const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
+
+    // Master condition for any break-time blocking.
+    if (!isRunning || !isBreak || !settings.websiteBlocking || !settings.enforceBreaks) {
+      this.removeBreakOverlay();
+      return;
+    }
+
+    let shouldBlockPage = false;
+    if (settings.breakBlockAll) {
+      shouldBlockPage = true;
+    } else if (settings.breakUseAllowlist) {
+      if (!this._isUrlInList(window.location.href, allowedWebsites)) {
+        shouldBlockPage = true;
+      }
+    }
+    
+    // Only show the stylish overlay if it's enabled and the page should be blocked.
+    const shouldShowStylishOverlay = shouldBlockPage && settings.breakOverlayEnabled;
+
+    if (shouldShowStylishOverlay && !this.breakOverlayVisible) {
       this.createBreakOverlay(state);
-    } else if (!shouldShowOverlay && this.breakOverlayVisible) {
+    } else if (!shouldShowStylishOverlay && this.breakOverlayVisible) {
       this.removeBreakOverlay();
     }
   }
@@ -61,13 +96,13 @@ class BreakEnforcer {
     }
 
     if (settings.nextSessionInfo && nextSessionInfo) {
+      const nextFocusDuration = nextSessionInfo.nextDuration === 1 ? '1 minute' : `${nextSessionInfo.nextDuration} minutes`;
+      const sessionsUntilText = nextSessionInfo.sessionsUntilLongBreak === 1 ? '1 session until long break' : `${nextSessionInfo.sessionsUntilLongBreak} sessions until long break`;
+
       overlayContent += `
         <div class="pomodoro-next-session">
           <div class="next-session-label">Next Focus Session:</div>
-          <div class="next-session-info">
-            <span class="next-duration">${nextSessionInfo.nextDuration} minutes</span>
-            <span class="next-sessions-until-long">(${nextSessionInfo.sessionsUntilLongBreak} sessions until long break)</span>
-          </div>
+          <div class="next-session-info">${nextFocusDuration} <span>(${sessionsUntilText})</span></div>
         </div>
       `;
     }
@@ -80,22 +115,61 @@ class BreakEnforcer {
     style.textContent = `
       #pomodoro-break-overlay {
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.95); z-index: 2147483647;
+        background: rgba(10, 10, 10, 0.75);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 2147483647;
         display: flex; align-items: center; justify-content: center;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         color: white; text-align: center;
+        animation: pomodoroFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1);
       }
-      .pomodoro-overlay-content { max-width: 500px; padding: 40px; }
-      .pomodoro-overlay-content h1 { font-size: 2.5rem; margin-bottom: 16px; color: #059669; }
-      .pomodoro-overlay-content p { font-size: 1.2rem; margin-bottom: 30px; line-height: 1.6; color: #d1d5db; }
-      .pomodoro-countdown { margin: 30px 0; padding: 20px; background: rgba(5, 150, 105, 0.1); border-radius: 12px; border: 1px solid rgba(5, 150, 105, 0.3); }
+      @keyframes pomodoroFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .pomodoro-overlay-content { max-width: 550px; padding: 40px; }
+      .pomodoro-overlay-content h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #ffffff;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      }
+      .pomodoro-overlay-content p {
+        font-size: 1.25rem;
+        margin-bottom: 40px;
+        line-height: 1.6;
+        color: #d1d5db;
+        text-shadow: 0 1px 5px rgba(0,0,0,0.2);
+      }
+      .pomodoro-countdown {
+        margin: 30px auto;
+        padding: 20px 30px;
+        background: rgba(5, 150, 105, 0.15);
+        border-radius: 16px;
+        border: 1px solid rgba(5, 150, 105, 0.4);
+        max-width: 300px;
+      }
       .countdown-label { font-size: 1rem; color: #9ca3af; margin-bottom: 8px; }
-      .countdown-timer { font-size: 2.5rem; font-weight: 700; color: #059669; font-family: monospace; }
-      .pomodoro-next-session { margin: 20px 0; padding: 16px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3); }
-      .next-session-label { font-size: 0.9rem; color: #9ca3af; margin-bottom: 4px; }
-      .next-session-info { font-size: 1.1rem; color: #3b82f6; }
-      .next-duration { font-weight: 600; }
-      .next-sessions-until-long { font-size: 0.9rem; opacity: 0.8; }
+      .countdown-timer {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: #10b981;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+      }
+      .pomodoro-next-session {
+        margin: 20px auto;
+        padding: 16px 24px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 12px;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        max-width: 400px;
+      }
+      .next-session-label { font-size: 0.9rem; color: #9ca3af; margin-bottom: 6px; }
+      .next-session-info { font-size: 1.1rem; font-weight: 600; color: #60a5fa; }
+      .next-session-info span { font-size: 0.9rem; font-weight: 400; opacity: 0.8; }
     `;
 
     document.documentElement.appendChild(style);

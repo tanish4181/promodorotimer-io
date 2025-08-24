@@ -159,6 +159,8 @@ class PomodoroBackground {
         hideDistractions: true,
         focusIndicator: true,
         websiteBlocking: true,
+        breakBlockAll: false,
+        breakUseAllowlist: true,
         hideYoutubeComments: false,
         hideYoutubeRecommendations: false,
         hideYoutubeShorts: false,
@@ -541,29 +543,12 @@ class PomodoroBackground {
       return { blocked: false };
     }
 
-    const { isRunning, currentMode, settings } = this.state;
+    const { isRunning, currentMode } = this.state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
-    const isYouTube = url.includes("youtube.com");
 
-    // Don't use generic blocker on youtube during breaks, let content script handle it
-    if (isYouTube && isBreak) {
-      return { blocked: false };
-    }
-
-    // 2. Break-time blocking logic
+    // 2. This function no longer handles break-time blocking.
+    // That is now handled exclusively by break-enforcer.js to avoid two overlays.
     if (isRunning && isBreak) {
-      // If the break overlay is enabled, it handles the visual "blocking", so the generic blocker should not be active.
-      if (settings.enforceBreaks && settings.breakOverlayEnabled) {
-        return { blocked: false };
-      }
-
-      // If the overlay is NOT enabled, then apply break-time blocking rules.
-      if (settings.breakBlockAll) {
-        return { blocked: true, reason: 'break-all' };
-      }
-      if (settings.breakUseAllowlist && !this._isUrlInList(url, this.state.allowedWebsites)) {
-        return { blocked: true, reason: 'break-allowlist' };
-      }
       return { blocked: false };
     }
 
