@@ -31,7 +31,6 @@ class ModernPomodoroOptions {
     this.elements.sounds = document.getElementById("sounds");
     this.elements.soundType = document.getElementById("sound-type");
     this.elements.enforceBreaks = document.getElementById("enforce-breaks");
-    this.elements.breakOverlayEnabled = document.getElementById("break-overlay-enabled");
     this.elements.breakCountdown = document.getElementById("break-countdown");
     this.elements.nextSessionInfo = document.getElementById("next-session-info");
     this.elements.pauseYoutubeBreaks = document.getElementById("pause-youtube-breaks");
@@ -109,7 +108,7 @@ class ModernPomodoroOptions {
     const toggleInputs = [
       this.elements.autoStartBreaks, this.elements.autoStartPomodoros,
       this.elements.notifications, this.elements.sounds,
-      this.elements.enforceBreaks, this.elements.breakOverlayEnabled,
+      this.elements.enforceBreaks,
       this.elements.breakCountdown, this.elements.nextSessionInfo,
       this.elements.hideDistractions, this.elements.focusIndicator,
       this.elements.websiteBlocking, this.elements.breakBlockAll,
@@ -191,7 +190,6 @@ class ModernPomodoroOptions {
 
     // These depend only on enforceBreaks
     const breakSubToggles = [
-        this.elements.breakOverlayEnabled,
         this.elements.breakCountdown,
         this.elements.nextSessionInfo,
         this.elements.pauseYoutubeBreaks,
@@ -316,7 +314,6 @@ class ModernPomodoroOptions {
       breakReminders: true,
       youtubeIntegration: true,
       youtubeDistractionMode: "focus",
-      breakOverlayEnabled: true,
       breakCountdown: true,
       nextSessionInfo: true,
       hideDistractions: true,
@@ -343,7 +340,7 @@ class ModernPomodoroOptions {
     const toggleSettings = [
       "autoStartBreaks", "autoStartPomodoros",
       "notifications", "sounds", "enforceBreaks",
-      "breakOverlayEnabled", "breakCountdown",
+      "breakCountdown",
       "nextSessionInfo", "hideDistractions",
       "focusIndicator", "websiteBlocking", "breakBlockAll",
       "breakUseAllowlist", "hideYoutubeComments", "hideYoutubeRecommendations",
@@ -382,7 +379,6 @@ class ModernPomodoroOptions {
       soundType: this.elements.soundType?.value || "ding",
       enforceBreaks: this.elements.enforceBreaks?.checked || false,
       youtubeDistractionMode: this.elements.youtubeDistractionMode?.value || "focus",
-      breakOverlayEnabled: this.elements.breakOverlayEnabled?.checked || false,
       breakCountdown: this.elements.breakCountdown?.checked || false,
       nextSessionInfo: this.elements.nextSessionInfo?.checked || false,
       hideDistractions: this.elements.hideDistractions?.checked || false,
@@ -724,7 +720,6 @@ class ModernPomodoroOptions {
             this.elements.addBlocklistBtn,
             ...document.querySelectorAll('.website-remove-btn'),
             this.elements.enforceBreaks,
-            this.elements.breakOverlayEnabled,
             this.elements.resetDefaultsBtn,
             this.elements.clearDataBtn
         ];
