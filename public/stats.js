@@ -140,24 +140,80 @@ class PomodoroStats {
     })
   }
 
-  calculateProductivityScore() {
-    const today = new Date().toISOString().split('T')[0]
-    const last7Days = this.getLast7Days()
-    
-    let totalPossibleSessions = last7Days.length * (this.goals.daily || 8)
-    let actualSessions = 0
-    
+/**
+ * Calculates a more intelligent and demanding productivity score.
+ * This version prioritizes the quality of focus sessions (longer sessions).
+ * @returns {number} The productivity score from 0 to 100.
+ */
+calculateProductivityScore() {
+    const last7Days = this.getLast7Days();
+    let totalGoalAdherence = 0;
+    let totalConsistency = 0;
+    let totalFocusQuality = 0;
+    let totalTaskCompletion = 0;
+    let daysWithActivity = 0;
+
     last7Days.forEach(date => {
-      const day = this.stats.dailyStats[date]
-      if (day) {
-        actualSessions += day.focusSessions || 0
-      }
-    })
-    
-    return totalPossibleSessions > 0 
-      ? Math.round((actualSessions / totalPossibleSessions) * 100)
-      : 0
-  }
+        const day = this.stats.dailyStats[date];
+        if (day && day.focusSessions > 0) {
+            daysWithActivity++;
+
+            // 1. Goal Adherence Score (Weight: 20%)
+            const dailyGoal = this.goals.daily || 8;
+            const adherence = Math.min((day.focusSessions / dailyGoal) * 100, 100);
+            totalGoalAdherence += adherence;
+
+            // 2. Consistency Score (Weight: 30%)
+            const streakBonus = Math.min((this.calculateCurrentStreak() / 7) * 100, 100);
+            totalConsistency += streakBonus;
+
+            // 3. Focus Quality Score (Weight: 40%) - MORE DEMANDING
+            const avgSessionLength = day.focusTime / day.focusSessions;
+            const configuredFocusTime = this.settings.focusTime || 25;
+            // Using a squared ratio to heavily penalize shorter sessions.
+            const qualityRatio = avgSessionLength / configuredFocusTime;
+            const quality = Math.min(Math.pow(qualityRatio, 2) * 100, 100);
+            totalFocusQuality += quality;
+
+            // 4. Task Completion Score (Weight: 10%)
+            const completedTasks = this.getCompletedTasksForDate(date);
+            const taskScore = Math.min(completedTasks * 10, 100);
+            totalTaskCompletion += taskScore;
+        }
+    });
+
+    if (daysWithActivity === 0) return 0;
+
+    // Calculate the average score for each component
+    const avgGoalAdherence = totalGoalAdherence / daysWithActivity;
+    const avgConsistency = totalConsistency / daysWithActivity;
+    const avgFocusQuality = totalFocusQuality / daysWithActivity;
+    const avgTaskCompletion = totalTaskCompletion / daysWithActivity;
+
+    // Weighted average with new weights prioritizing focus quality
+    const weightedScore = 
+        (avgGoalAdherence * 0.20) + 
+        (avgConsistency * 0.30) + 
+        (avgFocusQuality * 0.40) + 
+        (avgTaskCompletion * 0.10);
+
+    return Math.round(weightedScore);
+}
+
+
+/**
+ * Helper to get the number of completed tasks for a specific date.
+ * @param {string} dateStr - The date in 'YYYY-MM-DD' format.
+ * @returns {number} The number of tasks completed on that date.
+ */
+getCompletedTasksForDate(dateStr) {
+    if (!this.todos || this.todos.length === 0) return 0;
+
+    return this.todos.filter(todo => {
+        return todo.completed && todo.completedAt && todo.completedAt.startsWith(dateStr);
+    }).length;
+}
+
 
   calculateTrendStats() {
     const last30Days = this.getLast30Days()
@@ -925,7 +981,7 @@ class PomodoroStats {
       <div class="goals-progress">
         <div class="goal-item">
           <div class="goal-header">
-            <h3>📅 Daily Goal</h3>
+            <h3>Daily Goal</h3>
             <span class="goal-value">${this.getTodaysSessions()} / ${this.goals.daily}</span>
           </div>
           <div class="progress-bar">
