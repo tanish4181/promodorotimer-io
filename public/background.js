@@ -260,10 +260,36 @@ class PomodoroBackground {
         case "GET_BLOCKED_WEBSITES":
           sendResponse({ websites: this.state.blockedWebsites });
           break;
-        case "TODOS_UPDATED":
-          this.state.todos = message.todos;
+        case "ADD_TODO":
+          const newTodo = {
+            id: Date.now(),
+            text: message.todo.text,
+            completed: false,
+            createdAt: new Date().toISOString()
+          };
+          if (!this.state.todos) this.state.todos = [];
+          this.state.todos.push(newTodo);
           await this.saveState();
-          sendResponse({ success: true });
+          this.broadcastUpdate(); // Broadcast the change to all parts of the extension
+          sendResponse({ success: true, todos: this.state.todos });
+          break;
+
+        case "TOGGLE_TODO":
+          const todoToToggle = this.state.todos.find(t => t.id === message.todoId);
+          if (todoToToggle) {
+            todoToToggle.completed = !todoToToggle.completed;
+            todoToToggle.completedAt = todoToToggle.completed ? new Date().toISOString() : null;
+            await this.saveState();
+            this.broadcastUpdate();
+          }
+          sendResponse({ success: true, todos: this.state.todos });
+          break;
+
+        case "DELETE_TODO":
+          this.state.todos = this.state.todos.filter(t => t.id !== message.todoId);
+          await this.saveState();
+          this.broadcastUpdate();
+          sendResponse({ success: true, todos: this.state.todos });
           break;
         case "GET_TODOS":
           sendResponse({ todos: this.state.todos });
