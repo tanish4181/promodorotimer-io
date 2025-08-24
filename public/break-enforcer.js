@@ -2,12 +2,15 @@ class BreakEnforcer {
   constructor() {
     this.breakOverlayVisible = false;
     this.breakCountdownInterval = null;
+    this.observer = null;
+    this.currentState = null;
     this.init();
   }
 
   init() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === "TIMER_UPDATE") {
+        this.currentState = message.state;
         this.handleBreakOverlay(message.state);
       }
       return true;
@@ -18,6 +21,7 @@ class BreakEnforcer {
       if (chrome.runtime.lastError) {
         console.error(chrome.runtime.lastError.message);
       } else if (response && response.state) {
+        this.currentState = response.state;
         this.handleBreakOverlay(response.state);
       }
     });
@@ -28,13 +32,21 @@ class BreakEnforcer {
       return false;
     }
     try {
-      const urlHostname = new URL(url).hostname.toLowerCase();
-      for (const domain of list) {
-        const lowerCaseDomain = domain.toLowerCase();
-        if (urlHostname === lowerCaseDomain || urlHostname.endsWith(`.${lowerCaseDomain}`)) {
-          return true;
+        const currentUrl = new URL(url);
+        const currentUrlStr = `${currentUrl.hostname}${currentUrl.pathname}`.toLowerCase().replace(/\/$/, "");
+
+        for (const rule of list) {
+            const lowerCaseRule = rule.toLowerCase();
+            if (!lowerCaseRule.includes('/')) {
+                if (currentUrl.hostname === lowerCaseRule || currentUrl.hostname.endsWith(`.${lowerCaseRule}`)) {
+                    return true;
+                }
+            } else {
+                if (currentUrlStr.startsWith(lowerCaseRule)) {
+                    return true;
+                }
+            }
         }
-      }
     } catch (error) {
       console.error(`[v0] Invalid URL format for blocking check: ${url}`, error);
       return false;
@@ -178,6 +190,29 @@ class BreakEnforcer {
     if (settings.breakCountdown) {
       this.startBreakCountdown(currentTime);
     }
+    this.setupOverlayObserver();
+  }
+
+  setupOverlayObserver() {
+    if (this.observer) this.observer.disconnect();
+
+    this.observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.removedNodes) {
+          mutation.removedNodes.forEach(node => {
+            if (node.id === 'pomodoro-break-overlay') {
+              console.log("Break overlay removed, re-injecting...");
+              this.breakOverlayVisible = false; // Reset flag to allow recreation
+              if (this.currentState) {
+                  this.createBreakOverlay(this.currentState);
+              }
+            }
+          });
+        }
+      }
+    });
+
+    this.observer.observe(document.documentElement, { childList: true });
   }
 
   updateBreakCountdown(currentTime) {
@@ -217,6 +252,11 @@ class BreakEnforcer {
   }
 
   removeBreakOverlay() {
+    if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+    }
+
     const overlay = document.getElementById("pomodoro-break-overlay");
     if (overlay) overlay.remove();
 
