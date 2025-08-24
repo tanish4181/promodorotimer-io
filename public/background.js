@@ -564,13 +564,12 @@ class PomodoroBackground {
       return { blocked: false };
     }
 
-    const { isRunning, currentMode } = this.state;
+    const { isRunning, currentMode, settings } = this.state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
 
-    // 2. This function no longer handles break-time blocking.
-    // That is now handled exclusively by break-enforcer.js to avoid two overlays.
+    // 2. Break-time blocking is now handled exclusively by break-enforcer.js
     if (isRunning && isBreak) {
-      return { blocked: false };
+        return { blocked: false };
     }
 
     // 3. Allowlist is the highest priority for focus and idle modes
