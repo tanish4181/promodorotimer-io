@@ -30,6 +30,7 @@ class PomodoroPopup {
             breakTimeSelect: document.getElementById("break-time"),
 
             // Header buttons
+            helpBtn: document.getElementById("help-btn"),
             settingsBtn: document.getElementById("settings-btn"),
             statsBtn: document.getElementById("stats-btn"),
             supportBtn: document.getElementById("support-btn"),
@@ -165,6 +166,7 @@ class PomodoroPopup {
         this.elements.skipBreakBtn?.addEventListener("click", () => this.sendMessageToBackground("SKIP_BREAK"));
 
         // Navigation buttons
+        this.elements.helpBtn?.addEventListener("click", () => this.openHelpPage());
         this.elements.settingsBtn?.addEventListener("click", () => this.openSettings());
         this.elements.statsBtn?.addEventListener("click", () => this.openStats());
         this.elements.supportBtn?.addEventListener("click", () => this.openSupportPage());
@@ -433,6 +435,10 @@ class PomodoroPopup {
 
     openSupportPage() {
         chrome.tabs.create({ url: chrome.runtime.getURL("support.html") });
+    }
+    
+    openHelpPage() {
+        chrome.tabs.create({ url: chrome.runtime.getURL("help.html") });
     }
 
     // Cleanup when popup closes
