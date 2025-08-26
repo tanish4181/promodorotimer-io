@@ -164,7 +164,6 @@ body {
   backdrop-filter: var(--blur);
 }
 
-/* New container for timer text and label */
 #timer-content {
   display: flex;
   flex-direction: column;
@@ -193,7 +192,6 @@ body {
   }
 }
 
-/* Progress Ring */
 .progress-ring {
   position: absolute;
   top: 50%;
@@ -249,7 +247,8 @@ body {
   gap: 12px;
   justify-content: center;
   padding: 0 24px;
-  margin-bottom: 24px;
+  margin-bottom: 16px; /* Adjusted margin */
+  align-items: center; /* Vertically align all buttons */
 }
 
 .primary-btn, .secondary-btn {
@@ -264,6 +263,9 @@ body {
   overflow: hidden;
   min-width: 100px;
   backdrop-filter: var(--blur);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .primary-btn {
@@ -306,6 +308,77 @@ body {
   background: var(--surface-hover);
   border-color: var(--border-hover);
   transform: translateY(-1px);
+}
+
+/* Lock-in Button Specific Styles */
+#lock-in-btn {
+  min-width: 48px; /* Match the height */
+  width: 48px;
+  padding: 0;
+  font-size: 20px;
+  color: var(--text-secondary);
+}
+
+#lock-in-btn:hover {
+    color: var(--text-primary);
+}
+
+#lock-in-btn.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}
+
+/* Lock-in Settings Panel */
+.lock-in-settings {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 24px;
+  margin: 0 24px 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  transition: all var(--transition-normal);
+  backdrop-filter: var(--blur);
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+  max-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.lock-in-settings.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  max-height: 100px;
+}
+
+.lock-in-settings label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.lock-in-settings input[type="number"] {
+  width: 60px;
+  height: 36px;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-hover);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: center;
+  font-size: 16px;
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.lock-in-settings input[type="number"]::-webkit-outer-spin-button,
+.lock-in-settings input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Skip Break Container */
@@ -380,84 +453,8 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* Quick Toggles */
-.quick-toggles {
-  padding: 0 24px;
-  margin-bottom: 32px;
-}
-
-.toggle-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--border);
-  transition: all var(--transition-fast);
-}
-
-.toggle-item:last-child {
-  border-bottom: none;
-}
-
-.toggle-item:hover {
-  padding-left: 8px;
-}
-
-.toggle-label {
-  font-size: 15px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.toggle-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.toggle-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: var(--primary-light);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: all var(--transition-normal);
-}
-
-.toggle-btn.active {
-  background: var(--primary);
-  color: var(--text-inverse);
-  border-color: var(--primary);
-  transform: scale(1.05);
-  box-shadow: 0 4px 16px var(--primary-light);
-}
-
-.toggle-btn.active::before {
-  width: 100%;
-  height: 100%;
-}
-
-.toggle-btn:hover:not(.active) {
-  background: var(--surface-hover);
-  border-color: var(--border-hover);
-}
-
-/* Section Styles */
-.todo-section, .blocking-section {
+/* To-Do Section */
+.todo-section {
   padding: 0 24px;
   margin-bottom: 32px;
 }
@@ -476,14 +473,13 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* Input Groups */
-.add-todo, .add-website {
+.add-todo {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
 }
 
-.add-todo input, .add-website input {
+.add-todo input {
   flex: 1;
   height: 44px;
   padding: 0 16px;
@@ -496,11 +492,11 @@ body {
   backdrop-filter: var(--blur);
 }
 
-.add-todo input::placeholder, .add-website input::placeholder {
+.add-todo input::placeholder {
   color: var(--text-muted);
 }
 
-.add-todo input:focus, .add-website input:focus {
+.add-todo input:focus {
   outline: none;
   border-color: var(--primary);
   background: var(--surface-hover);
@@ -529,8 +525,7 @@ body {
   box-shadow: 0 4px 16px var(--primary-light);
 }
 
-/* Lists */
-.todo-list, .websites-list {
+.todo-list {
   max-height: 160px;
   overflow-y: auto;
   padding-right: 4px;
@@ -546,7 +541,7 @@ body {
   padding-left: 4px;
 }
 
-.todo-item, .website-item {
+.todo-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -559,7 +554,7 @@ body {
   backdrop-filter: var(--blur);
 }
 
-.todo-item:hover, .website-item:hover {
+.todo-item:hover {
   background: var(--surface-hover);
   border-color: var(--border-hover);
   transform: translateX(4px);
@@ -598,12 +593,12 @@ body {
   line-height: 1.4;
 }
 
-.todo-text.completed {
+.todo-item.completed .todo-text {
   text-decoration: line-through;
   color: var(--text-muted);
 }
 
-.todo-delete, .website-remove {
+.todo-delete {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -619,13 +614,13 @@ body {
   justify-content: center;
 }
 
-.todo-delete:hover, .website-remove:hover {
+.todo-delete:hover {
   color: var(--accent-danger);
   background: rgba(255, 71, 87, 0.1);
   transform: scale(1.1);
 }
 
-.todo-empty, .websites-empty {
+.todo-empty {
   text-align: center;
   color: var(--text-muted);
   font-size: 14px;
@@ -634,17 +629,6 @@ body {
   border: 1px dashed var(--border);
   border-radius: 12px;
   backdrop-filter: var(--blur);
-}
-
-.website-name {
-  flex: 1;
-  font-size: 13px;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-  color: var(--text-primary);
-  background: var(--bg-tertiary);
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
 }
 
 /* Quick Settings */
@@ -814,271 +798,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
-}
-
-/* Responsive adjustments */
-@media (max-width: 420px) {
-  body {
-    width: 360px;
-  }
-  
-  #timer-circle {
-    width: 180px;
-    height: 180px;
-  }
-  
-  #timer-text {
-    font-size: 32px;
-  }
-  
-  .header, .timer-display, .controls, .session-info, 
-  .quick-toggles, .todo-section, .blocking-section, 
-  .quick-settings, .support-section {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-}
-
-/* Accessibility improvements */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-  :root {
-    --border: rgba(255, 255, 255, 0.3);
-    --border-hover: rgba(255, 255, 255, 0.5);
-  }
-}
-
-/* Focus indicators for accessibility */
-.primary-btn:focus,
-.secondary-btn:focus,
-.toggle-btn:focus,
-.add-btn:focus,
-.support-btn-popup:focus,
-.text-btn:focus,
-input:focus,
-select:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* Additional animations for enhanced UX */
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Apply entrance animations */
-.session-info {
-  animation: slideInUp 0.4s ease-out;
-}
-
-.todo-section {
-  animation: slideInUp 0.5s ease-out;
-}
-
-.quick-settings {
-  animation: slideInUp 0.6s ease-out;
-}
-
-.support-section {
-  animation: slideInUp 0.7s ease-out;
-}
-
-.footer {
-  animation: fadeIn 0.8s ease-out;
-}
-
-/* Improved button interactions */
-.primary-btn, .secondary-btn, .support-btn-popup {
-  position: relative;
-  overflow: hidden;
-}
-
-.primary-btn:active, .secondary-btn:active {
-  transform: scale(0.98);
-}
-
-/* Enhanced timer circle states */
-#timer-circle.paused {
-  border-color: var(--accent-warning);
-  box-shadow: 0 0 20px rgba(255, 176, 32, 0.2);
-}
-
-#timer-circle.completed {
-  border-color: var(--accent-success);
-  box-shadow: 0 0 30px rgba(0, 208, 132, 0.3);
-  animation: completePulse 1s ease-out;
-}
-
-@keyframes completePulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 40px rgba(0, 208, 132, 0.5);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 30px rgba(0, 208, 132, 0.3);
-  }
-}
-
-/* Loading states */
-.loading {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.loading::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid transparent;
-  border-top: 2px solid var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Improved hover states for better feedback */
-.info-item:hover {
-  background: var(--surface-hover);
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px var(--primary-light);
-}
-
-/* Better visual hierarchy */
-.section-header h3::after {
-  content: '';
-  display: block;
-  width: 30px;
-  height: 2px;
-  background: var(--primary);
-  margin-top: 8px;
-  border-radius: 1px;
-}
-
-/* Enhanced support button with more premium feel */
-.support-btn-popup {
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.support-btn-popup:hover {
-  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.4), 
-              0 4px 16px rgba(255, 107, 53, 0.2);
-}
-
-/* Improved text button styling in footer */
-.text-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.text-btn:hover {
-  transform: translateY(-1px);
-  background: var(--primary-light);
-}
-
-/* Accessibility: Focus visible improvements */
-@media (prefers-reduced-motion: no-preference) {
-  .support-btn-popup {
-    transition: all var(--transition-normal), 
-                box-shadow var(--transition-slow);
-  }
-}
-
-/* Dark mode optimizations for better contrast */
-@media (prefers-color-scheme: dark) {
-  .support-text {
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  }
-  
-  .support-subtext {
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  }
-}
-
-/* Print styles (if someone wants to print) */
-@media print {
-  .support-section,
-  .footer {
-    display: none;
-  }
-  
-  body {
-    background: white;
-    color: black;
-  }
-}
-
-#lock-in-btn.active {
-  background: var(--primary);
-  color: var(--text-inverse);
-  border-color: var(--primary);
-}
-/* Add to the end of popup.css */
-#lock-in-btn.active {
-  background: var(--primary);
-  color: var(--text-inverse);
-  border-color: var(--primary);
-}
-
-.lock-in-settings {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  margin-bottom: 12px;
-  background: var(--surface);
-  border-radius: 12px;
-  color: var(--text-secondary);
-}
-
-.lock-in-settings input[type="number"] {
-  width: 50px;
-  padding: 4px 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-weight: 600;
-  text-align: center;
 }

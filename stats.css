@@ -1042,6 +1042,13 @@ body {
   background: var(--border-hover);
 }
 
+/* FIX for Trends Layout */
+.trends-layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {

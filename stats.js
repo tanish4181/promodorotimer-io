@@ -695,8 +695,10 @@ getCompletedTasksForDate(dateStr) {
           <div class="section-header">
             <h2>Productivity Trends</h2>
           </div>
-          ${this.renderTrendCharts()}
-          ${this.renderInsights()}
+          <div class="trends-layout-wrapper">
+            ${this.renderTrendCharts()}
+            ${this.renderInsights()}
+          </div>
         </div>
       </div>
     `
@@ -832,7 +834,7 @@ getCompletedTasksForDate(dateStr) {
     
     return `
       <div class="insights-container">
-        <h3>🧠 AI Insights</h3>
+        <h3>AI Insights</h3>
         <div class="insights-grid">
           ${insights.map(insight => `
             <div class="insight-card ${insight.type}">

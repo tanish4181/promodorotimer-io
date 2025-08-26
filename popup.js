@@ -136,7 +136,7 @@ class PomodoroPopup {
     initializeEventListeners() {
         this.elements.lockInBtn?.addEventListener("click", () => {
             this.elements.lockInBtn.classList.toggle("active");
-            this.elements.lockInSettings.style.display = this.elements.lockInBtn.classList.contains("active") ? "flex" : "none";
+            this.elements.lockInSettings.classList.toggle("visible");
         });
 
         this.elements.startBtn?.addEventListener("click", () => {
@@ -334,7 +334,7 @@ class PomodoroPopup {
             this.elements.skipBreakBtn.disabled = true;
             this.elements.lockInBtn.classList.add("active");
             this.elements.lockInBtn.disabled = true;
-            this.elements.lockInSettings.style.display = 'none'; // Hide settings when running
+            this.elements.lockInSettings.classList.remove('visible'); // Hide settings when running
         } else {
             this.elements.pauseBtn.disabled = false;
             this.elements.resetBtn.disabled = false;
