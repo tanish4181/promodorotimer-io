@@ -181,12 +181,12 @@ class AdvancedWebsiteBlocker {
             if (node.id === 'pomodoro-block-overlay') {
               console.log("Blocker overlay removed, re-injecting...");
               this.createBlockingOverlay(reason);
+              this.hidePageContent(); // **FIX**: Re-hide content as well
             }
           });
         }
       }
     });
-
     this.observer.observe(document.documentElement, { childList: true });
   }
 
@@ -365,20 +365,9 @@ class AdvancedWebsiteBlocker {
   }
 
   hidePageContent() {
-    // Prevent scrolling
     document.documentElement.classList.add("pomodoro-blocked");
-    
-    // Hide body content but keep our overlay visible
-    document.body.style.visibility = "hidden";
-    document.body.style.overflow = "hidden";
-    
-    // Make sure our overlay is visible
-    const overlayEl = document.getElementById("pomodoro-block-overlay");
-    if (overlayEl) {
-      overlayEl.style.visibility = "visible";
-    }
-
-    console.log("Page content hidden");
+    // Use cssText to add !important, making it harder to override
+    document.body.style.cssText += 'visibility: hidden !important; overflow: hidden !important;';
   }
 
   showPageContent() {

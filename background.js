@@ -55,10 +55,11 @@ class PomodoroBackground {
   // Initializes the background script by loading the state and setting up listeners.
   async initialize() {
     try {
-      await this.loadState();
+      this.initializationPromise = this.loadState();
 
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         (async () => {
+            await this.initializationPromise;
             const response = await this.handleMessage(message, sender);
             sendResponse(response);
         })();
@@ -97,32 +98,32 @@ class PomodoroBackground {
   async loadState() {
     try {
       const result = await chrome.storage.local.get([
-        "timerState", "currentTime", "isRunning", "currentMode",
-        "sessionCount", "totalSessions", "settings", "lastActiveTime",
-        "blockedWebsites", "allowedWebsites", "todos", "isLockedIn", "lockedInSessions",
-        "targetCompletionTime", "lockInEndTime"
+        "timerState", "isRunning", "currentMode", "sessionCount", "totalSessions",
+        "settings", "blockedWebsites", "allowedWebsites", "todos", "isLockedIn",
+        "lockedInSessions", "targetCompletionTime", "lockInEndTime"
       ]);
 
-      if (result.timerState) {
-        const defaultSettings = this.state.settings;
-        this.state = { ...this.state, ...result };
-        this.state.settings = { ...defaultSettings, ...this.state.settings };
+      if (result.settings) {
+        // Keep user's settings, but use defaults for any missing properties
+        this.state.settings = { ...this.state.settings, ...result.settings };
+        // Overwrite the rest of the state
+        Object.assign(this.state, result);
+      }
 
-        if (this.state.isLockedIn && this.state.lockInEndTime && Date.now() > this.state.lockInEndTime) {
-            this.state.isLockedIn = false;
-            this.state.lockedInSessions = 0;
-            this.state.lockInEndTime = null;
-        }
+      // **CRITICAL FIX**: If the timer was running, recalculate the current time
+      // based on when it was supposed to end. This is the key to surviving
+      // the service worker going to sleep.
+      if (this.state.isRunning && this.state.targetCompletionTime) {
+        const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
+        this.state.currentTime = Math.max(0, remainingTime);
 
-        if (this.state.isRunning && this.state.targetCompletionTime) {
-          const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
-          this.state.currentTime = Math.max(0, remainingTime);
-          if (this.state.currentTime === 0) {
-            await this.handleTimerComplete();
-          }
+        // If the timer has already finished while the worker was asleep, handle completion.
+        if (this.state.currentTime === 0) {
+          await this.handleTimerComplete();
         }
       }
     } catch (error) {
+      console.error("Error loading state, initializing defaults:", error);
       await this.initializeDefaultState();
     }
   }
@@ -189,7 +190,6 @@ class PomodoroBackground {
   }
 
   async handleMessage(message, sender) {
-      await this.initializationPromise;
       try {
           switch (message.type) {
               case "GET_STATE":
@@ -289,15 +289,17 @@ class PomodoroBackground {
   }
 
   async startTimer() {
+    if (this.state.isRunning) return; // Prevent multiple start calls
+
     this.state.isRunning = true;
-    this.state.notificationSent = false; // FIX: Reset notification flag on start.
+    this.state.notificationSent = false;
+
+    // Set the target completion time as the absolute truth
     const remainingMilliseconds = this.state.currentTime * 1000;
     this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
-    chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 });
 
-    if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
-      this.notifyContentScripts({ type: "TIMER_STARTED" });
-    }
+    // Use a precise alarm that fires roughly every second.
+    chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 });
 
     await this.saveState();
     this.broadcastUpdate();
@@ -372,7 +374,9 @@ class PomodoroBackground {
   }
 
   async handleTimerComplete() {
-    if (this.state.notificationSent) return; // FIX: Prevent multiple completions.
+    // **FIX**: The guard check and the flag set must be atomic.
+    if (this.state.notificationSent) return;
+    this.state.notificationSent = true; // Set the flag immediately to prevent re-entry.
 
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
@@ -391,8 +395,7 @@ class PomodoroBackground {
       }
     }
     
-    this.state.notificationSent = true; // FIX: Set flag after sending notification.
-
+    // The flag is now correctly set before any async operations or state changes.
     if (this.state.currentMode === "focus") {
       this.state.totalSessions++;
       await this.recordSession();
@@ -577,25 +580,34 @@ class PomodoroBackground {
       return { blocked: false };
     }
 
-    const { isRunning, currentMode } = this.state;
+    const { isRunning, currentMode, settings, allowedWebsites, blockedWebsites } = this.state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
 
-    if (isRunning && isBreak) {
-        return { blocked: false };
-    }
-
-    if (this._isUrlInList(url, this.state.allowedWebsites)) {
+    // If it's on the allowlist, it's never blocked.
+    if (this._isUrlInList(url, allowedWebsites)) {
       return { blocked: false };
     }
 
+    // Break time logic
+    if (isRunning && isBreak) {
+        if (settings.breakBlockAll) {
+            return { blocked: true, reason: 'break-all' };
+        }
+        if (settings.breakUseAllowlist) {
+            // Since we already checked the allowlist, if this setting is on, block it.
+            return { blocked: true, reason: 'break-allowlist' };
+        }
+    }
+
+    // Focus time logic
     if (isRunning && currentMode === 'focus') {
+      // Block everything that isn't on the allowlist (which we've already checked)
       return { blocked: true, reason: 'focus' };
     }
 
-    if (!isRunning) {
-      if (this._isUrlInList(url, this.state.blockedWebsites)) {
-        return { blocked: true, reason: 'blocklist' };
-      }
+    // Idle timer logic
+    if (!isRunning && this._isUrlInList(url, blockedWebsites)) {
+      return { blocked: true, reason: 'blocklist' };
     }
 
     return { blocked: false };

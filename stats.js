@@ -15,7 +15,7 @@ class PomodoroStats {
       bestDay: null,
       productivityScore: 0
     }
-    
+    this.tooltipElement = null; // **ADD THIS**
     this.currentView = 'overview' // overview, trends, goals
     this.initializeStats()
   }
@@ -1205,16 +1205,18 @@ getCompletedTasksForDate(dateStr) {
       cancelGoalsBtn.addEventListener('click', () => this.cancelGoalsEdit())
     }
 
-    // Heatmap cell tooltips
+    // **REFACTOR THIS PART**
+    if (!this.tooltipElement) {
+        this.tooltipElement = document.createElement('div');
+        this.tooltipElement.className = 'heatmap-tooltip';
+        this.tooltipElement.style.display = 'none'; // Initially hidden
+        document.body.appendChild(this.tooltipElement);
+    }
+
     document.querySelectorAll('.heatmap-cell, .quick-heatmap-cell').forEach(cell => {
-      cell.addEventListener('mouseenter', (e) => {
-        this.showTooltip(e)
-      })
-      
-      cell.addEventListener('mouseleave', () => {
-        this.hideTooltip()
-      })
-    })
+      cell.addEventListener('mouseenter', (e) => this.showTooltip(e));
+      cell.addEventListener('mouseleave', () => this.hideTooltip());
+    });
   }
 
   switchView(view) {
@@ -1274,35 +1276,23 @@ getCompletedTasksForDate(dateStr) {
   }
 
   showTooltip(e) {
-    // Remove any existing tooltip first
-    if (this.currentTooltip) {
-      this.currentTooltip.remove();
-    }
-    const cell = e.currentTarget
-    const tooltip = document.createElement('div')
-    tooltip.className = 'heatmap-tooltip'
-    tooltip.textContent = cell.title
-    
-    // Position tooltip
-    const rect = cell.getBoundingClientRect()
-    tooltip.style.position = 'fixed'
-    tooltip.style.left = rect.left + rect.width / 2 + 'px'
-    tooltip.style.top = rect.top - 10 + 'px'
-    tooltip.style.transform = 'translate(-50%, -100%)'
-    tooltip.style.zIndex = '1000'
-    
-    document.body.appendChild(tooltip)
-    
-    // Store reference for cleanup
-    this.currentTooltip = tooltip
+    const cell = e.currentTarget;
+    this.tooltipElement.textContent = cell.title;
+
+    const rect = cell.getBoundingClientRect();
+    // **FIX**: The positioning was incorrect for a fixed tooltip.
+    this.tooltipElement.style.position = 'fixed';
+    this.tooltipElement.style.left = `${rect.left + rect.width / 2}px`;
+    this.tooltipElement.style.top = `${rect.top - 10}px`;
+    this.tooltipElement.style.transform = 'translate(-50%, -100%)';
+    this.tooltipElement.style.display = 'block';
   }
 
   hideTooltip() {
-      if (this.currentTooltip) {
-        this.currentTooltip.remove()
-        this.currentTooltip = null
-      }
+    if (this.tooltipElement) {
+        this.tooltipElement.style.display = 'none';
     }
+  }
 
   showError(message) {
     document.body.innerHTML = `
