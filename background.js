@@ -56,10 +56,13 @@ class PomodoroBackground {
     try {
       await this.loadState();
 
-      // Listen for messages from other parts of the extension.
+      // This new listener structure is fully async and more reliable.
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        this.handleMessage(message, sender, sendResponse);
-        return true; // Indicates that the response will be sent asynchronously.
+        (async () => {
+            const response = await this.handleMessage(message, sender);
+            sendResponse(response);
+        })();
+        return true;
       });
 
       // Listen for changes to the settings in storage.
@@ -89,7 +92,7 @@ class PomodoroBackground {
         }
       });
     } catch (error) {
-      // console.error("Error initializing background script:", error);
+      console.error("Error initializing background script:", error);
     }
   }
 
@@ -141,7 +144,7 @@ class PomodoroBackground {
         lastActiveTime: Date.now(),
       });
     } catch (error) {
-      // console.error("Error saving state:", error);
+      console.error("Error saving state:", error);
     }
   }
 
@@ -193,133 +196,96 @@ class PomodoroBackground {
     await this.saveState();
   }
 
-  // Handles messages from other parts of the extension.
-  async handleMessage(message, sender, sendResponse) {
-    await this.initializationPromise;
-    try {
-      switch (message.type) {
-        case "GET_STATE":
-          sendResponse({ state: this.state });
-          break;
-        case "SETTINGS_UPDATED":
-          await this.updateSettings(message.settings);
-          sendResponse({ success: true });
-          break;
-        case "START_TIMER":
-          await this.startTimer();
-          sendResponse({ success: true });
-          break;
-        case "START_TIMER_LOCKED":
-          this.state.isLockedIn = true;
-          const numSessions = message.sessions || this.state.settings.sessionsUntilLongBreak;
-          this.state.lockedInSessions = numSessions;
-
-          // Calculate lock-in end time for failsafe
-          let totalDurationInSeconds = 0;
-          const { focusTime, shortBreak, longBreak, sessionsUntilLongBreak } = this.state.settings;
-          let sessionCycle = this.state.sessionCount;
-
-          totalDurationInSeconds += numSessions * focusTime * 60;
-          for (let i = 0; i < numSessions - 1; i++) {
-            if (sessionCycle % sessionsUntilLongBreak === 0) {
-              totalDurationInSeconds += longBreak * 60;
-            } else {
-              totalDurationInSeconds += shortBreak * 60;
-            }
-            sessionCycle++;
+  // The handleMessage function is now refactored to always return a value.
+  async handleMessage(message, sender) {
+      await this.initializationPromise;
+      try {
+          switch (message.type) {
+              case "GET_STATE":
+                  return { state: this.state };
+              case "SETTINGS_UPDATED":
+                  await this.updateSettings(message.settings);
+                  return { success: true };
+              case "START_TIMER":
+                  await this.startTimer();
+                  return { success: true };
+              case "START_TIMER_LOCKED":
+                  this.state.isLockedIn = true;
+                  const numSessions = message.sessions || this.state.settings.sessionsUntilLongBreak;
+                  this.state.lockedInSessions = numSessions;
+                  let totalDurationInSeconds = 0;
+                  const { focusTime, shortBreak, longBreak, sessionsUntilLongBreak } = this.state.settings;
+                  let sessionCycle = this.state.sessionCount;
+                  totalDurationInSeconds += numSessions * focusTime * 60;
+                  for (let i = 0; i < numSessions - 1; i++) {
+                      if (sessionCycle % sessionsUntilLongBreak === 0) {
+                          totalDurationInSeconds += longBreak * 60;
+                      } else {
+                          totalDurationInSeconds += shortBreak * 60;
+                      }
+                      sessionCycle++;
+                  }
+                  this.state.lockInEndTime = Date.now() + totalDurationInSeconds * 1000;
+                  await this.startTimer();
+                  return { success: true };
+              case "PAUSE_TIMER":
+                  await this.pauseTimer();
+                  return { success: true };
+              case "RESET_TIMER":
+                  await this.resetTimer();
+                  return { success: true };
+              case "SKIP_BREAK":
+                  await this.skipBreak();
+                  return { success: true };
+              case "TEST_NOTIFICATION":
+                  await this.showNotification();
+                  return { success: true };
+              case "TEST_SOUND":
+                  await this.playSound(message.soundType);
+                  return { success: true };
+              case "ADD_TODO":
+                  const newTodo = { id: Date.now(), text: message.todo.text, completed: false, createdAt: new Date().toISOString() };
+                  if (!this.state.todos) this.state.todos = [];
+                  this.state.todos.push(newTodo);
+                  await this.saveState();
+                  this.broadcastUpdate();
+                  return { success: true, todos: this.state.todos };
+              case "TOGGLE_TODO":
+                  const todoToToggle = this.state.todos.find(t => t.id === message.todoId);
+                  if (todoToToggle) {
+                      todoToToggle.completed = !todoToToggle.completed;
+                      todoToToggle.completedAt = todoToToggle.completed ? new Date().toISOString() : null;
+                      await this.saveState();
+                      this.broadcastUpdate();
+                  }
+                  return { success: true, todos: this.state.todos };
+              case "DELETE_TODO":
+                  this.state.todos = this.state.todos.filter(t => t.id !== message.todoId);
+                  await this.saveState();
+                  this.broadcastUpdate();
+                  return { success: true, todos: this.state.todos };
+              case "GET_TODOS":
+                  return { todos: this.state.todos };
+              case "WEBSITE_LISTS_UPDATED":
+                  this.state.allowedWebsites = message.allowlist || [];
+                  this.state.blockedWebsites = message.blocklist || [];
+                  await this.saveState();
+                  this.broadcastUpdate();
+                  return { success: true };
+              case "CHECK_WEBSITE_BLOCKED":
+                  return this.isUrlBlocked(message.url);
+              case "CLOSE_CURRENT_TAB":
+                  if (sender.tab) {
+                      chrome.tabs.remove(sender.tab.id);
+                  }
+                  return { success: true };
+              default:
+                  return { error: "Unknown message type" };
           }
-          this.state.lockInEndTime = Date.now() + totalDurationInSeconds * 1000;
-
-          await this.startTimer();
-          sendResponse({ success: true });
-          break;
-        case "PAUSE_TIMER":
-          await this.pauseTimer();
-          sendResponse({ success: true });
-          break;
-        case "RESET_TIMER":
-          await this.resetTimer();
-          sendResponse({ success: true });
-          break;
-        case "SKIP_BREAK":
-          await this.skipBreak();
-          sendResponse({ success: true });
-          break;
-        case "TEST_NOTIFICATION":
-          await this.showNotification();
-          sendResponse({ success: true });
-          break;
-        case "TEST_SOUND":
-          await this.playSound(message.soundType);
-          sendResponse({ success: true });
-          break;
-        case "ADD_BLOCKED_WEBSITE":
-          await this.addBlockedWebsite(message.website);
-          sendResponse({ success: true });
-          break;
-        case "REMOVE_BLOCKED_WEBSITE":
-          await this.removeBlockedWebsite(message.website);
-          sendResponse({ success: true });
-          break;
-        case "GET_BLOCKED_WEBSITES":
-          sendResponse({ websites: this.state.blockedWebsites });
-          break;
-        case "ADD_TODO":
-          const newTodo = {
-            id: Date.now(),
-            text: message.todo.text,
-            completed: false,
-            createdAt: new Date().toISOString()
-          };
-          if (!this.state.todos) this.state.todos = [];
-          this.state.todos.push(newTodo);
-          await this.saveState();
-          this.broadcastUpdate(); // Broadcast the change to all parts of the extension
-          sendResponse({ success: true, todos: this.state.todos });
-          break;
-
-        case "TOGGLE_TODO":
-          const todoToToggle = this.state.todos.find(t => t.id === message.todoId);
-          if (todoToToggle) {
-            todoToToggle.completed = !todoToToggle.completed;
-            todoToToggle.completedAt = todoToToggle.completed ? new Date().toISOString() : null;
-            await this.saveState();
-            this.broadcastUpdate();
-          }
-          sendResponse({ success: true, todos: this.state.todos });
-          break;
-
-        case "DELETE_TODO":
-          this.state.todos = this.state.todos.filter(t => t.id !== message.todoId);
-          await this.saveState();
-          this.broadcastUpdate();
-          sendResponse({ success: true, todos: this.state.todos });
-          break;
-        case "GET_TODOS":
-          sendResponse({ todos: this.state.todos });
-          break;
-        case "WEBSITE_LISTS_UPDATED":
-          this.state.allowedWebsites = message.allowlist || [];
-          this.state.blockedWebsites = message.blocklist || [];
-          this.saveState();
-          this.broadcastUpdate();
-          sendResponse({ success: true });
-          break;
-        case "CHECK_WEBSITE_BLOCKED":
-          sendResponse(this.isUrlBlocked(message.url));
-          break;
-        case "CLOSE_CURRENT_TAB":
-          if (sender.tab) {
-            chrome.tabs.remove(sender.tab.id);
-          }
-          break;
-        default:
-          sendResponse({ error: "Unknown message type" });
+      } catch (error) {
+          console.error("Error in handleMessage:", error);
+          return { error: error.message };
       }
-    } catch (error) {
-      // console.error("Error handling message:", error);
-      sendResponse({ error: error.message });
-    }
   }
 
   // Updates the settings and broadcasts the changes.
@@ -455,7 +421,8 @@ class PomodoroBackground {
 
     // Only auto-start if the lock-in mode didn't just complete
     if (this.shouldAutoStart() && !lockInJustCompleted) {
-      setTimeout(() => this.startTimer(), 1000);
+      // Using a direct call instead of setTimeout to avoid issues with the service worker being suspended.
+      await this.startTimer();
     }
 
     await this.saveState();
@@ -674,32 +641,34 @@ class PomodoroBackground {
     return { blocked: false };
   }
 
-  broadcastUpdate() {
-    // console.log("[v0] Broadcasting update");
-
-    // Send update to all tabs
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        try {
-          chrome.tabs.sendMessage(tab.id, {
-            type: "TIMER_UPDATE",
-            state: this.state,
+  // This function now uses async/await and try/catch blocks for robustness.
+  async broadcastUpdate() {
+      // Send update to popup and options page
+      try {
+          await chrome.runtime.sendMessage({
+              type: "TIMER_UPDATE",
+              state: this.state,
           });
-        } catch (error) {
-          // Ignore errors for tabs that don't have content scripts
-        }
-      });
-    });
+      } catch (e) {
+          // This error is expected if the popup/options are closed. We can ignore it.
+      }
 
-    // Send update to popup if open
-    try {
-      chrome.runtime.sendMessage({
-        type: "TIMER_UPDATE",
-        state: this.state,
-      });
-    } catch (error) {
-      // Popup might not be open
-    }
+      // Send update to all content scripts in tabs
+      try {
+          const tabs = await chrome.tabs.query({});
+          for (const tab of tabs) {
+              try {
+                  await chrome.tabs.sendMessage(tab.id, {
+                      type: "TIMER_UPDATE",
+                      state: this.state,
+                  });
+              } catch (e) {
+                  // This error is expected for tabs without content scripts (e.g., chrome:// pages).
+              }
+          }
+      } catch (e) {
+          console.error("Error querying tabs for broadcast:", e);
+      }
   }
 
   async notifyContentScripts(message) {
