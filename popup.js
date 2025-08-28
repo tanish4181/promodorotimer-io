@@ -190,19 +190,38 @@ class PomodoroPopup {
         button.classList.toggle("active", isActive);
     }
 
+    // FIX: Made state loading more robust to handle inactive service worker.
     async loadState() {
-        console.log("Loading state from background script.");
+        console.log("Loading state for popup.");
         try {
+            // First, try to get the most up-to-date state from the background script.
             const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
             if (response && response.state) {
                 this.state = response.state;
-                this.updateDisplay();
-                this.renderTodos();
-                console.log("State loaded and rendered successfully.");
+                console.log("State loaded successfully from background script.");
+            } else {
+                // If the background script is inactive, it might return no response.
+                // Fallback to loading directly from storage.
+                throw new Error("Background script did not return state. Falling back to storage.");
             }
         } catch (error) {
-            console.error("Error loading state:", error);
-            this.initializeDefaultState();
+            console.warn("Could not get state from background script, loading from storage instead. Error:", error.message);
+            // Fallback: If messaging fails, load the last known state from storage.
+            // This prevents the UI from resetting to defaults.
+            try {
+                const result = await chrome.storage.local.get(null); // Get all stored data
+                if (result && result.settings) {
+                    this.state = result;
+                } else {
+                    // Only if storage is also empty, initialize defaults.
+                    this.initializeDefaultState();
+                }
+            } catch (storageError) {
+                console.error("Error loading state from storage:", storageError);
+                this.initializeDefaultState();
+            }
+        } finally {
+            // Always update the display after attempting to load the state.
             this.updateDisplay();
             this.renderTodos();
         }
@@ -336,7 +355,6 @@ class PomodoroPopup {
                 console.log("Quick settings updated and confirmed by background script.");
             } else {
                 console.error("Background script failed to confirm settings update.", response);
-                // NOTE: Here you could add logic to revert the UI if it were updated optimistically
             }
         } catch (error) {
             console.error("Error sending settings update to background:", error);
@@ -360,7 +378,7 @@ class PomodoroPopup {
     }
   
     renderTodos() {
-      if (!this.elements.todoList) return;
+      if (!this.elements.todoList || !this.state.todos) return;
       
       const activeTodos = this.state.todos.filter(todo => !todo.completed);
       const completedTodos = this.state.todos.filter(todo => todo.completed);

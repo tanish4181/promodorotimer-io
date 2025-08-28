@@ -10,10 +10,7 @@ class ModernPomodoroOptions {
     this.allowlist = [];
     this.blocklist = [];
 
-    this.initializeElements();
-    this.setupTabNavigation();
-    this.bindEventListeners();
-    this.initializeOptions();
+    this.initialize();
   }
 
   // Caches all necessary DOM elements for quick access.
@@ -247,6 +244,29 @@ class ModernPomodoroOptions {
   }
 
   // Main initialization function for the options page.
+  async initialize() {
+    this.initializeElements();
+    this.setupTabNavigation();
+    this.bindEventListeners();
+    await this.initializeOptions();
+    this.listenForUpdates(); // Add listener for real-time updates
+  }
+
+  // Add a listener to keep the options page in sync with the rest of the extension.
+  listenForUpdates() {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === "TIMER_UPDATE") {
+            console.log("Options page received state update from background.");
+            this.currentSettings = message.state.settings;
+            this.isLockedIn = message.state.isLockedIn;
+            // Re-populate the UI with the new state
+            this.populateSettings();
+            this.updateLockInUI();
+            this.updateHeaderStats();
+        }
+    });
+  }
+
   async initializeOptions() {
     this.showStatus("Loading settings...", "loading");
     try {
@@ -291,13 +311,8 @@ class ModernPomodoroOptions {
       
       this.renderWebsiteList("allowlist");
       this.renderWebsiteList("blocklist");
-      
-      console.log("[v0] Website lists loaded:", {
-        allowlist: this.allowlist.length,
-        blocklist: this.blocklist.length
-      });
     } catch (error) {
-      console.error("[v0] Error loading website lists:", error);
+      console.error("Error loading website lists:", error);
     }
   }
 
@@ -363,7 +378,6 @@ class ModernPomodoroOptions {
     }
 
     this.updateAllToggleStates();
-    console.log("[v0] Settings populated in UI");
   }
 
   async saveSettings() {
@@ -403,15 +417,12 @@ class ModernPomodoroOptions {
       this.currentSettings = newSettings;
       this.updateHeaderStats();
       this.showStatus("Settings saved successfully", "success");
-      
-      console.log("[v0] Settings saved:", newSettings);
     } catch (error) {
-      console.error("[v0] Error saving settings:", error);
+      console.error("Error saving settings:", error);
       this.showStatus("Error saving settings", "error");
     }
   }
 
-  // Enhanced website addition with validation
   addWebsiteToList(listType) {
     const inputElement = listType === "allowlist" ? 
       this.elements.allowlistInput : this.elements.blocklistInput;
@@ -424,7 +435,6 @@ class ModernPomodoroOptions {
       return;
     }
     
-    // Enhanced validation
     const validationResult = this.validateWebsiteUrl(website);
     if (!validationResult.isValid) {
       this.showValidationError(inputElement, validationResult.error);
@@ -435,13 +445,11 @@ class ModernPomodoroOptions {
     const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
     const oppositeList = listType === "allowlist" ? this.blocklist : this.allowlist;
     
-    // Check if already exists in current list
     if (targetList.includes(cleanedWebsite)) {
       this.showValidationError(inputElement, `Website already in ${listType}`);
       return;
     }
     
-    // Check if exists in opposite list and ask for confirmation
     if (oppositeList.includes(cleanedWebsite)) {
       const confirmed = confirm(
         `"${cleanedWebsite}" is already in the ${listType === "allowlist" ? "blocklist" : "allowlist"}. ` +
@@ -454,17 +462,14 @@ class ModernPomodoroOptions {
       }
     }
     
-    // Add to list with animation
     targetList.push(cleanedWebsite);
     inputElement.value = "";
     this.clearValidationState(inputElement);
     
-    // Save and render with success feedback
     this.saveWebsiteLists();
     this.renderWebsiteList(listType);
     
     this.showStatus(`"${cleanedWebsite}" added to ${listType}`, "success");
-    console.log(`[v0] Website added to ${listType}:`, cleanedWebsite);
   }
 
   removeWebsiteFromList(listType, website) {
@@ -476,13 +481,10 @@ class ModernPomodoroOptions {
       this.saveWebsiteLists();
       this.renderWebsiteList(listType);
       this.showStatus(`Website removed from ${listType}`, "success");
-      console.log(`[v0] Website removed from ${listType}:`, website);
     }
   }
 
-  // Enhanced URL validation
   validateWebsiteUrl(url) {
-    // Basic cleaning
     let cleaned = url.trim().toLowerCase();
     if (!cleaned) {
         return { isValid: false, error: "URL cannot be empty" };
@@ -493,31 +495,19 @@ class ModernPomodoroOptions {
     
     try {
         const urlObject = new URL(cleaned);
-
-        // We only want the hostname and path, no protocol, port, query, or hash
         let finalUrl = `${urlObject.hostname}${urlObject.pathname}`;
-
-        // Remove trailing slash for consistency, unless it's the only thing in the path
         if (finalUrl.endsWith('/') && finalUrl.length > 1) {
             finalUrl = finalUrl.slice(0, -1);
         }
-
-        // Basic format validation
         if (!urlObject.hostname.includes('.')) {
             return { isValid: false, error: "Please enter a valid domain (e.g., example.com/path)" };
         }
-
-        return {
-            isValid: true,
-            cleaned: finalUrl
-        };
-
+        return { isValid: true, cleaned: finalUrl };
     } catch (e) {
         return { isValid: false, error: "Invalid URL format" };
     }
   }
 
-  // Enhanced website list rendering with validation and status
   renderWebsiteList(listType) {
     const container = listType === "allowlist" ? 
       this.elements.allowlistContainer : this.elements.blocklistContainer;
@@ -527,7 +517,6 @@ class ModernPomodoroOptions {
     
     if (!container) return;
     
-    // Clear existing content
     container.innerHTML = "";
     
     if (targetList.length === 0) {
@@ -538,12 +527,10 @@ class ModernPomodoroOptions {
       return;
     }
     
-    // Hide empty state
     if (emptyElement) {
       emptyElement.style.display = "none";
     }
     
-    // Create website items with enhanced styling
     targetList.forEach((website, index) => {
       const item = document.createElement("div");
       item.className = "website-item";
@@ -555,7 +542,6 @@ class ModernPomodoroOptions {
         </div>
       `;
       
-      // Add remove functionality with confirmation
       const removeBtn = item.querySelector(".website-remove-btn");
       removeBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -571,24 +557,20 @@ class ModernPomodoroOptions {
     });
   }
 
-  // Validation UI helpers
   showValidationError(inputElement, message) {
     inputElement.classList.add("invalid");
     inputElement.classList.remove("valid");
     
-    // Remove existing validation message
     const existingMessage = inputElement.parentNode.querySelector(".validation-message");
     if (existingMessage) {
       existingMessage.remove();
     }
     
-    // Add new validation message
     const messageDiv = document.createElement("div");
     messageDiv.className = "validation-message error";
     messageDiv.textContent = message;
     inputElement.parentNode.appendChild(messageDiv);
     
-    // Auto-clear after 5 seconds
     setTimeout(() => {
       this.clearValidationState(inputElement);
     }, 5000);
@@ -602,7 +584,6 @@ class ModernPomodoroOptions {
     }
   }
 
-  // Real-time input validation
   validateInputRealTime(inputElement, listType) {
     const value = inputElement.value.trim();
     
@@ -617,7 +598,6 @@ class ModernPomodoroOptions {
       inputElement.classList.remove("invalid");
       inputElement.classList.add("valid");
       
-      // Check for duplicates
       const targetList = listType === "allowlist" ? this.allowlist : this.blocklist;
       if (targetList.includes(validationResult.cleaned)) {
         this.showValidationError(inputElement, "Website already exists in list");
@@ -636,19 +616,17 @@ class ModernPomodoroOptions {
         allowlist: this.allowlist,
         blocklist: this.blocklist
       });
-      
-      console.log("[v0] Website lists saved");
     } catch (error) {
-      console.error("[v0] Error saving website lists:", error);
+      console.error("Error saving website lists:", error);
     }
   }
 
   updateHeaderStats() {
     if (this.elements.headerFocusTime) {
-      this.elements.headerFocusTime.textContent = this.elements.focusTime?.value || 25;
+      this.elements.headerFocusTime.textContent = this.currentSettings.focusTime || 25;
     }
     if (this.elements.headerBreakTime) {
-      this.elements.headerBreakTime.textContent = this.elements.shortBreak?.value || 5;
+      this.elements.headerBreakTime.textContent = this.currentSettings.shortBreak || 5;
     }
   }
 
@@ -662,10 +640,8 @@ class ModernPomodoroOptions {
       if (storageElement) {
         storageElement.textContent = `${usageKB} KB`;
       }
-      
-      console.log(`[v0] Storage usage calculated: ${usageKB} KB`);
     } catch (error) {
-      console.error("[v0] Error calculating storage usage:", error);
+      console.error("Error calculating storage usage:", error);
     }
   }
 
@@ -693,10 +669,8 @@ class ModernPomodoroOptions {
       
       URL.revokeObjectURL(url);
       this.showStatus("Data exported successfully", "success");
-      
-      console.log("[v0] Data exported");
     } catch (error) {
-      console.error("[v0] Error exporting data:", error);
+      console.error("Error exporting data:", error);
       this.showStatus("Error exporting data", "error");
     }
   }
@@ -732,6 +706,11 @@ class ModernPomodoroOptions {
         });
     } else {
         if (lockInBanner) lockInBanner.style.display = 'none';
+        // Re-enable all elements when not locked in
+        document.querySelectorAll('.locked').forEach(el => {
+            el.classList.remove('locked');
+            el.querySelectorAll('input, button').forEach(child => child.disabled = false);
+        });
     }
   }
 
@@ -743,7 +722,6 @@ class ModernPomodoroOptions {
       const defaultSettings = this.getDefaultSettings();
       await chrome.storage.local.set({ settings: defaultSettings });
       
-      // Update background script if available
       if (this.backgroundAvailable) {
         await chrome.runtime.sendMessage({
           type: "SETTINGS_UPDATED",
@@ -755,10 +733,8 @@ class ModernPomodoroOptions {
       this.populateSettings();
       this.updateHeaderStats();
       this.showStatus("Settings reset to defaults", "success");
-      
-      console.log("[v0] Settings reset to defaults");
     } catch (error) {
-      console.error("[v0] Error resetting defaults:", error);
+      console.error("Error resetting defaults:", error);
       this.showStatus("Error resetting defaults", "error");
     }
   }
@@ -773,12 +749,10 @@ class ModernPomodoroOptions {
     try {
       await chrome.storage.local.clear();
       
-      // Reset local data
       this.currentSettings = this.getDefaultSettings();
       this.allowlist = [];
       this.blocklist = [];
       
-      // Repopulate UI
       this.populateSettings();
       this.renderWebsiteList("allowlist");
       this.renderWebsiteList("blocklist");
@@ -786,9 +760,8 @@ class ModernPomodoroOptions {
       this.calculateStorageUsage();
       
       this.showStatus("All data cleared successfully", "success");
-      console.log("[v0] All data cleared");
     } catch (error) {
-      console.error("[v0] Error clearing data:", error);
+      console.error("Error clearing data:", error);
       this.showStatus("Error clearing data", "error");
     }
   }
@@ -802,18 +775,14 @@ class ModernPomodoroOptions {
     statusElement.style.opacity = "1";
     statusElement.style.transform = "translateY(0)";
     
-    // Auto hide after 3 seconds
     setTimeout(() => {
       statusElement.style.opacity = "0";
       statusElement.style.transform = "translateY(20px)";
     }, 3000);
-    
-    console.log(`[v0] Status: ${message} (${type})`);
   }
 }
 
 // Initialize options when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[v0] DOM loaded, initializing options");
   new ModernPomodoroOptions();
 });

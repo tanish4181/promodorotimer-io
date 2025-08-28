@@ -1,7 +1,7 @@
 class BreakEnforcer {
   constructor() {
     this.breakOverlayVisible = false;
-    this.breakCountdownInterval = null;
+    // REMOVED: this.breakCountdownInterval = null;
     this.observer = null;
     this.currentState = null;
     this.activeOverlaySettings = {};
@@ -49,7 +49,7 @@ class BreakEnforcer {
             }
         }
     } catch (error) {
-      console.error(`[v0] Invalid URL format for blocking check: ${url}`, error);
+      console.error(`Invalid URL format for blocking check: ${url}`, error);
       return false;
     }
     return false;
@@ -202,7 +202,7 @@ class BreakEnforcer {
     document.documentElement.appendChild(overlay);
 
     if (settings.breakCountdown) {
-      this.startBreakCountdown(currentTime);
+      this.updateBreakCountdown(currentTime);
     }
     this.setupOverlayObserver();
   }
@@ -238,33 +238,6 @@ class BreakEnforcer {
     countdownElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }
 
-  startBreakCountdown(initialTime) {
-    if (this.breakCountdownInterval) {
-      clearInterval(this.breakCountdownInterval);
-    }
-    this.updateBreakCountdown(initialTime);
-    this.breakCountdownInterval = setInterval(() => {
-      const countdownElement = document.getElementById("break-countdown-timer");
-      if (!countdownElement) {
-        clearInterval(this.breakCountdownInterval);
-        return;
-      }
-      const parts = countdownElement.textContent.split(":");
-      let minutes = parseInt(parts[0], 10);
-      let seconds = parseInt(parts[1], 10);
-      if (seconds > 0) {
-        seconds--;
-      } else if (minutes > 0) {
-        minutes--;
-        seconds = 59;
-      } else {
-        clearInterval(this.breakCountdownInterval);
-        return;
-      }
-      this.updateBreakCountdown(minutes * 60 + seconds);
-    }, 1000);
-  }
-
   removeBreakOverlay() {
     if (this.observer) {
         this.observer.disconnect();
@@ -277,10 +250,6 @@ class BreakEnforcer {
     const styles = document.getElementById("pomodoro-break-overlay-styles");
     if (styles) styles.remove();
 
-    if (this.breakCountdownInterval) {
-      clearInterval(this.breakCountdownInterval);
-      this.breakCountdownInterval = null;
-    }
     this.breakOverlayVisible = false;
     this.activeOverlaySettings = {};
   }

@@ -77,9 +77,10 @@ class PomodoroBackground {
       });
 
       // Listen for the timer alarm.
-      chrome.alarms.onAlarm.addListener((alarm) => {
+      // FIX: Made the listener async to properly handle async operations.
+      chrome.alarms.onAlarm.addListener(async (alarm) => {
         if (alarm.name === this.alarmName) {
-          this.handleTimerTick();
+          await this.handleTimerTick();
         }
       });
 
@@ -114,7 +115,6 @@ class PomodoroBackground {
 
         // Failsafe check for Lock-In Mode
         if (this.state.isLockedIn && this.state.lockInEndTime && Date.now() > this.state.lockInEndTime) {
-            // console.log("Lock-in mode expired, disabling failsafe.");
             this.state.isLockedIn = false;
             this.state.lockedInSessions = 0;
             this.state.lockInEndTime = null;
@@ -131,7 +131,6 @@ class PomodoroBackground {
         }
       }
     } catch (error) {
-      // console.error("Error loading state:", error);
       await this.initializeDefaultState();
     }
   }
@@ -196,7 +195,6 @@ class PomodoroBackground {
     await this.saveState();
   }
 
-  // The handleMessage function is now refactored to always return a value.
   async handleMessage(message, sender) {
       await this.initializationPromise;
       try {
@@ -288,7 +286,6 @@ class PomodoroBackground {
       }
   }
 
-  // Updates the settings and broadcasts the changes.
   async updateSettings(newSettings) {
     this.state.settings = { ...this.state.settings, ...newSettings };
     if (!this.state.isRunning && this.state.currentMode === "focus") {
@@ -298,12 +295,11 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Starts the timer.
   async startTimer() {
     this.state.isRunning = true;
     const remainingMilliseconds = this.state.currentTime * 1000;
     this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
-    chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 }); // Fire every second.
+    chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 });
 
     if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
       this.notifyContentScripts({ type: "TIMER_STARTED" });
@@ -313,11 +309,9 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Pauses the timer.
   async pauseTimer() {
     if (this.state.isLockedIn) return;
 
-    // Recalculate remaining time when pausing to get the most accurate value.
     if (this.state.targetCompletionTime) {
       const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
       this.state.currentTime = Math.max(0, remainingTime);
@@ -335,7 +329,6 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Resets the timer to the beginning of the current mode.
   async resetTimer() {
     if (this.state.isLockedIn) return;
     this.state.isRunning = false;
@@ -353,7 +346,6 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Skips the current break and starts the next focus session.
   async skipBreak() {
     if (this.state.isLockedIn) return;
     this.state.currentMode = "focus";
@@ -368,8 +360,8 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // Called by the alarm to update the timer every second.
-  handleTimerTick() {
+  // FIX: Made the handler async to ensure all operations complete.
+  async handleTimerTick() {
     if (!this.state.isRunning || !this.state.targetCompletionTime) {
       chrome.alarms.clear(this.alarmName);
       return;
@@ -377,19 +369,18 @@ class PomodoroBackground {
 
     const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
     this.state.currentTime = Math.max(0, remainingTime);
-    this.broadcastUpdate();
+    await this.broadcastUpdate();
 
     if (this.state.currentTime <= 0) {
-      this.handleTimerComplete();
+      await this.handleTimerComplete();
     }
   }
 
-  // Handles the completion of a timer.
   async handleTimerComplete() {
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
     this.state.targetCompletionTime = null;
-    let lockInJustCompleted = false; // Flag to detect when the lock ends
+    let lockInJustCompleted = false;
 
     if (this.state.settings.notifications) {
       await this.showNotification();
@@ -399,7 +390,7 @@ class PomodoroBackground {
       try {
         await this.playSound();
       } catch (e) {
-        // console.error("Error playing sound:", e);
+        // Sound playback failed
       }
     }
 
@@ -411,17 +402,15 @@ class PomodoroBackground {
         this.state.lockedInSessions--;
         if (this.state.lockedInSessions <= 0) {
           this.state.isLockedIn = false;
-          this.state.lockInEndTime = null; // Also clear the failsafe timestamp
-          lockInJustCompleted = true; // Set the flag: the lock is now off
+          this.state.lockInEndTime = null;
+          lockInJustCompleted = true;
         }
       }
     }
 
     await this.switchToNextMode();
 
-    // Only auto-start if the lock-in mode didn't just complete
     if (this.shouldAutoStart() && !lockInJustCompleted) {
-      // Using a direct call instead of setTimeout to avoid issues with the service worker being suspended.
       await this.startTimer();
     }
 
@@ -441,7 +430,7 @@ class PomodoroBackground {
         : this.state.settings.shortBreak * 60;
 
       this.state.sessionCount++;
-      this.state.nextSessionInfo = this.getNextSessionInfo(); // Store next session info in state
+      this.state.nextSessionInfo = this.getNextSessionInfo();
 
       if (this.state.settings.pauseYoutubeBreaks) {
         this.notifyContentScripts({ type: "PAUSE_ALL_YOUTUBE_TABS" });
@@ -450,7 +439,7 @@ class PomodoroBackground {
     } else {
       this.state.currentMode = "focus";
       this.state.currentTime = this.state.settings.focusTime * 60;
-      this.state.nextSessionInfo = null; // Clear next session info
+      this.state.nextSessionInfo = null;
     }
   }
 
@@ -500,7 +489,7 @@ class PomodoroBackground {
         silent: false
       });
     } catch (error) {
-      // console.error("[v0] Error showing notification:", error);
+        // Notification permission may not be granted
     }
   }
 
@@ -523,7 +512,7 @@ class PomodoroBackground {
       const sound = soundOverride || this.state.settings.soundType || 'ding'
       await chrome.runtime.sendMessage({ type: 'PLAY_SOUND', sound });
     } catch (e) {
-      // console.error('[v0] playSound failed:', e);
+      // Sound playback failed
     }
   }
 
@@ -548,31 +537,14 @@ class PomodoroBackground {
       dailyStats[today].focusTime += this.state.settings.focusTime;
 
       await chrome.storage.local.set({ dailyStats });
-      // console.log("[v0] Session recorded for", today);
       try {
         chrome.runtime.sendMessage({ type: "STATS_UPDATED" });
       } catch (e) {
         // ignore if stats page not open
       }
     } catch (error) {
-      // console.error("[v0] Error recording session:", error);
+      // Error recording session
     }
-  }
-
-  async addBlockedWebsite(website) {
-    if (!this.state.blockedWebsites.includes(website)) {
-      this.state.blockedWebsites.push(website);
-      await this.saveState();
-      // console.log("[v0] Website blocked:", website);
-    }
-  }
-
-  async removeBlockedWebsite(website) {
-    this.state.blockedWebsites = this.state.blockedWebsites.filter(
-      (w) => w !== website
-    );
-    await this.saveState();
-    // console.log("[v0] Website unblocked:", website);
   }
 
   _isUrlInList(url, list) {
@@ -581,79 +553,65 @@ class PomodoroBackground {
     }
     try {
       const currentUrl = new URL(url);
-      // Normalize the current URL for comparison: lowercase hostname and pathname, remove trailing slash
       const currentUrlStr = `${currentUrl.hostname}${currentUrl.pathname}`.toLowerCase().replace(/\/$/, "");
 
       for (const blocked of list) {
         const lowerCaseBlocked = blocked.toLowerCase();
-        // If the blocked entry is just a domain (no path), check if the current URL's hostname matches or is a subdomain.
         if (!lowerCaseBlocked.includes('/')) {
           if (currentUrl.hostname === lowerCaseBlocked || currentUrl.hostname.endsWith(`.${lowerCaseBlocked}`)) {
             return true;
           }
         } else {
-          // If the blocked entry has a path, check if the normalized current URL starts with it.
-          // This allows blocking "reddit.com/r/all" without blocking "reddit.com/r/programming"
           if (currentUrlStr.startsWith(lowerCaseBlocked)) {
             return true;
           }
         }
       }
     } catch (error) {
-      // console.error(`[v0] Invalid URL format for blocking check: ${url}`, error);
       return false;
     }
     return false;
   }
 
   isUrlBlocked(url) {
-    // 1. Master switch for the entire feature
     if (!this.state.settings.websiteBlocking) {
       return { blocked: false };
     }
 
-    const { isRunning, currentMode, settings } = this.state;
+    const { isRunning, currentMode } = this.state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
 
-    // 2. Break-time blocking is now handled exclusively by break-enforcer.js
     if (isRunning && isBreak) {
         return { blocked: false };
     }
 
-    // 3. Allowlist is the highest priority for focus and idle modes
     if (this._isUrlInList(url, this.state.allowedWebsites)) {
       return { blocked: false };
     }
 
-    // 4. Focus-time blocking logic
     if (isRunning && currentMode === 'focus') {
       return { blocked: true, reason: 'focus' };
     }
 
-    // 5. Idle-time blocking logic (timer is not running)
     if (!isRunning) {
       if (this._isUrlInList(url, this.state.blockedWebsites)) {
         return { blocked: true, reason: 'blocklist' };
       }
     }
 
-    // 6. Default case: If no other rule applies, do not block the site.
     return { blocked: false };
   }
 
-  // This function now uses async/await and try/catch blocks for robustness.
   async broadcastUpdate() {
-      // Send update to popup and options page
       try {
           await chrome.runtime.sendMessage({
               type: "TIMER_UPDATE",
               state: this.state,
           });
       } catch (e) {
-          // This error is expected if the popup/options are closed. We can ignore it.
+          // Popup/options are likely closed.
       }
 
-      // Send update to all content scripts in tabs
       try {
           const tabs = await chrome.tabs.query({});
           for (const tab of tabs) {
@@ -663,11 +621,11 @@ class PomodoroBackground {
                       state: this.state,
                   });
               } catch (e) {
-                  // This error is expected for tabs without content scripts (e.g., chrome:// pages).
+                  // Tab doesn't have a content script.
               }
           }
       } catch (e) {
-          console.error("Error querying tabs for broadcast:", e);
+          // Error querying tabs
       }
   }
 
@@ -681,26 +639,13 @@ class PomodoroBackground {
         try {
           chrome.tabs.sendMessage(tab.id, message);
         } catch (error) {
-          // console.log(
-          //   "Could not send message to tab:",
-          //   tab.id,
-          //   error.message
-          // );
+          // Could not send message to tab
         }
       }
     } catch (error) {
-      // console.error("Error notifying content scripts:", error);
+      // Error notifying content scripts
     }
   }
 }
-// console.log("stoping thew backgrounf task with po")
-// Initialize background script
-// console.log("Creating PomodoroBackground instance");
-new PomodoroBackground();
 
-// Export for testing
-try {
-  module.exports = PomodoroBackground;
-} catch (e) {
-  // Ignore, this fails in a real extension context
-}
+new PomodoroBackground();
