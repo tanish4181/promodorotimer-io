@@ -185,35 +185,6 @@ class PomodoroPopup {
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
     }
-    
-    async toggleSetting(settingName) {
-        if (!this.state || !this.state.settings) {
-            console.error("No state or settings available");
-            return;
-        }
-
-        const newValue = !this.state.settings[settingName];
-        
-        try {
-            this.state.settings[settingName] = newValue;
-            this.updateDisplay();
-
-            const newSettings = { [settingName]: newValue };
-            await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
-            
-            console.log(`Setting ${settingName} successfully toggled to ${newValue}`);
-        } catch (error) {
-            console.error(`Error toggling setting ${settingName}:`, error);
-            this.state.settings[settingName] = !newValue;
-            this.updateDisplay();
-        }
-    }
-    
-    updateToggleButton(button, isActive) {
-        if (!button) return;
-        button.classList.toggle("active", isActive);
-    }
-
     async loadState() {
         console.log("Loading state from background script.");
         try {
@@ -443,21 +414,11 @@ class PomodoroPopup {
 
     // Cleanup when popup closes
     destroy() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-        }
+        // This method is currently not used but can be expanded for future cleanup needs.
     }
 }
 
-// Initialize popup and handle cleanup
-let pomodoroPopup;
+// Initialize popup
 document.addEventListener("DOMContentLoaded", () => {
-    pomodoroPopup = new PomodoroPopup();
-});
-
-// Cleanup on page unload
-window.addEventListener("beforeunload", () => {
-    if (pomodoroPopup) {
-        pomodoroPopup.destroy();
-    }
+    new PomodoroPopup();
 });
