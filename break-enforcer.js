@@ -1,7 +1,7 @@
 class BreakEnforcer {
   constructor() {
     this.breakOverlayVisible = false;
-    // REMOVED: this.breakCountdownInterval = null;
+    this.countdownInterval = null;
     this.observer = null;
     this.currentState = null;
     this.activeOverlaySettings = {};
@@ -205,6 +205,38 @@ class BreakEnforcer {
       this.updateBreakCountdown(currentTime);
     }
     this.setupOverlayObserver();
+    this.startTicking();
+  }
+
+  startTicking() {
+      this.stopTicking();
+      if (!this.currentState?.isRunning || !this.currentState?.targetCompletionTime) return;
+
+      this.countdownInterval = setInterval(() => this.tick(), 250);
+      this.tick();
+  }
+
+  stopTicking() {
+      if (this.countdownInterval) {
+          clearInterval(this.countdownInterval);
+          this.countdownInterval = null;
+      }
+  }
+
+  tick() {
+      if (!this.currentState?.targetCompletionTime) {
+          this.stopTicking();
+          return;
+      }
+
+      const remaining = this.currentState.targetCompletionTime - Date.now();
+      const remainingSeconds = Math.max(0, Math.round(remaining / 1000));
+
+      this.updateBreakCountdown(remainingSeconds);
+
+      if (remaining < 0) {
+          this.stopTicking();
+      }
   }
 
   setupOverlayObserver() {
@@ -239,6 +271,7 @@ class BreakEnforcer {
   }
 
   removeBreakOverlay() {
+    this.stopTicking();
     if (this.observer) {
         this.observer.disconnect();
         this.observer = null;

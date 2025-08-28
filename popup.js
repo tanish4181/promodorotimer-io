@@ -47,6 +47,7 @@ class PomodoroPopup {
         };
 
         this.state = {};
+        this.tickInterval = null;
         
         this.initialize();
     }
@@ -62,6 +63,12 @@ class PomodoroPopup {
                 this.state = message.state;
                 this.updateDisplay();
                 this.renderTodos(); // Re-render todos with the new state
+
+                if (this.state.isRunning) {
+                    this.startTicking();
+                } else {
+                    this.stopTicking();
+                }
             }
             if (message.type === "SETTINGS_UPDATED") {
                 // Reflect settings changes immediately.
@@ -71,6 +78,42 @@ class PomodoroPopup {
                 this.updateDisplay();
             }
         });
+    }
+
+    startTicking() {
+        this.stopTicking(); // Ensure no multiple intervals are running
+        if (!this.state.isRunning || !this.state.targetCompletionTime) return;
+
+        this.tickInterval = setInterval(() => this.tick(), 250);
+        this.tick(); // Run once immediately for instant update
+    }
+
+    stopTicking() {
+        if (this.tickInterval) {
+            clearInterval(this.tickInterval);
+            this.tickInterval = null;
+        }
+    }
+
+    tick() {
+        if (!this.state.targetCompletionTime) {
+            this.stopTicking();
+            return;
+        }
+
+        const remaining = this.state.targetCompletionTime - Date.now();
+        const remainingSeconds = Math.max(0, Math.round(remaining / 1000));
+
+        // Only update if the second has changed to avoid unnecessary re-renders
+        if (this.state.currentTime !== remainingSeconds) {
+            this.state.currentTime = remainingSeconds;
+            this.updateTimerDisplay();
+        }
+
+        if (remaining < 0) {
+            this.stopTicking();
+            // The display will be fully updated by the next TIMER_UPDATE from background
+        }
     }
 
     // Updates the timer text display.
@@ -226,6 +269,9 @@ class PomodoroPopup {
         } finally {
             this.updateDisplay();
             this.renderTodos();
+            if (this.state.isRunning) {
+                this.startTicking();
+            }
         }
     }
 
