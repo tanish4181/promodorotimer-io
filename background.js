@@ -13,6 +13,7 @@ class PomodoroBackground {
       lockedInSessions: 0,
       lockInEndTime: null, // Failsafe timestamp for lock-in mode.
       targetCompletionTime: null, // Timestamp for when the current timer is expected to end.
+      notificationSent: false, // FIX: Flag to prevent notification spam.
       settings: {
         focusTime: 25,
         shortBreak: 5,
@@ -56,7 +57,6 @@ class PomodoroBackground {
     try {
       await this.loadState();
 
-      // This new listener structure is fully async and more reliable.
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         (async () => {
             const response = await this.handleMessage(message, sender);
@@ -65,7 +65,6 @@ class PomodoroBackground {
         return true;
       });
 
-      // Listen for changes to the settings in storage.
       chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "local" && changes.settings) {
           this.state.settings = changes.settings.newValue;
@@ -76,15 +75,12 @@ class PomodoroBackground {
         }
       });
 
-      // Listen for the timer alarm.
-      // FIX: Made the listener async to properly handle async operations.
       chrome.alarms.onAlarm.addListener(async (alarm) => {
         if (alarm.name === this.alarmName) {
           await this.handleTimerTick();
         }
       });
 
-      // Handle extension lifecycle events.
       chrome.runtime.onStartup.addListener(() => this.loadState());
       chrome.runtime.onInstalled.addListener((details) => {
         this.initializeDefaultState();
@@ -110,22 +106,18 @@ class PomodoroBackground {
       if (result.timerState) {
         const defaultSettings = this.state.settings;
         this.state = { ...this.state, ...result };
-        // Merge loaded settings with defaults to ensure new settings are not missing.
         this.state.settings = { ...defaultSettings, ...this.state.settings };
 
-        // Failsafe check for Lock-In Mode
         if (this.state.isLockedIn && this.state.lockInEndTime && Date.now() > this.state.lockInEndTime) {
             this.state.isLockedIn = false;
             this.state.lockedInSessions = 0;
             this.state.lockInEndTime = null;
         }
 
-        // If the timer was running, recalculate currentTime based on the targetCompletionTime.
         if (this.state.isRunning && this.state.targetCompletionTime) {
           const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
           this.state.currentTime = Math.max(0, remainingTime);
           if (this.state.currentTime === 0) {
-            // This ensures that if the timer finished while the worker was inactive, it completes.
             await this.handleTimerComplete();
           }
         }
@@ -158,6 +150,7 @@ class PomodoroBackground {
       totalSessions: 0,
       lockInEndTime: null,
       targetCompletionTime: null,
+      notificationSent: false,
       settings: {
         focusTime: 25,
         shortBreak: 5,
@@ -297,6 +290,7 @@ class PomodoroBackground {
 
   async startTimer() {
     this.state.isRunning = true;
+    this.state.notificationSent = false; // FIX: Reset notification flag on start.
     const remainingMilliseconds = this.state.currentTime * 1000;
     this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
     chrome.alarms.create(this.alarmName, { periodInMinutes: 1 / 60 });
@@ -332,6 +326,7 @@ class PomodoroBackground {
   async resetTimer() {
     if (this.state.isLockedIn) return;
     this.state.isRunning = false;
+    this.state.notificationSent = false;
     chrome.alarms.clear(this.alarmName);
     this.state.targetCompletionTime = null;
 
@@ -351,8 +346,9 @@ class PomodoroBackground {
     this.state.currentMode = "focus";
     this.state.currentTime = this.state.settings.focusTime * 60;
     this.state.isRunning = false;
+    this.state.notificationSent = false;
     this.state.targetCompletionTime = null;
-    this.state.nextSessionInfo = null; // Clear next session info
+    this.state.nextSessionInfo = null;
 
     this.notifyContentScripts({ type: "BREAK_SKIPPED" });
 
@@ -360,7 +356,6 @@ class PomodoroBackground {
     this.broadcastUpdate();
   }
 
-  // FIX: Made the handler async to ensure all operations complete.
   async handleTimerTick() {
     if (!this.state.isRunning || !this.state.targetCompletionTime) {
       chrome.alarms.clear(this.alarmName);
@@ -377,6 +372,8 @@ class PomodoroBackground {
   }
 
   async handleTimerComplete() {
+    if (this.state.notificationSent) return; // FIX: Prevent multiple completions.
+
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName);
     this.state.targetCompletionTime = null;
@@ -393,6 +390,8 @@ class PomodoroBackground {
         // Sound playback failed
       }
     }
+    
+    this.state.notificationSent = true; // FIX: Set flag after sending notification.
 
     if (this.state.currentMode === "focus") {
       this.state.totalSessions++;
