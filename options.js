@@ -243,6 +243,24 @@ class ModernPomodoroOptions {
     }
   }
 
+  async sendMessageWithRetry(message, maxRetries = 3, delay = 100) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await chrome.runtime.sendMessage(message);
+            if (chrome.runtime.lastError) {
+                throw new Error(chrome.runtime.lastError.message);
+            }
+            return response;
+        } catch (error) {
+            if (i === maxRetries - 1) {
+                console.error(`Failed to send message after ${maxRetries} attempts.`, error);
+                throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        }
+    }
+  }
+
   // Main initialization function for the options page.
   async initialize() {
     this.initializeElements();
@@ -282,22 +300,21 @@ class ModernPomodoroOptions {
     }
   }
 
-  // Loads settings from the background script or chrome.storage as a fallback.
+  // Loads settings from the background script.
   async loadSettings() {
     try {
-      // Prioritize getting settings from the active background script.
-      const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
+      const response = await this.sendMessageWithRetry({ type: "GET_STATE" });
       if (response && response.state) {
         this.currentSettings = response.state.settings;
-        this.isLockedIn = response.state.isLockedIn; // Store the lock-in state
+        this.isLockedIn = response.state.isLockedIn;
         this.backgroundAvailable = true;
-    } else {
-        throw new Error("Background script not available or returned invalid state.");
+      } else {
+        throw new Error("Background script did not return a valid state.");
       }
     } catch (error) {
-      // Fallback to direct storage access if the background script is inactive.
-      const result = await chrome.storage.local.get("settings");
-      this.currentSettings = result.settings || this.getDefaultSettings();
+      console.error("Failed to load settings from background script:", error);
+      this.showStatus("Could not load settings. Please reload the extension.", "error");
+      this.currentSettings = this.getDefaultSettings();
       this.backgroundAvailable = false;
     }
     this.populateSettings();

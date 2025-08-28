@@ -357,12 +357,14 @@ getCompletedTasksForDate(dateStr) {
       <div class="container">
         ${this.renderHeader()}
         ${this.renderNavigation()}
-        ${this.renderCurrentView()}
+        <div id="view-container">
+            ${this.renderCurrentView()}
+        </div>
       </div>
     `
     
     // Add event listeners after rendering
-    setTimeout(() => this.setupEventListeners(), 100)
+    this.setupEventListeners()
   }
 
   renderHeader() {
@@ -1165,52 +1167,51 @@ getCompletedTasksForDate(dateStr) {
   }
 
   setupEventListeners() {
-    // Navigation
+    // Navigation (attached once)
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const view = e.currentTarget.dataset.view
-        this.switchView(view)
-      })
-    })
+        const view = e.currentTarget.dataset.view;
+        this.switchView(view);
+      });
+    });
 
-    // View full heatmap button
-    const viewFullBtn = document.querySelector('.view-full-btn')
-    if (viewFullBtn) {
-      viewFullBtn.addEventListener('click', (e) => {
-        const view = e.currentTarget.dataset.view
-        this.switchView(view)
-      })
-    }
-
-    // Goals editing
-    const editGoalsBtn = document.getElementById('editGoalsBtn')
-    const saveGoalsBtn = document.getElementById('saveGoalsBtn')
-    const cancelGoalsBtn = document.getElementById('cancelGoalsBtn')
-    
-    if (editGoalsBtn) {
-      editGoalsBtn.addEventListener('click', () => {
-        const goalSettings = document.querySelector('.goal-settings')
-        const goalsHeader = document.querySelector('.section-header h2').closest('.section-header');
-        goalsHeader.after(goalSettings); // Insert after the goals header
-        goalSettings.style.display = 'block'; // Make it visible
-        editGoalsBtn.style.display = 'none'
-      })
-    }
-
-    if (saveGoalsBtn) {
-      saveGoalsBtn.addEventListener('click', () => this.saveGoals())
-    }
-
-    if (cancelGoalsBtn) {
-      cancelGoalsBtn.addEventListener('click', () => this.cancelGoalsEdit())
-    }
-
-    // **REFACTOR THIS PART**
+    // Tooltip element (created once)
     if (!this.tooltipElement) {
         this.tooltipElement = document.createElement('div');
         this.tooltipElement.className = 'heatmap-tooltip';
-        this.tooltipElement.style.display = 'none'; // Initially hidden
+        this.tooltipElement.style.display = 'none';
         document.body.appendChild(this.tooltipElement);
+    }
+
+    // Initial setup for the current view's listeners
+    this.setupViewEventListeners();
+  }
+
+  setupViewEventListeners() {
+    // These listeners need to be re-attached whenever the view content changes.
+    const viewFullBtn = document.querySelector('.view-full-btn');
+    if (viewFullBtn) {
+      viewFullBtn.addEventListener('click', (e) => {
+        this.switchView(e.currentTarget.dataset.view);
+      });
+    }
+
+    const editGoalsBtn = document.getElementById('editGoalsBtn');
+    if (editGoalsBtn) {
+      editGoalsBtn.addEventListener('click', () => {
+        document.querySelector('.goal-settings').style.display = 'block';
+        editGoalsBtn.style.display = 'none';
+      });
+    }
+
+    const saveGoalsBtn = document.getElementById('saveGoalsBtn');
+    if (saveGoalsBtn) {
+      saveGoalsBtn.addEventListener('click', () => this.saveGoals());
+    }
+
+    const cancelGoalsBtn = document.getElementById('cancelGoalsBtn');
+    if (cancelGoalsBtn) {
+      cancelGoalsBtn.addEventListener('click', () => this.cancelGoalsEdit());
     }
 
     document.querySelectorAll('.heatmap-cell, .quick-heatmap-cell').forEach(cell => {
@@ -1220,23 +1221,21 @@ getCompletedTasksForDate(dateStr) {
   }
 
   switchView(view) {
-    this.currentView = view
+    this.currentView = view;
     
-    // Update navigation
+    // Update navigation active state
     document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.view === view)
-    })
+      btn.classList.toggle('active', btn.dataset.view === view);
+    });
     
-    // Update content
-    const contentContainer = document.querySelector('.container')
-    contentContainer.innerHTML = `
-      ${this.renderHeader()}
-      ${this.renderNavigation()}
-      ${this.renderCurrentView()}
-    `
+    // Update only the view content
+    const viewContainer = document.getElementById('view-container');
+    if (viewContainer) {
+        viewContainer.innerHTML = this.renderCurrentView();
+    }
     
-    // Re-setup event listeners
-    setTimeout(() => this.setupEventListeners(), 100)
+    // Re-setup event listeners for the new view
+    this.setupViewEventListeners();
   }
 
   async saveGoals() {

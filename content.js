@@ -45,24 +45,18 @@ class YouTubeIntegration {
       console.log("Not on YouTube, skipping integration")
       return
     }
-
-    // Load timer state
-    await this.loadTimerState()
     
     // Set up message listener
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message, sender, sendResponse)
     })
 
-    // Initial setup
-    this.setupYouTubeIntegration()
+    // Get initial state
+    this.getInitialState();
     
     // Set up mutation observer for dynamic content
     this.setupMutationObserver()
     
-    // Set up periodic state refresh
-    this.setupPeriodicRefresh()
-
     // Listen for YouTube's own navigation events for faster updates
     document.addEventListener('yt-navigate-finish', () => {
       console.log('YouTube navigation finished, re-running setup.');
@@ -74,32 +68,37 @@ class YouTubeIntegration {
     return window.location.hostname.includes('youtube.com') || window.location.hostname.includes('youtu.be')
   }
 
-  async loadTimerState() {
-    try {
-      const result = await chrome.storage.local.get(['timerState', 'currentTime', 'isRunning', 'currentMode', 'settings'])
-      this.timerState = {
-        timerState: result.timerState || 'focus',
-        currentTime: result.currentTime || 25 * 60,
-        isRunning: result.isRunning || false,
-        currentMode: result.currentMode || 'focus',
-        settings: result.settings || {}
-      }
-      console.log("Timer state loaded:", this.timerState)
-    } catch (error) {
-      console.error("Error loading timer state:", error)
-      if (error.message?.includes("Extension context invalidated")) {
-        console.log("Context invalidated, reloading page to re-establish connection.");
-        window.location.reload();
-      }
+  async sendMessageWithRetry(message, maxRetries = 3, delay = 100) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await chrome.runtime.sendMessage(message);
+            if (chrome.runtime.lastError) {
+                throw new Error(chrome.runtime.lastError.message);
+            }
+            return response;
+        } catch (error) {
+            if (i === maxRetries - 1) {
+                console.error(`Failed to send message after ${maxRetries} attempts.`, error);
+                throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        }
     }
   }
 
-  setupPeriodicRefresh() {
-    // Refresh timer state every 5 seconds to stay in sync
-    setInterval(async () => {
-      await this.loadTimerState()
-      this.setupYouTubeIntegration()
-    }, 5000)
+  async getInitialState() {
+    try {
+        const response = await this.sendMessageWithRetry({ type: "GET_STATE" });
+        if (response && response.state) {
+            this.timerState = response.state;
+            console.log("Initial timer state loaded:", this.timerState);
+            this.setupYouTubeIntegration();
+        } else {
+            console.warn("Could not get initial state from background script.");
+        }
+    } catch (error) {
+        console.error("Failed to get initial state from background script:", error);
+    }
   }
 
   setupYouTubeIntegration() {

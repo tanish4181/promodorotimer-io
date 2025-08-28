@@ -281,8 +281,17 @@ class PomodoroBackground {
 
   async updateSettings(newSettings) {
     this.state.settings = { ...this.state.settings, ...newSettings };
-    if (!this.state.isRunning && this.state.currentMode === "focus") {
-      this.state.currentTime = this.state.settings.focusTime * 60;
+    // If the timer isn't running, update the current time to reflect the new setting for the current mode.
+    if (!this.state.isRunning) {
+        const timeMap = {
+            focus: this.state.settings.focusTime * 60,
+            shortBreak: this.state.settings.shortBreak * 60,
+            longBreak: this.state.settings.longBreak * 60,
+        };
+        // Ensure the current mode exists in the map before assigning.
+        if (timeMap[this.state.currentMode]) {
+            this.state.currentTime = timeMap[this.state.currentMode];
+        }
     }
     await this.saveState();
     this.broadcastUpdate();

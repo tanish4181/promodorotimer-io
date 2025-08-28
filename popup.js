@@ -190,38 +190,40 @@ class PomodoroPopup {
         button.classList.toggle("active", isActive);
     }
 
-    // FIX: Made state loading more robust to handle inactive service worker.
+    async sendMessageWithRetry(message, maxRetries = 3, delay = 100) {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await chrome.runtime.sendMessage(message);
+                if (chrome.runtime.lastError) {
+                    // If there's a runtime error, it's likely the background script isn't ready.
+                    throw new Error(chrome.runtime.lastError.message);
+                }
+                return response;
+            } catch (error) {
+                if (i === maxRetries - 1) {
+                    console.error(`Failed to send message after ${maxRetries} attempts.`, error);
+                    throw error;
+                }
+                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            }
+        }
+    }
+
     async loadState() {
         console.log("Loading state for popup.");
         try {
-            // First, try to get the most up-to-date state from the background script.
-            const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
+            const response = await this.sendMessageWithRetry({ type: "GET_STATE" });
             if (response && response.state) {
                 this.state = response.state;
                 console.log("State loaded successfully from background script.");
             } else {
-                // If the background script is inactive, it might return no response.
-                // Fallback to loading directly from storage.
-                throw new Error("Background script did not return state. Falling back to storage.");
+                throw new Error("Background script did not return a valid state.");
             }
         } catch (error) {
-            console.warn("Could not get state from background script, loading from storage instead. Error:", error.message);
-            // Fallback: If messaging fails, load the last known state from storage.
-            // This prevents the UI from resetting to defaults.
-            try {
-                const result = await chrome.storage.local.get(null); // Get all stored data
-                if (result && result.settings) {
-                    this.state = result;
-                } else {
-                    // Only if storage is also empty, initialize defaults.
-                    this.initializeDefaultState();
-                }
-            } catch (storageError) {
-                console.error("Error loading state from storage:", storageError);
-                this.initializeDefaultState();
-            }
+            console.error("Failed to load state from background script:", error);
+            this.showErrorState("Could not connect to the timer. Please try again.");
+            this.initializeDefaultState(); // Load a default state to prevent UI errors
         } finally {
-            // Always update the display after attempting to load the state.
             this.updateDisplay();
             this.renderTodos();
         }
@@ -438,6 +440,21 @@ class PomodoroPopup {
     // Cleanup when popup closes
     destroy() {
         // This method is currently not used but can be expanded for future cleanup needs.
+    }
+
+    showErrorState(message) {
+        // A simple way to show an error in the UI without adding new elements.
+        if (this.elements.timerText) {
+            this.elements.timerText.textContent = "Error";
+            this.elements.timerText.style.fontSize = "3rem";
+        }
+        if (this.elements.timerLabel) {
+            this.elements.timerLabel.textContent = message;
+            this.elements.timerLabel.style.fontSize = "0.8rem";
+        }
+        // Hide all control buttons during an error state
+        if (this.elements.startBtn) this.elements.startBtn.style.display = 'none';
+        if (this.elements.pauseBtn) this.elements.pauseBtn.style.display = 'none';
     }
 }
 
