@@ -185,6 +185,11 @@ class PomodoroPopup {
         });
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
     }
+    updateToggleButton(button, isActive) {
+        if (!button) return;
+        button.classList.toggle("active", isActive);
+    }
+
     async loadState() {
         console.log("Loading state from background script.");
         try {
