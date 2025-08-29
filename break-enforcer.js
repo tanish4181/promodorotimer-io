@@ -281,7 +281,6 @@ class BreakEnforcer {
       this.breakCountdownInterval = null;
     }
   }
-  }
 
   removeBreakOverlay() {
     if (this.observer) {
