@@ -198,8 +198,14 @@ class BreakEnforcer {
       .next-session-info span { font-size: 0.9rem; font-weight: 400; opacity: 0.8; }
     `;
 
-    document.documentElement.appendChild(style);
-    document.documentElement.appendChild(overlay);
+    if (document.documentElement) {
+      document.documentElement.appendChild(style);
+      document.documentElement.appendChild(overlay);
+    } else {
+      console.error("Could not create break overlay, documentElement not found.");
+      this.breakOverlayVisible = false; // Reset visibility flag
+      return;
+    }
 
     if (settings.breakCountdown) {
       this.startBreakCountdown(currentTime);

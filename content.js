@@ -271,7 +271,9 @@ class YouTubeIntegration {
     if (!style) {
       style = document.createElement('style');
       style.id = styleId;
-      document.head.appendChild(style);
+      if (document.head) {
+        document.head.appendChild(style);
+      }
     }
     
     style.textContent = `
@@ -349,7 +351,9 @@ class YouTubeIntegration {
     if (existingIndicator) {
       existingIndicator.remove()
     }
-    document.body.appendChild(indicator)
+    if (document.body) {
+      document.body.appendChild(indicator)
+    }
   }
 
   hideFocusModeIndicator() {

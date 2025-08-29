@@ -185,6 +185,10 @@ class AdvancedWebsiteBlocker {
     this.injectOverlayStyles();
 
     // Add to page
+    if (!document.documentElement) {
+      console.error("Cannot block page: documentElement not found.");
+      return;
+    }
     document.documentElement.appendChild(this.overlay);
 
     // Bind event listeners
@@ -325,7 +329,12 @@ class AdvancedWebsiteBlocker {
       }
     `;
 
-    document.head.appendChild(style);
+    const target = document.head || document.documentElement;
+    if (target) {
+      target.appendChild(style);
+    } else {
+      console.error("Could not inject overlay styles, head or documentElement not found.");
+    }
   }
 
   bindOverlayEvents() {
@@ -390,6 +399,7 @@ class AdvancedWebsiteBlocker {
   }
 
   hidePageContent() {
+    if (!document.documentElement || !document.body) return;
     // Prevent scrolling
     document.documentElement.classList.add("pomodoro-blocked");
     
@@ -407,6 +417,7 @@ class AdvancedWebsiteBlocker {
   }
 
   showPageContent() {
+    if (!document.documentElement || !document.body) return;
     // Remove body hiding
     document.body.style.visibility = "visible";
     document.body.style.overflow = "auto";
@@ -461,8 +472,8 @@ class AdvancedWebsiteBlocker {
 
 // Cleanup on page unload
 window.addEventListener("beforeunload", () => {
-  if (blocker) {
-    blocker.cleanup();
+  if (window.__pomodoroBlocker) {
+    window.__pomodoroBlocker.cleanup();
   }
 });
 
@@ -472,11 +483,21 @@ chrome.runtime.onConnect.addListener(() => {
 });
 
 // Add fade out animation CSS
-const fadeOutStyle = document.createElement("style");
-fadeOutStyle.textContent = `
-  @keyframes pomodoroFadeOut {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.9); }
-  }
-`;
-document.head.appendChild(fadeOutStyle);
+function addFadeOutStyle() {
+    if (document.getElementById('pomodoro-fade-stylesheet')) return;
+    const fadeOutStyle = document.createElement("style");
+    fadeOutStyle.id = 'pomodoro-fade-stylesheet';
+    fadeOutStyle.textContent = `
+      @keyframes pomodoroFadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.9); }
+      }
+    `;
+    (document.head || document.documentElement).appendChild(fadeOutStyle);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addFadeOutStyle);
+} else {
+    addFadeOutStyle();
+}
