@@ -14,28 +14,24 @@ class PomodoroPopup {
             lockInSettings: document.getElementById("lock-in-settings"),
             lockInSessions: document.getElementById("lock-in-sessions"),
             sessionCount: document.getElementById("session-count"),
-            currentMode: document.getElementById("current-mode"),
-            focusTimeSelect: document.getElementById("focus-time"),
-            breakTimeSelect: document.getElementById("break-time"),
             helpBtn: document.getElementById("help-btn"),
             settingsBtn: document.getElementById("settings-btn"),
             statsBtn: document.getElementById("stats-btn"),
-            supportBtn: document.getElementById("support-btn"),
             todoInput: document.getElementById("todo-input"),
             addTodoBtn: document.getElementById("add-todo-btn"),
             todoList: document.getElementById("todo-list"),
             supportBtnMain: document.getElementById("support-btn-main"),
-            openStatsBtn: document.getElementById("open-stats"),
-            openSettingsBtn: document.getElementById("open-settings"),
         };
         this.state = {};
+        this.totalSessions = 0;
         this.initialize();
     }
 
     async initialize() {
         this.initializeEventListeners();
         await this.loadState();
-        chrome.runtime.onMessage.addListener((message) => {
+
+        chrome.runtime.onMessage.addListener(async (message) => {
             if (message.type === "TIMER_UPDATE") {
                 this.state = message.state;
                 this.updateDisplay();
@@ -45,6 +41,10 @@ class PomodoroPopup {
                 if (message.settings) {
                     this.state.settings = { ...this.state.settings, ...message.settings };
                 }
+                this.updateDisplay();
+            }
+            if (message.type === "STATS_UPDATED") {
+                await this.updateTotalSessions();
                 this.updateDisplay();
             }
         });
@@ -62,9 +62,6 @@ class PomodoroPopup {
         const seconds = currentTime % 60;
         this.elements.timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         this.updateProgressCircle();
-        if (currentTime === 0 && this.state.isRunning) {
-            this.sendMessageToBackground("GET_STATE");
-        }
     }
 
     updateProgressCircle() {
@@ -72,21 +69,9 @@ class PomodoroPopup {
         if (!circle) return;
         const totalTime = this.getTotalTimeForCurrentMode();
         const progress = totalTime > 0 ? (totalTime - this.state.currentTime) / totalTime : 0;
-        let progressRing = circle.querySelector('.progress-ring');
-        if (!progressRing) {
-            progressRing = document.createElement('div');
-            progressRing.className = 'progress-ring';
-            progressRing.innerHTML = `
-                <svg class="progress-svg" viewBox="0 0 120 120">
-                    <circle class="progress-track" cx="60" cy="60" r="54" />
-                    <circle class="progress-fill" cx="60" cy="60" r="54" />
-                </svg>
-            `;
-            circle.appendChild(progressRing);
-        }
-        const progressFill = progressRing.querySelector('.progress-fill');
+        const progressFill = circle.querySelector('.progress-fill');
         if (progressFill) {
-            const circumference = 2 * Math.PI * 54;
+            const circumference = 2 * Math.PI * 110;
             const strokeDashoffset = circumference - (progress * circumference);
             progressFill.style.strokeDashoffset = strokeDashoffset;
         }
@@ -159,12 +144,7 @@ class PomodoroPopup {
         this.elements.helpBtn?.addEventListener("click", () => this.openHelpPage());
         this.elements.settingsBtn?.addEventListener("click", () => this.openSettings());
         this.elements.statsBtn?.addEventListener("click", () => this.openStats());
-        this.elements.supportBtn?.addEventListener("click", () => this.openSupportPage());
         this.elements.supportBtnMain?.addEventListener("click", () => this.openSupportPage());
-        this.elements.openStatsBtn?.addEventListener("click", () => this.openStats());
-        this.elements.openSettingsBtn?.addEventListener("click", () => this.openSettings());
-        this.elements.focusTimeSelect?.addEventListener("change", () => this.updateSettings());
-        this.elements.breakTimeSelect?.addEventListener("change", () => this.updateSettings());
         this.elements.addTodoBtn?.addEventListener("click", () => this.addTodo());
         this.elements.todoInput?.addEventListener("keypress", (e) => {
             if (e.key === "Enter") this.addTodo();
@@ -181,6 +161,7 @@ class PomodoroPopup {
                     const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
                     this.state.currentTime = Math.max(0, remainingTime);
                 }
+                await this.updateTotalSessions();
                 this.updateDisplay();
                 this.renderTodos();
             }
@@ -206,31 +187,44 @@ class PomodoroPopup {
       };
     }
 
+    async updateTotalSessions() {
+        try {
+            const result = await chrome.storage.local.get(['dailyStats']);
+            const dailyStats = result.dailyStats || {};
+            let total = 0;
+            for (const date in dailyStats) {
+                total += dailyStats[date].focusSessions || 0;
+            }
+            this.totalSessions = total;
+        } catch (error) {
+            console.error("Error calculating total sessions:", error);
+            this.totalSessions = 0;
+        }
+    }
+
     updateDisplay() {
         if (!this.state) return;
         this.updateTimerDisplay();
         if (this.elements.timerLabel) {
-            const labelMap = { 'focus': 'Focus Time', 'shortBreak': 'Short Break', 'longBreak': 'Long Break' };
-            this.elements.timerLabel.textContent = labelMap[this.state.currentMode] || 'Focus Time';
+            const labelMap = { 'focus': 'Focus', 'shortBreak': 'Short Break', 'longBreak': 'Long Break' };
+            this.elements.timerLabel.textContent = labelMap[this.state.currentMode] || 'Focus';
         }
-        if (this.elements.currentMode) {
-            const modeMap = { 'focus': 'Focus', 'shortBreak': 'Short Break', 'longBreak': 'Long Break' };
-            this.elements.currentMode.textContent = modeMap[this.state.currentMode] || 'Focus';
+        if (this.elements.sessionCount) {
+             this.elements.sessionCount.textContent = this.totalSessions;
         }
-        if (this.elements.sessionCount) this.elements.sessionCount.textContent = this.state.sessionCount;
         if (this.elements.timerCircle) {
             this.elements.timerCircle.classList.toggle("running", this.state.isRunning);
-            this.elements.timerCircle.classList.toggle("focus", this.state.currentMode === 'focus');
         }
-        if (this.elements.startBtn) this.elements.startBtn.style.display = this.state.isRunning ? 'none' : 'block';
-        if (this.elements.pauseBtn) this.elements.pauseBtn.style.display = this.state.isRunning ? 'block' : 'none';
+        if (this.elements.startBtn) this.elements.startBtn.style.display = this.state.isRunning ? 'none' : 'flex';
+        if (this.elements.pauseBtn) this.elements.pauseBtn.style.display = this.state.isRunning ? 'flex' : 'none';
+        
         const isBreakMode = this.state.currentMode === "shortBreak" || this.state.currentMode === "longBreak";
-        if (this.elements.skipBreakContainer) this.elements.skipBreakContainer.style.display = isBreakMode ? "flex" : "none";
+        if (this.elements.skipBreakContainer) this.elements.skipBreakContainer.style.display = isBreakMode && !this.state.isRunning ? "flex" : "none";
+        
         document.body.className = "";
         if (this.state.currentMode === "shortBreak") document.body.classList.add("break-mode");
         if (this.state.currentMode === "longBreak") document.body.classList.add("long-break-mode");
-        if (this.elements.focusTimeSelect) this.elements.focusTimeSelect.value = this.state.settings.focusTime;
-        if (this.elements.breakTimeSelect) this.elements.breakTimeSelect.value = this.state.settings.shortBreak;
+        
         if (this.state.isLockedIn) {
             this.elements.pauseBtn.disabled = true;
             this.elements.resetBtn.disabled = true;
@@ -240,26 +234,9 @@ class PomodoroPopup {
             this.elements.lockInSettings.classList.remove('visible');
         } else {
             this.elements.pauseBtn.disabled = false;
-            this.elements.resetBtn.disabled = false;
+            this.elements.resetBtn.disabled = this.state.isRunning;
             this.elements.skipBreakBtn.disabled = false;
             this.elements.lockInBtn.disabled = this.state.isRunning;
-        }
-    }
-
-    async updateSettings() {
-        const newSettings = {
-            ...this.state.settings,
-            focusTime: Number(this.elements.focusTimeSelect.value),
-            shortBreak: Number(this.elements.breakTimeSelect.value),
-        };
-        try {
-            const response = await chrome.runtime.sendMessage({ type: "SETTINGS_UPDATED", settings: newSettings });
-            if (response && response.success) {
-                this.state.settings = newSettings;
-                this.updateDisplay();
-            }
-        } catch (error) {
-            console.error("Error sending settings update to background:", error);
         }
     }
     
@@ -293,14 +270,15 @@ class PomodoroPopup {
   
     renderTodos() {
       if (!this.elements.todoList) return;
-      const activeTodos = this.state.todos.filter(todo => !todo.completed);
-      const completedTodos = this.state.todos.filter(todo => todo.completed);
-      let todoHtml = activeTodos.length > 0 ? `<div class="todo-section-title">Active Tasks (${activeTodos.length})</div>` : `<div class="todo-empty">No active tasks. Add one!</div>`;
-      activeTodos.forEach(todo => {
-        todoHtml += `<div class="todo-item" data-id="${todo.id}"><button class="todo-checkbox"></button><span class="todo-text">${todo.text}</span><button class="todo-delete">×</button></div>`;
-      });
-      if (completedTodos.length > 0) {
-        todoHtml += `<div class="todo-section-title">Completed (${completedTodos.length})</div>`;
+      const activeTodos = this.state.todos?.filter(todo => !todo.completed) || [];
+      const completedTodos = this.state.todos?.filter(todo => todo.completed) || [];
+      let todoHtml = '';
+      if (activeTodos.length === 0 && completedTodos.length === 0) {
+        todoHtml = `<div class="todo-empty">No tasks yet.</div>`;
+      } else {
+        activeTodos.forEach(todo => {
+          todoHtml += `<div class="todo-item" data-id="${todo.id}"><button class="todo-checkbox"></button><span class="todo-text">${todo.text}</span><button class="todo-delete">×</button></div>`;
+        });
         completedTodos.forEach(todo => {
           todoHtml += `<div class="todo-item completed" data-id="${todo.id}"><button class="todo-checkbox">✓</button><span class="todo-text">${todo.text}</span><button class="todo-delete">×</button></div>`;
         });
@@ -335,3 +313,4 @@ document.addEventListener("DOMContentLoaded", () => {
 window.addEventListener("beforeunload", () => {
     if (pomodoroPopup) pomodoroPopup.destroy();
 });
+

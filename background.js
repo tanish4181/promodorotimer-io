@@ -7,11 +7,11 @@ class PomodoroBackground {
       isRunning: false, // Whether the timer is currently running.
       currentMode: "focus", // The current timer mode.
       sessionCount: 1, // The number of focus sessions completed in the current cycle.
-      totalSessions: 0, // The total number of focus sessions completed.
       isLockedIn: false,
       lockedInSessions: 0,
       lockInEndTime: null, // Failsafe timestamp for lock-in mode.
       targetCompletionTime: null, // Timestamp for when the current timer is expected to end.
+      currentSessionTotalTime: null, // The total duration for the currently active session.
       settings: {
         focusTime: 25,
         shortBreak: 5,
@@ -108,9 +108,9 @@ class PomodoroBackground {
     try {
       const result = await chrome.storage.local.get([
         "currentTime", "isRunning", "currentMode",
-        "sessionCount", "totalSessions", "settings", "lastActiveTime",
+        "sessionCount", "settings", "lastActiveTime",
         "blockedWebsites", "allowedWebsites", "todos", "isLockedIn", "lockedInSessions",
-        "targetCompletionTime", "lockInEndTime"
+        "targetCompletionTime", "lockInEndTime", "currentSessionTotalTime"
       ]);
 
       if (result.currentMode) {
@@ -162,7 +162,6 @@ class PomodoroBackground {
             isRunning: false,
             currentMode: "focus",
             sessionCount: 1,
-            totalSessions: 0,
             settings: {
                 focusTime: 25,
                 shortBreak: 5,
@@ -213,9 +212,9 @@ class PomodoroBackground {
       isRunning: false,
       currentMode: "focus",
       sessionCount: 1,
-      totalSessions: 0,
       lockInEndTime: null,
       targetCompletionTime: null,
+      currentSessionTotalTime: null,
       settings: {
         focusTime: 25,
         shortBreak: 5,
@@ -390,8 +389,18 @@ class PomodoroBackground {
       const previousSettings = { ...this.state.settings };
       this.state.settings = updatedSettings;
 
-      if (!this.state.isRunning && this.state.currentMode === "focus") {
-        this.state.currentTime = this.state.settings.focusTime * 60;
+      // If the timer is not running, update its duration to reflect the new settings for the current mode.
+      if (!this.state.isRunning) {
+          // Only update currentTime if a session is not already paused.
+          // If currentSessionTotalTime is set, a session was started and paused, so we preserve its state.
+          if (!this.state.currentSessionTotalTime) {
+              const timeMap = {
+                  focus: this.state.settings.focusTime * 60,
+                  shortBreak: this.state.settings.shortBreak * 60,
+                  longBreak: this.state.settings.longBreak * 60,
+              };
+              this.state.currentTime = timeMap[this.state.currentMode];
+          }
       }
 
       await this.saveState();
@@ -437,7 +446,10 @@ class PomodoroBackground {
 
     const booleanSettings = [
       'autoStartBreaks', 'autoStartPomodoros', 'notifications', 'sounds',
-      'enforceBreaks', 'youtubeIntegration', 'websiteBlocking', 'collectStats'
+      'enforceBreaks', 'youtubeIntegration', 'websiteBlocking', 'collectStats',
+      'breakCountdown', 'nextSessionInfo', 'hideDistractions', 'focusIndicator',
+      'breakBlockAll', 'breakUseAllowlist', 'hideYoutubeComments', 
+      'hideYoutubeRecommendations', 'hideYoutubeShorts', 'pauseYoutubeBreaks'
     ];
     
     booleanSettings.forEach(setting => {
@@ -452,6 +464,7 @@ class PomodoroBackground {
   // Starts the timer.
   async startTimer() {
     this.state.isRunning = true;
+    this.state.currentSessionTotalTime = this.state.currentTime;
     const remainingMilliseconds = this.state.currentTime * 1000;
     this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
     
@@ -495,6 +508,7 @@ class PomodoroBackground {
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName + "_tick");
     this.state.targetCompletionTime = null;
+    this.state.currentSessionTotalTime = null;
 
     const timeMap = {
       focus: this.state.settings.focusTime * 60,
@@ -514,6 +528,7 @@ class PomodoroBackground {
     this.state.currentTime = this.state.settings.focusTime * 60;
     this.state.isRunning = false;
     this.state.targetCompletionTime = null;
+    this.state.currentSessionTotalTime = null;
     this.state.nextSessionInfo = null;
 
     this.notifyContentScripts({ type: "BREAK_SKIPPED" });
@@ -547,59 +562,60 @@ class PomodoroBackground {
     }
   }
 
-    async handleTimerComplete() {
-        this.state.isRunning = false;
-        this.state.currentTime = 0;
-        this.state.targetCompletionTime = null;
+  async handleTimerComplete() {
+    this.state.isRunning = false;
+    this.state.currentTime = 0;
+    this.state.targetCompletionTime = null;
+    this.state.currentSessionTotalTime = null;
+    await chrome.alarms.clear(this.alarmName + "_tick");
+    let lockInJustCompleted = false;
 
-        await chrome.alarms.clear(this.alarmName + "_tick");
-        let lockInJustCompleted = false;
-
-        if (this.state.settings.notifications) {
-            await this.showNotification();
-        }
-
-        if (this.state.settings.sounds) {
-            try {
-                await this.playSound();
-            } catch (e) {
-                console.error("Error playing sound:", e);
-            }
-        }
-
-        if (this.state.currentMode === "focus") {
-            this.state.totalSessions++;
-            await this.recordSession();
-
-            if (this.state.isLockedIn) {
-                const updatedState = {
-                    lockedInSessions: this.state.lockedInSessions - 1,
-                    isLockedIn: this.state.lockedInSessions > 1,
-                    lockInEndTime: this.state.lockedInSessions > 1 ? this.state.lockInEndTime : null
-                };
-                
-                Object.assign(this.state, updatedState);
-                lockInJustCompleted = updatedState.lockedInSessions <= 0;
-                
-                await this.saveState();
-            }
-        }
-
-        await this.switchToNextMode();
-
-        if (this.shouldAutoStart() && !lockInJustCompleted) {
-            setTimeout(() => this.startTimer(), 1000);
-        }
-
-        await this.saveState();
-        this.broadcastUpdate();
+    if (this.state.settings.notifications) {
+        await this.showNotification();
     }
+
+    if (this.state.settings.sounds) {
+        try {
+            await this.playSound();
+        } catch (e) {
+            console.error("Error playing sound:", e);
+        }
+    }
+
+    if (this.state.currentMode === "focus") {
+        await this.recordSession();
+
+        if (this.state.isLockedIn) {
+            const sessionsRemaining = this.state.lockedInSessions - 1;
+            const isStillLockedIn = sessionsRemaining > 0;
+
+            this.state.lockedInSessions = sessionsRemaining;
+            this.state.isLockedIn = isStillLockedIn;
+
+            if (!isStillLockedIn) {
+                this.state.lockInEndTime = null;
+                lockInJustCompleted = true;
+            }
+            await this.saveState();
+        }
+    }
+
+    await this.switchToNextMode();
+
+    if (this.shouldAutoStart() && !lockInJustCompleted) {
+        setTimeout(() => this.startTimer(), 1000);
+    }
+
+    await this.saveState();
+    this.broadcastUpdate();
+  }
 
 
   async switchToNextMode() {
     this.state.isRunning = false;
     this.state.currentTime = 0;
     this.state.targetCompletionTime = null;
+    this.state.currentSessionTotalTime = null;
 
     if (this.state.currentMode === "focus") {
       const isLongBreak =
@@ -880,3 +896,4 @@ class PomodoroBackground {
   }
 }
 new PomodoroBackground();
+

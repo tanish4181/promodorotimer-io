@@ -186,32 +186,32 @@ class YouTubeIntegration {
   }
 
   hideDistractions() {
-    if (!this.shouldHideDistractions()) {
-      this.showDistractions()
-      return
+    if (!this.shouldHideDistractions() || !this.timerState.settings.hideDistractions) {
+      this.showDistractions();
+      return;
     }
 
-    console.log("Hiding YouTube distractions")
+    console.log("Hiding YouTube distractions");
 
     // Comments
     if (this.timerState.settings.hideYoutubeComments) {
-      this.hideComments()
+      this.hideComments();
     } else {
-      this.showComments()
+      this.showComments();
     }
 
     // Recommendations
     if (this.timerState.settings.hideYoutubeRecommendations) {
-      this.hideRecommendations()
+      this.hideRecommendations();
     } else {
-      this.showRecommendations()
+      this.showRecommendations();
     }
 
     // Shorts
     if (this.timerState.settings.hideYoutubeShorts) {
-      this.hideShorts()
+      this.hideShorts();
     } else {
-      this.showShorts()
+      this.showShorts();
     }
   }
 

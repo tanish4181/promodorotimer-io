@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="container">
+    <!-- Header - Dashboard Style -->
     <header class="header">
       <div class="header-content">
         <div class="header-icon"></div>
@@ -32,17 +33,16 @@
       </div>
     </header>
 
+    <!-- Lock-In Mode Banner -->
     <div id="lock-in-banner" class="banner" style="display: none;">
       🔒 Lock-In Mode is active. Website blocking settings are temporarily disabled.
     </div>
 
+    <!-- Navigation Tabs - Centered -->
     <div class="nav-container">
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="timer">
           <span></span> Timer
-        </button>
-        <button class="nav-tab" data-tab="focus">
-          <span></span> Focus
         </button>
         <button class="nav-tab" data-tab="breaks">
           <span></span> Breaks
@@ -62,9 +62,11 @@
       </nav>
     </div>
 
+    <!-- Timer Settings Tab -->
     <div class="tab-content active" id="timer">
       <div class="tab-content-wrapper">
         <div class="settings-grid">
+          <!-- Timer Duration Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3> Timer Duration</h3>
@@ -104,6 +106,7 @@
             </div>
           </div>
 
+          <!-- Automation Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Automation</h3>
@@ -142,45 +145,7 @@
       </div>
     </div>
 
-    <div class="tab-content" id="focus">
-      <div class="tab-content-wrapper">
-        <div class="settings-grid">
-          <div class="settings-card">
-            <div class="card-header">
-              <h3> Focus Enhancement</h3>
-              <p>Optimize your focus experience</p>
-            </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="hide-distractions">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Hide distractions</div>
-                  <div class="toggle-description">Hide distracting elements on websites</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="hide-distractions" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="focus-indicator">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Focus mode indicator</div>
-                  <div class="toggle-description">Show focus mode indicator on websites</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="focus-indicator" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    <!-- Break Settings Tab -->
     <div class="tab-content" id="breaks">
         <div class="tab-content-wrapper">
             <div class="settings-grid single-column">
@@ -284,9 +249,11 @@
         </div>
     </div>
 
+    <!-- Website Blocking Tab -->
     <div class="tab-content" id="blocking">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
+          <!-- Website Blocking Settings Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Website Blocking Settings</h3>
@@ -307,6 +274,7 @@
             </div>
           </div>
 
+          <!-- Focus Mode Blocking Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Focus Mode Blocking</h3>
@@ -321,6 +289,7 @@
             </div>
           </div>
 
+          <!-- Allowlist Management Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Allowlist (Always Accessible)</h3>
@@ -336,7 +305,8 @@
               
               <div class="website-list-container">
                 <div id="allowlist-container" class="website-list">
-                  </div>
+                  <!-- Allowlist items will be populated here -->
+                </div>
                 <div id="allowlist-empty" class="website-list-empty" style="display: none;">
                   <p>No websites in allowlist</p>
                   <p style="font-size: 12px; margin-top: 8px;">Add websites that should always be accessible during focus sessions</p>
@@ -345,6 +315,7 @@
             </div>
           </div>
 
+          <!-- Blocklist Management Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Blocklist (Block When Idle)</h3>
@@ -360,7 +331,8 @@
               
               <div class="website-list-container">
                 <div id="blocklist-container" class="website-list">
-                  </div>
+                  <!-- Blocklist items will be populated here -->
+                </div>
                 <div id="blocklist-empty" class="website-list-empty" style="display: none;">
                   <p>No websites in blocklist</p>
                   <p style="font-size: 12px; margin-top: 8px;">Add websites that should be blocked when the timer is idle</p>
@@ -369,6 +341,7 @@
             </div>
           </div>
 
+          <!-- Blocking Logic Explanation Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>ℹ️ How Website Blocking Works</h3>
@@ -409,81 +382,109 @@
       </div>
     </div>
 
+    <!-- YouTube Settings Tab -->
     <div class="tab-content" id="youtube">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
+          <!-- YouTube Integration Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>YouTube Integration</h3>
               <p>Customize YouTube behavior during focus sessions</p>
             </div>
             
+            <div class="setting-group">
+              <label class="toggle-setting" for="hide-distractions">
+                <div class="toggle-text-content">
+                  <div class="toggle-text">Enable YouTube Distraction Hiding</div>
+                  <div class="toggle-description">Master switch to hide distracting elements on YouTube.</div>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="hide-distractions" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
             
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="youtube-distraction-mode">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Distraction blocking mode</div>
-                  <div class="toggle-description">Choose when to hide YouTube distractions</div>
-                </div>
-                <div class="input-group">
-                  <div class="select-wrapper">
-                    <select id="youtube-distraction-mode" class="styled-select">
-                      <option value="focus">Only when focus timer is running</option>
-                      <option value="always">Always</option>
-                      <option value="off">Never</option>
-                    </select>
+            <fieldset id="youtube-sub-settings">
+              <legend>Elements to Hide</legend>
+              <div class="setting-group">
+                <label class="toggle-setting" for="hide-youtube-comments">
+                  <div class="toggle-text-content">
+                    <div class="toggle-text">Hide comments</div>
                   </div>
-                </div>
-              </label>
-            </div>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="hide-youtube-comments" checked>
+                    <span class="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
+              <div class="setting-group">
+                <label class="toggle-setting" for="hide-youtube-recommendations">
+                  <div class="toggle-text-content">
+                    <div class="toggle-text">Hide recommendations</div>
+                  </div>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="hide-youtube-recommendations" checked>
+                    <span class="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
+              <div class="setting-group">
+                <label class="toggle-setting" for="hide-youtube-shorts">
+                  <div class="toggle-text-content">
+                    <div class="toggle-text">Hide YouTube Shorts</div>
+                  </div>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="hide-youtube-shorts" checked>
+                    <span class="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
+            </fieldset>
 
-            <div class="setting-group">
-              <label class="toggle-setting" for="hide-youtube-comments">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Hide comments</div>
-                  <div class="toggle-description">Hide YouTube comments during focus sessions</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="hide-youtube-comments" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="hide-youtube-recommendations">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Hide recommendations</div>
-                  <div class="toggle-description">Hide YouTube recommendations during focus</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="hide-youtube-recommendations" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group">
-              <label class="toggle-setting" for="hide-youtube-shorts">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Hide YouTube Shorts</div>
-                  <div class="toggle-description">Hide YouTube Shorts during focus sessions</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="hide-youtube-shorts" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
+            <fieldset>
+              <legend>Other YouTube Settings</legend>
+              <div class="setting-group">
+                <label class="toggle-setting" for="focus-indicator">
+                  <div class="toggle-text-content">
+                    <div class="toggle-text">Focus mode indicator</div>
+                    <div class="toggle-description">Show a focus mode indicator on YouTube pages.</div>
+                  </div>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="focus-indicator" checked>
+                    <span class="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
+              <div class="setting-group">
+                <label class="toggle-setting" for="youtube-distraction-mode">
+                  <div class="toggle-text-content">
+                    <div class="toggle-text">When to hide distractions</div>
+                    <div class="toggle-description">Choose when the above rules apply.</div>
+                  </div>
+                  <div class="input-group">
+                    <div class="select-wrapper">
+                      <select id="youtube-distraction-mode" class="styled-select">
+                        <option value="focus">Only when focus timer is running</option>
+                        <option value="always">Always</option>
+                        <option value="off">Never</option>
+                      </select>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </fieldset>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Notifications Tab -->
     <div class="tab-content" id="notifications">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
+          <!-- Notifications Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Notifications & Alerts</h3>
@@ -540,9 +541,11 @@
       </div>
     </div>
 
+    <!-- Data & Privacy Tab -->
     <div class="tab-content" id="data">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
+          <!-- Data Management Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Data Management</h3>
@@ -572,6 +575,7 @@
             </div>
           </div>
 
+          <!-- About Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>About</h3>
@@ -597,6 +601,7 @@
       </div>
     </div>
 
+    <!-- Save Status -->
     <div class="save-status" id="save-status">
       <span class="status-text">Settings saved automatically</span>
     </div>
