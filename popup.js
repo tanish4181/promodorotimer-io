@@ -79,11 +79,23 @@ class PomodoroPopup {
             return;
         }
 
-        const minutes = Math.floor(this.state.currentTime / 60);
-        const seconds = this.state.currentTime % 60;
+        let currentTime = this.state.currentTime;
+
+        // If the timer is running, calculate the current time based on targetCompletionTime
+        if (this.state.isRunning && this.state.targetCompletionTime) {
+            currentTime = Math.max(0, Math.round((this.state.targetCompletionTime - Date.now()) / 1000));
+        }
+
+        const minutes = Math.floor(currentTime / 60);
+        const seconds = currentTime % 60;
         this.elements.timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         
         this.updateProgressCircle();
+
+        // If timer has reached zero, ensure background script knows about it
+        if (currentTime === 0 && this.state.isRunning) {
+            this.sendMessageToBackground("GET_STATE");
+        }
     }
 
     // Updates the circular progress bar.
@@ -134,6 +146,42 @@ class PomodoroPopup {
 
     // Binds event listeners to all interactive elements.
     initializeEventListeners() {
+        // Initialize the update interval for smooth timer updates using requestAnimationFrame
+        const updateTimer = () => {
+            if (!this.isDestroyed && this.state?.isRunning && this.state?.targetCompletionTime) {
+                const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
+                this.state.currentTime = Math.max(0, remainingTime);
+                this.updateDisplay();
+            }
+            
+            // Schedule next update only if not destroyed and visible
+            if (!this.isDestroyed && document.visibilityState === 'visible') {
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                }
+                this.animationFrameId = requestAnimationFrame(updateTimer);
+            }
+        };
+
+        // Start the animation frame loop
+        this.isDestroyed = false;
+        updateTimer();
+
+        // Handle visibility changes
+        this.visibilityHandler = () => {
+            if (document.visibilityState === 'visible') {
+                this.loadState(); // Sync with background when becoming visible
+                updateTimer();
+            } else {
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                    this.animationFrameId = null;
+                }
+            }
+        };
+        
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+
         this.elements.lockInBtn?.addEventListener("click", () => {
             this.elements.lockInBtn.classList.toggle("active");
             this.elements.lockInSettings.classList.toggle("visible");
@@ -220,6 +268,13 @@ class PomodoroPopup {
             const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
             if (response && response.state) {
                 this.state = response.state;
+
+                // If timer is running, ensure targetCompletionTime is properly synchronized
+                if (this.state.isRunning && this.state.targetCompletionTime) {
+                    const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
+                    this.state.currentTime = Math.max(0, remainingTime);
+                }
+
                 this.updateDisplay();
                 this.renderTodos();
                 console.log("State loaded and rendered successfully.");
@@ -367,12 +422,45 @@ class PomodoroPopup {
         }
     }
     
-    addTodo() {
+    async addTodo() {
       const todoText = this.elements.todoInput.value.trim();
       if (!todoText) return;
 
-      this.sendMessageToBackground("ADD_TODO", { todo: { text: todoText } });
-      this.elements.todoInput.value = "";
+      const todoInput = this.elements.todoInput;
+      const addButton = this.elements.addTodoBtn;
+
+      try {
+        // Disable input and button while adding
+        todoInput.disabled = true;
+        addButton.disabled = true;
+
+        // Send message and wait for response
+        const response = await chrome.runtime.sendMessage({
+          type: "ADD_TODO",
+          todo: { text: todoText }
+        });
+
+        if (response && response.success) {
+          todoInput.value = "";
+          // Update local state with the response
+          if (response.todos) {
+            this.state.todos = response.todos;
+            this.renderTodos();
+          }
+        } else {
+          throw new Error("Failed to add todo");
+        }
+      } catch (error) {
+        console.error("Error adding todo:", error);
+        // Show error to user
+        todoInput.classList.add("error");
+        setTimeout(() => todoInput.classList.remove("error"), 2000);
+      } finally {
+        // Re-enable input and button
+        todoInput.disabled = false;
+        addButton.disabled = false;
+        todoInput.focus();
+      }
     }
   
     toggleTodo(todoId) {
@@ -443,8 +531,8 @@ class PomodoroPopup {
 
     // Cleanup when popup closes
     destroy() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
         }
     }
 }

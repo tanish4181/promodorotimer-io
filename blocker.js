@@ -59,27 +59,52 @@ class AdvancedWebsiteBlocker {
 
   async waitForRuntime() {
     return new Promise((resolve, reject) => {
-      if (chrome?.runtime?.sendMessage) {
+      const maxAttempts = 10;
+      const checkInterval = 100;
+      let attempts = 0;
+
+      // First check if runtime is immediately available
+      if (this.isRuntimeAvailable()) {
         resolve();
         return;
       }
-      
-      let attempts = 0;
-      const maxAttempts = 10;
-      
+
+      // Setup connection check interval
       const checkRuntime = () => {
         attempts++;
-        if (chrome?.runtime?.sendMessage) {
-          resolve();
+        
+        // Check if runtime is available and can make connections
+        if (this.isRuntimeAvailable()) {
+          // Verify connection with a test message
+          chrome.runtime.sendMessage({ type: "PING" }, response => {
+            if (chrome.runtime.lastError) {
+              if (attempts < maxAttempts) {
+                setTimeout(checkRuntime, checkInterval);
+              } else {
+                reject(new Error("Failed to establish connection to extension runtime"));
+              }
+            } else {
+              resolve();
+            }
+          });
         } else if (attempts < maxAttempts) {
-          setTimeout(checkRuntime, 100);
+          setTimeout(checkRuntime, checkInterval);
         } else {
-          reject(new Error("Chrome runtime not available"));
+          reject(new Error("Chrome runtime not available after maximum attempts"));
         }
       };
-      
-      setTimeout(checkRuntime, 100);
+
+      // Start checking
+      setTimeout(checkRuntime, checkInterval);
     });
+  }
+
+  isRuntimeAvailable() {
+    return Boolean(
+      chrome?.runtime?.sendMessage && 
+      !chrome.runtime.id?.endsWith('deactivated') &&
+      chrome.runtime.getManifest
+    );
   }
 
   retryInitialization() {
@@ -421,8 +446,18 @@ class AdvancedWebsiteBlocker {
 }
 
 // Initialize the advanced website blocker
-console.log("Initializing AdvancedWebsiteBlocker");
-const blocker = new AdvancedWebsiteBlocker();
+(function() {
+  try {
+    console.log("Initializing AdvancedWebsiteBlocker");
+    const blocker = new AdvancedWebsiteBlocker();
+    // Store blocker instance in a way that doesn't rely on global scope
+    if (typeof window !== 'undefined') {
+      window.__pomodoroBlocker = blocker;
+    }
+  } catch (error) {
+    console.error("Failed to initialize website blocker:", error);
+  }
+})();
 
 // Cleanup on page unload
 window.addEventListener("beforeunload", () => {

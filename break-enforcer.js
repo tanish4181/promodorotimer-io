@@ -239,30 +239,42 @@ class BreakEnforcer {
   }
 
   startBreakCountdown(initialTime) {
-    if (this.breakCountdownInterval) {
-      clearInterval(this.breakCountdownInterval);
-    }
+    // Clear any existing interval
+    this.stopBreakCountdown();
+    
+    // Store the start time and total duration
+    this.countdownStartTime = Date.now();
+    this.countdownDuration = initialTime;
+    
     this.updateBreakCountdown(initialTime);
+    
     this.breakCountdownInterval = setInterval(() => {
       const countdownElement = document.getElementById("break-countdown-timer");
       if (!countdownElement) {
-        clearInterval(this.breakCountdownInterval);
+        this.stopBreakCountdown();
         return;
       }
-      const parts = countdownElement.textContent.split(":");
-      let minutes = parseInt(parts[0], 10);
-      let seconds = parseInt(parts[1], 10);
-      if (seconds > 0) {
-        seconds--;
-      } else if (minutes > 0) {
-        minutes--;
-        seconds = 59;
-      } else {
-        clearInterval(this.breakCountdownInterval);
+
+      // Calculate remaining time based on actual elapsed time
+      const elapsedTime = Math.floor((Date.now() - this.countdownStartTime) / 1000);
+      const remainingTime = Math.max(0, this.countdownDuration - elapsedTime);
+
+      if (remainingTime <= 0) {
+        this.stopBreakCountdown();
+        this.updateBreakCountdown(0);
         return;
       }
-      this.updateBreakCountdown(minutes * 60 + seconds);
+
+      this.updateBreakCountdown(remainingTime);
     }, 1000);
+  }
+
+  stopBreakCountdown() {
+    if (this.breakCountdownInterval) {
+      clearInterval(this.breakCountdownInterval);
+      this.breakCountdownInterval = null;
+    }
+  }
   }
 
   removeBreakOverlay() {
