@@ -54,9 +54,6 @@ class PomodoroBackground {
   // Initializes the background script by loading the state and setting up listeners.
   async initialize() {
     try {
-      // Initialize with default state first
-      await this.initializeDefaultState();
-      
       // Then try to load saved state
       try {
         await this.loadState();
@@ -88,9 +85,7 @@ class PomodoroBackground {
 
       // Listen for the timer alarms.
       chrome.alarms.onAlarm.addListener((alarm) => {
-        if (alarm.name === this.alarmName + "_completion") {
-          this.handleTimerComplete();
-        } else if (alarm.name === this.alarmName + "_tick") {
+        if (alarm.name === this.alarmName + "_tick") {
           this.handleTimerTick();
         }
       });
@@ -98,8 +93,8 @@ class PomodoroBackground {
       // Handle extension lifecycle events.
       chrome.runtime.onStartup.addListener(() => this.loadState());
       chrome.runtime.onInstalled.addListener((details) => {
-        this.initializeDefaultState();
         if (details.reason === 'install') {
+          this.initializeDefaultState();
           chrome.tabs.create({ url: 'help.html' });
         }
       });
@@ -497,14 +492,9 @@ class PomodoroBackground {
     const remainingMilliseconds = this.state.currentTime * 1000;
     this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
     
-    // Create two alarms: one for the final completion and one for periodic updates
-    chrome.alarms.create(this.alarmName + "_completion", {
-      when: this.state.targetCompletionTime
-    });
-    
     // Periodic alarm every second for more accurate updates
-    chrome.alarms.create(this.alarmName + "_tick", { 
-      periodInMinutes: 1 / 60 
+    chrome.alarms.create(this.alarmName + "_tick", {
+      periodInMinutes: 1 / 60
     });
 
     if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
@@ -526,7 +516,6 @@ class PomodoroBackground {
     }
 
     this.state.isRunning = false;
-    chrome.alarms.clear(this.alarmName + "_completion");
     chrome.alarms.clear(this.alarmName + "_tick");
     this.state.targetCompletionTime = null;
 
@@ -576,10 +565,7 @@ class PomodoroBackground {
     try {
       // Validate timer state
       if (!this.state.isRunning || !this.state.targetCompletionTime) {
-        await Promise.all([
-          chrome.alarms.clear(this.alarmName + "_completion"),
-          chrome.alarms.clear(this.alarmName + "_tick")
-        ]);
+        await chrome.alarms.clear(this.alarmName + "_tick");
         return;
       }
 
@@ -603,10 +589,7 @@ class PomodoroBackground {
 
       // Handle timer completion
       if (this.state.currentTime <= 0) {
-        await Promise.all([
-          chrome.alarms.clear(this.alarmName + "_completion"),
-          chrome.alarms.clear(this.alarmName + "_tick")
-        ]);
+        await chrome.alarms.clear(this.alarmName + "_tick");
         await this.handleTimerComplete();
       }
     } catch (error) {
@@ -627,10 +610,7 @@ class PomodoroBackground {
     if (!this.state.isRunning || !this.state.targetCompletionTime) return;
     
     // Clear existing alarms
-    await Promise.all([
-      chrome.alarms.clear(this.alarmName + "_completion"),
-      chrome.alarms.clear(this.alarmName + "_tick")
-    ]);
+    await chrome.alarms.clear(this.alarmName + "_tick");
 
     // Recalculate remaining time
     const remainingTime = Math.max(0, Math.round((this.state.targetCompletionTime - Date.now()) / 1000));
@@ -638,14 +618,9 @@ class PomodoroBackground {
 
     if (remainingTime > 0) {
       // Recreate alarms with corrected timing
-      await Promise.all([
-        chrome.alarms.create(this.alarmName + "_completion", {
-          when: this.state.targetCompletionTime
-        }),
-        chrome.alarms.create(this.alarmName + "_tick", {
-          periodInMinutes: 1 / 60
-        })
-      ]);
+      await chrome.alarms.create(this.alarmName + "_tick", {
+        periodInMinutes: 1 / 60
+      });
     } else {
       await this.handleTimerComplete();
     }
@@ -662,7 +637,6 @@ class PomodoroBackground {
     this.state.targetCompletionTime = null;
     
     // Clear any existing alarms
-    await chrome.alarms.clear(this.alarmName + "_completion");
     await chrome.alarms.clear(this.alarmName + "_tick");
     let lockInJustCompleted = false; // Flag to detect when the lock ends
 
