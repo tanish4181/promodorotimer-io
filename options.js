@@ -394,7 +394,6 @@ class ModernPomodoroOptions {
     };
 
     try {
-      // Update background script
       await chrome.runtime.sendMessage({
         type: "SETTINGS_UPDATED",
         settings: newSettings

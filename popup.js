@@ -195,19 +195,10 @@ class PomodoroPopup {
             } else {
                 this.sendMessageToBackground("START_TIMER");
             }
-
-            if (this.state) {
-                this.state.isRunning = true;
-                this.updateDisplay();
-            }
         });
         
         this.elements.pauseBtn?.addEventListener("click", () => {
             this.sendMessageToBackground("PAUSE_TIMER");
-            if (this.state) {
-                this.state.isRunning = false;
-                this.updateDisplay();
-            }
         });
         
         this.elements.resetBtn?.addEventListener("click", () => this.sendMessageToBackground("RESET_TIMER"));

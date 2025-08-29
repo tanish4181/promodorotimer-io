@@ -3,7 +3,6 @@ class PomodoroBackground {
   constructor() {
     // The main state object for the extension.
     this.state = {
-      timerState: "focus", // The current state of the timer ('focus', 'shortBreak', 'longBreak').
       currentTime: 25 * 60, // The current time in seconds.
       isRunning: false, // Whether the timer is currently running.
       currentMode: "focus", // The current timer mode.
@@ -54,9 +53,6 @@ class PomodoroBackground {
   // Initializes the background script by loading the state and setting up listeners.
   async initialize() {
     try {
-      // Initialize with default state first
-      await this.initializeDefaultState();
-      
       // Then try to load saved state
       try {
         await this.loadState();
@@ -88,9 +84,7 @@ class PomodoroBackground {
 
       // Listen for the timer alarms.
       chrome.alarms.onAlarm.addListener((alarm) => {
-        if (alarm.name === this.alarmName + "_completion") {
-          this.handleTimerComplete();
-        } else if (alarm.name === this.alarmName + "_tick") {
+        if (alarm.name === this.alarmName + "_tick") {
           this.handleTimerTick();
         }
       });
@@ -98,8 +92,8 @@ class PomodoroBackground {
       // Handle extension lifecycle events.
       chrome.runtime.onStartup.addListener(() => this.loadState());
       chrome.runtime.onInstalled.addListener((details) => {
-        this.initializeDefaultState();
         if (details.reason === 'install') {
+          this.initializeDefaultState();
           chrome.tabs.create({ url: 'help.html' });
         }
       });
@@ -112,13 +106,13 @@ class PomodoroBackground {
   async loadState() {
     try {
       const result = await chrome.storage.local.get([
-        "timerState", "currentTime", "isRunning", "currentMode",
+        "currentTime", "isRunning", "currentMode",
         "sessionCount", "totalSessions", "settings", "lastActiveTime",
         "blockedWebsites", "allowedWebsites", "todos", "isLockedIn", "lockedInSessions",
         "targetCompletionTime", "lockInEndTime"
       ]);
 
-      if (result.timerState) {
+      if (result.currentMode) {
         const defaultSettings = this.state.settings;
         this.state = { ...this.state, ...result };
         // Merge loaded settings with defaults to ensure new settings are not missing.
@@ -182,7 +176,6 @@ class PomodoroBackground {
   validateState() {
     // Ensure all required properties exist
     const requiredProperties = {
-      timerState: "focus",
       currentTime: 25 * 60,
       isRunning: false,
       currentMode: "focus",
@@ -237,7 +230,6 @@ class PomodoroBackground {
   // Initializes the default state of the extension.
   async initializeDefaultState() {
     this.state = {
-      timerState: "focus",
       currentTime: 25 * 60,
       isRunning: false,
       currentMode: "focus",
@@ -497,11 +489,6 @@ class PomodoroBackground {
     const remainingMilliseconds = this.state.currentTime * 1000;
     this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
     
-    // Create two alarms: one for the final completion and one for periodic updates
-    chrome.alarms.create(this.alarmName + "_completion", {
-      when: this.state.targetCompletionTime
-    });
-    
     // Periodic alarm every second for more accurate updates
     chrome.alarms.create(this.alarmName + "_tick", { 
       periodInMinutes: 1 / 60 
@@ -656,7 +643,7 @@ class PomodoroBackground {
 
   // Handles the completion of a timer.
   async handleTimerComplete() {
-    // Stop the timer first
+    // Stop the timer first, ensuring all state changes are handled before saving.
     this.state.isRunning = false;
     this.state.currentTime = 0;
     this.state.targetCompletionTime = null;
@@ -692,21 +679,17 @@ class PomodoroBackground {
         
         Object.assign(this.state, updatedState);
         lockInJustCompleted = updatedState.lockedInSessions <= 0;
-        
-        // Ensure state is saved immediately after lock-in changes
-        await this.saveState();
       }
     }
 
     await this.switchToNextMode();
+    await this.saveState();
+    this.broadcastUpdate();
 
     // Only auto-start if the lock-in mode didn't just complete
     if (this.shouldAutoStart() && !lockInJustCompleted) {
       setTimeout(() => this.startTimer(), 1000);
     }
-
-    await this.saveState();
-    this.broadcastUpdate();
   }
 
   async switchToNextMode() {
