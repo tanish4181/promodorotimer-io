@@ -8,7 +8,6 @@
 </head>
 <body>
   <div class="container">
-    <!-- Header - Dashboard Style -->
     <header class="header">
       <div class="header-content">
         <div class="header-icon"></div>
@@ -33,12 +32,10 @@
       </div>
     </header>
 
-    <!-- Lock-In Mode Banner -->
     <div id="lock-in-banner" class="banner" style="display: none;">
       🔒 Lock-In Mode is active. Website blocking settings are temporarily disabled.
     </div>
 
-    <!-- Navigation Tabs - Centered -->
     <div class="nav-container">
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="timer">
@@ -65,11 +62,9 @@
       </nav>
     </div>
 
-    <!-- Timer Settings Tab -->
     <div class="tab-content active" id="timer">
       <div class="tab-content-wrapper">
         <div class="settings-grid">
-          <!-- Timer Duration Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3> Timer Duration</h3>
@@ -109,7 +104,6 @@
             </div>
           </div>
 
-          <!-- Automation Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Automation</h3>
@@ -148,11 +142,9 @@
       </div>
     </div>
 
-    <!-- Focus Settings Tab -->
     <div class="tab-content" id="focus">
       <div class="tab-content-wrapper">
         <div class="settings-grid">
-          <!-- Focus Enhancement Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3> Focus Enhancement</h3>
@@ -189,104 +181,112 @@
       </div>
     </div>
 
-    <!-- Break Settings Tab -->
     <div class="tab-content" id="breaks">
-      <div class="tab-content-wrapper">
-        <div class="settings-grid single-column">
-          <!-- Break Enforcement Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>Break Enforcement</h3>
-              <p>Control what happens during break time</p>
-            </div>
+        <div class="tab-content-wrapper">
+            <div class="settings-grid single-column">
+                <div class="settings-card">
+                    <div class="card-header">
+                        <h3>Break Enforcement</h3>
+                        <p>Control what happens during break time</p>
+                    </div>
 
-            <div class="setting-group">
-              <label class="toggle-setting" for="enforce-breaks">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Enforce Breaks</div>
-                  <div class="toggle-description">Master switch for all break-related features.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="enforce-breaks" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
+                    <fieldset>
+                        <legend>General Break Settings</legend>
+                        <div class="setting-group">
+                            <label class="toggle-setting" for="enforce-breaks">
+                                <div class="toggle-text-content">
+                                    <div class="toggle-text">Enforce Breaks</div>
+                                    <div class="toggle-description">Master switch for all break-related features.</div>
+                                </div>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="enforce-breaks" checked>
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="setting-group">
+                            <label class="toggle-setting" for="pause-youtube-breaks">
+                                <div class="toggle-text-content">
+                                    <div class="toggle-text">Pause YouTube videos</div>
+                                    <div class="toggle-description">Automatically pauses any playing YouTube videos.</div>
+                                </div>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="pause-youtube-breaks" checked>
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                        </div>
+                    </fieldset>
 
-            <div class="setting-group sub-setting">
-              <label class="toggle-setting" for="break-countdown">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Show countdown on overlay</div>
-                  <div class="toggle-description">Shows a timer for the remaining break time.</div>
+                    <details class="advanced-settings">
+                        <summary>Advanced Break Options</summary>
+                        <fieldset>
+                            <legend>Overlay Settings</legend>
+                            <div class="setting-group sub-setting">
+                                <label class="toggle-setting" for="break-countdown">
+                                    <div class="toggle-text-content">
+                                        <div class="toggle-text">Show countdown on overlay</div>
+                                        <div class="toggle-description">Shows a timer for the remaining break time.</div>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="break-countdown" checked>
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="setting-group sub-setting">
+                                <label class="toggle-setting" for="next-session-info">
+                                    <div class="toggle-text-content">
+                                        <div class="toggle-text">Show next session info</div>
+                                        <div class="toggle-description">Displays details about the upcoming focus session.</div>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="next-session-info" checked>
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Website Blocking During Breaks</legend>
+                            <div class="setting-group sub-setting">
+                                <label class="toggle-setting" for="break-block-all">
+                                    <div class="toggle-text-content">
+                                        <div class="toggle-text">
+                                            Block all websites
+                                            <span class="tooltip" data-tooltip="Requires 'Enable Website Blocking' on the Blocking tab. This option will block all websites during your break.">?</span>
+                                        </div>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="break-block-all">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="setting-group sub-setting">
+                                <label class="toggle-setting" for="break-use-allowlist">
+                                    <div class="toggle-text-content">
+                                        <div class="toggle-text">
+                                            Use allowlist during breaks
+                                            <span class="tooltip" data-tooltip="Requires 'Enable Website Blocking' on the Blocking tab. Only websites on your allowlist will be accessible during breaks.">?</span>
+                                        </div>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="break-use-allowlist" checked>
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+                        </fieldset>
+                    </details>
                 </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-countdown" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
             </div>
-
-            <div class="setting-group sub-setting">
-              <label class="toggle-setting" for="next-session-info">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Show next session info</div>
-                  <div class="toggle-description">Displays details about the upcoming focus session.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="next-session-info" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group sub-setting">
-              <label class="toggle-setting" for="pause-youtube-breaks">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Pause YouTube videos</div>
-                  <div class="toggle-description">Automatically pauses any playing YouTube videos.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="pause-youtube-breaks" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group sub-setting">
-              <label class="toggle-setting" for="break-block-all">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Block all websites</div>
-                  <div class="toggle-description">Requires "Enable Website Blocking" on the Blocking tab.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-block-all">
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-
-            <div class="setting-group sub-setting">
-              <label class="toggle-setting" for="break-use-allowlist">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Use allowlist during breaks</div>
-                  <div class="toggle-description">Requires "Enable Website Blocking" on the Blocking tab.</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="break-use-allowlist" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
 
-    <!-- Website Blocking Tab -->
     <div class="tab-content" id="blocking">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
-          <!-- Website Blocking Settings Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Website Blocking Settings</h3>
@@ -307,7 +307,6 @@
             </div>
           </div>
 
-          <!-- Focus Mode Blocking Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Focus Mode Blocking</h3>
@@ -322,7 +321,6 @@
             </div>
           </div>
 
-          <!-- Allowlist Management Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Allowlist (Always Accessible)</h3>
@@ -338,8 +336,7 @@
               
               <div class="website-list-container">
                 <div id="allowlist-container" class="website-list">
-                  <!-- Allowlist items will be populated here -->
-                </div>
+                  </div>
                 <div id="allowlist-empty" class="website-list-empty" style="display: none;">
                   <p>No websites in allowlist</p>
                   <p style="font-size: 12px; margin-top: 8px;">Add websites that should always be accessible during focus sessions</p>
@@ -348,7 +345,6 @@
             </div>
           </div>
 
-          <!-- Blocklist Management Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Blocklist (Block When Idle)</h3>
@@ -364,8 +360,7 @@
               
               <div class="website-list-container">
                 <div id="blocklist-container" class="website-list">
-                  <!-- Blocklist items will be populated here -->
-                </div>
+                  </div>
                 <div id="blocklist-empty" class="website-list-empty" style="display: none;">
                   <p>No websites in blocklist</p>
                   <p style="font-size: 12px; margin-top: 8px;">Add websites that should be blocked when the timer is idle</p>
@@ -374,7 +369,6 @@
             </div>
           </div>
 
-          <!-- Blocking Logic Explanation Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>ℹ️ How Website Blocking Works</h3>
@@ -415,11 +409,9 @@
       </div>
     </div>
 
-    <!-- YouTube Settings Tab -->
     <div class="tab-content" id="youtube">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
-          <!-- YouTube Integration Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>YouTube Integration</h3>
@@ -489,11 +481,9 @@
       </div>
     </div>
 
-    <!-- Notifications Tab -->
     <div class="tab-content" id="notifications">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
-          <!-- Notifications Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Notifications & Alerts</h3>
@@ -550,11 +540,9 @@
       </div>
     </div>
 
-    <!-- Data & Privacy Tab -->
     <div class="tab-content" id="data">
       <div class="tab-content-wrapper">
         <div class="settings-grid single-column">
-          <!-- Data Management Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>Data Management</h3>
@@ -584,7 +572,6 @@
             </div>
           </div>
 
-          <!-- About Card -->
           <div class="settings-card">
             <div class="card-header">
               <h3>About</h3>
@@ -610,7 +597,6 @@
       </div>
     </div>
 
-    <!-- Save Status -->
     <div class="save-status" id="save-status">
       <span class="status-text">Settings saved automatically</span>
     </div>

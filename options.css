@@ -1283,3 +1283,68 @@ input[type="number"]:focus,
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* New Styles for Fieldset, Details, and Tooltips */
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+legend {
+  color: var(--primary);
+  font-weight: 600;
+  padding: 0 10px;
+}
+
+.advanced-settings {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.advanced-settings summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-secondary);
+  list-style: none; /* Hide the default marker */
+}
+
+.advanced-settings summary::-webkit-details-marker {
+  display: none; /* Hide the default marker in Chrome */
+}
+
+.advanced-settings[open] summary {
+  color: var(--primary);
+}
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  border-bottom: 1px dotted var(--text-secondary);
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 220px;
+  background-color: var(--surface-hover);
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 10px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -110px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}

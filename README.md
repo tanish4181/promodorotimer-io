@@ -184,7 +184,7 @@ If you encounter persistent issues:
 
 ```
 public/
-├── manifest.json          # Extension manifest
+├── manifest.json          # Extension manifest (v1.0.5)
 ├── background.js          # Background service worker
 ├── popup.html/js/css      # Main popup interface
 ├── options.html/js/css    # Settings page
