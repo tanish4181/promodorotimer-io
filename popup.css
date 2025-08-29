@@ -139,7 +139,7 @@ body {
   align-items: center;
   justify-content: center;
   background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
-  border: 2px solid var(--border);
+  border: 2px solid var(--border); /* Default border color */
   border-radius: 50%;
   transition: all var(--transition-normal);
   box-shadow: var(--shadow-strong);
@@ -147,15 +147,19 @@ body {
 
 #timer-circle.running {
   border-color: var(--primary);
-  /* The shadow is composed of two layers for a richer glow */
-  box-shadow: 0 0 20px rgba(0, 212, 170, 0.3), 0 0 50px rgba(0, 212, 170, 0.2);
-  animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    inset 0 0 15px rgba(255, 255, 255, 0.05),
+    0 0 15px var(--primary-light),
+    0 0 30px var(--primary);
+  animation: pulse 2s infinite alternate;
 }
 
 @keyframes pulse {
-  50% { 
-    /* The animation makes the glow "breathe" by expanding the shadows */
-    box-shadow: 0 0 30px rgba(0, 212, 170, 0.4), 0 0 70px rgba(0, 212, 170, 0.3);
+  to { 
+    box-shadow: 
+      inset 0 0 20px rgba(255, 255, 255, 0.05),
+      0 0 25px var(--primary-light),
+      0 0 50px var(--primary);
     transform: scale(1.01);
   }
 }
@@ -163,9 +167,16 @@ body {
 .progress-ring {
   position: absolute;
   top: 50%; left: 50%;
-  width: 224px; height: 224px; /* Slightly larger to sit outside the border */
+  width: 224px; height: 224px;
   transform: translate(-50%, -50%) rotate(-90deg);
+  opacity: 0; /* Hidden by default */
+  transition: opacity var(--transition-normal);
 }
+
+#timer-circle.running .progress-ring {
+  opacity: 1; /* Visible when timer is running */
+}
+
 .progress-svg { width: 100%; height: 100%; }
 .progress-track { fill: none; stroke: transparent; stroke-width: 4; }
 .progress-fill {
@@ -173,9 +184,9 @@ body {
   stroke: var(--primary);
   stroke-width: 4;
   stroke-linecap: round;
-  stroke-dasharray: 678; /* 2 * Math.PI * 54 */
-  stroke-dashoffset: 678;
-  transition: stroke-dashoffset 0.5s linear, stroke 0.3s;
+  stroke-dasharray: 678;
+  stroke-dashoffset: 0; /* Always a full circle */
+  transition: stroke 0.3s;
   filter: drop-shadow(0 0 6px var(--primary));
 }
 
@@ -244,6 +255,12 @@ body {
   background: var(--surface-hover);
   border-color: var(--border-hover);
   color: var(--text-primary);
+}
+.secondary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--surface);
+    color: var(--text-muted);
 }
 .secondary-btn.active {
   background: var(--primary);

@@ -76,7 +76,9 @@ class PomodoroBackground {
       chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "local" && changes.settings) {
           this.state.settings = changes.settings.newValue;
-          if (!this.state.isRunning) {
+          // Only reset the timer if it's completely idle (not running AND not paused).
+          // A paused timer has a currentSessionTotalTime.
+          if (!this.state.isRunning && !this.state.currentSessionTotalTime) {
             this.resetTimer();
           }
           this.broadcastUpdate();

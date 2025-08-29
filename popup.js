@@ -61,34 +61,7 @@ class PomodoroPopup {
         const minutes = Math.floor(currentTime / 60);
         const seconds = currentTime % 60;
         this.elements.timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        this.updateProgressCircle();
-    }
-
-    updateProgressCircle() {
-        const circle = this.elements.timerCircle;
-        if (!circle) return;
-        const totalTime = this.getTotalTimeForCurrentMode();
-        const progress = totalTime > 0 ? (totalTime - this.state.currentTime) / totalTime : 0;
-        const progressFill = circle.querySelector('.progress-fill');
-        if (progressFill) {
-            const circumference = 2 * Math.PI * 110;
-            const strokeDashoffset = circumference - (progress * circumference);
-            progressFill.style.strokeDashoffset = strokeDashoffset;
-        }
-    }
-
-    getTotalTimeForCurrentMode() {
-        if (!this.state || !this.state.settings) return 25 * 60;
-        switch (this.state.currentMode) {
-            case 'focus':
-                return this.state.settings.focusTime * 60;
-            case 'shortBreak':
-                return this.state.settings.shortBreak * 60;
-            case 'longBreak':
-                return this.state.settings.longBreak * 60;
-            default:
-                return 25 * 60;
-        }
+        // The progress circle is now handled entirely by CSS.
     }
 
     initializeEventListeners() {

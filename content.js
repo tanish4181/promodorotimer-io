@@ -176,21 +176,22 @@ class YouTubeIntegration {
   }
 
   shouldHideDistractions() {
-    const settings = this.timerState?.settings || {}
-    const mode = settings.youtubeDistractionMode || 'focus'
-    if (mode === 'off') return false
-    if (mode === 'always') return true
+    const settings = this.timerState?.settings || {};
 
-    // Default: only when actively focusing
-    return this.timerState?.currentMode === 'focus' && this.timerState?.isRunning
+    // Master switch is the ultimate gatekeeper.
+    if (!settings.hideDistractions) {
+        return false;
+    }
+
+    const mode = settings.youtubeDistractionMode || 'focus';
+    if (mode === 'off') return false;
+    if (mode === 'always') return true;
+
+    // Default 'focus' mode: only hide when timer is running in focus mode.
+    return this.timerState?.currentMode === 'focus' && this.timerState?.isRunning;
   }
 
   hideDistractions() {
-    if (!this.shouldHideDistractions() || !this.timerState.settings.hideDistractions) {
-      this.showDistractions();
-      return;
-    }
-
     console.log("Hiding YouTube distractions");
 
     // Comments
@@ -412,3 +413,4 @@ class YouTubeIntegration {
 
 // Initialize YouTube integration
 new YouTubeIntegration()
+
