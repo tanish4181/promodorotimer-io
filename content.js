@@ -51,6 +51,7 @@ class YouTubeIntegration {
     
     // Set up message listener
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (chrome.runtime.lastError) { /* Silently ignore */ return; }
       this.handleMessage(message, sender, sendResponse)
     })
 
@@ -76,21 +77,20 @@ class YouTubeIntegration {
 
   async loadTimerState() {
     try {
-      const result = await chrome.storage.local.get(['timerState', 'currentTime', 'isRunning', 'currentMode', 'settings'])
-      this.timerState = {
-        timerState: result.timerState || 'focus',
-        currentTime: result.currentTime || 25 * 60,
-        isRunning: result.isRunning || false,
-        currentMode: result.currentMode || 'focus',
-        settings: result.settings || {}
-      }
-      console.log("Timer state loaded:", this.timerState)
+        const response = await this.sendMessageToBackground({ type: "GET_STATE" });
+        if (response && response.state) {
+            this.timerState = response.state;
+            console.log("Timer state loaded:", this.timerState);
+        } else {
+            console.warn("Could not load timer state. Retrying.");
+            setTimeout(() => this.loadTimerState(), 500);
+        }
     } catch (error) {
-      console.error("Error loading timer state:", error)
-      if (error.message?.includes("Extension context invalidated")) {
-        console.log("Context invalidated, reloading page to re-establish connection.");
-        window.location.reload();
-      }
+        console.error("Error loading timer state:", error);
+        if (error.message?.includes("Extension context invalidated")) {
+            console.log("Context invalidated, reloading page to re-establish connection.");
+            window.location.reload();
+        }
     }
   }
 
@@ -408,6 +408,21 @@ class YouTubeIntegration {
       video.pause()
       console.log("YouTube video paused")
     }
+  }
+  
+  // Wrapper for sendMessage to handle connection errors
+  async sendMessageToBackground(message) {
+      return new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage(message, (response) => {
+              if (chrome.runtime.lastError) {
+                  // Don't reject, just resolve with null to prevent unhandled promise rejections
+                  // The caller can then check for a null response
+                  resolve(null);
+              } else {
+                  resolve(response);
+              }
+          });
+      });
   }
 }
 

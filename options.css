@@ -1,4 +1,3 @@
-/* Modern Pomodoro Settings Page - Dashboard Style with Website Blocking */
 :root {
   /* Dark theme colors from stats.css */
   --bg-primary: #0d1117;
@@ -886,4 +885,3 @@ legend {
   cursor: not-allowed;
   pointer-events: none;
 }
-

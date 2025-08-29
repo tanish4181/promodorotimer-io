@@ -53,21 +53,24 @@ class PomodoroBackground {
   // Initializes the background script by loading the state and setting up listeners.
   async initialize() {
     try {
-      // Try to load saved state first
-      try {
-        await this.loadState();
-      } catch (loadError) {
-        console.error("Failed to load saved state:", loadError);
-        // If loading fails, initialize with default state
-        await this.initializeDefaultState();
-      }
-
-      // Validate state integrity
+      // Try to load saved state first. loadState has its own error handling.
+      await this.loadState();
+      
+      // Validate state integrity after loading.
       this.validateState();
 
       // Listen for messages from other parts of the extension.
       this.messageListener = (message, sender, sendResponse) => {
-        this.handleMessage(message, sender, sendResponse);
+        // Wrap the async handler to ensure sendResponse is always called.
+        (async () => {
+            try {
+                const response = await this.handleMessage(message, sender);
+                sendResponse(response);
+            } catch (error) {
+                console.error("Error handling message:", message.type, error);
+                sendResponse({ error: error.message });
+            }
+        })();
         return true; // Indicates that the response will be sent asynchronously.
       };
       chrome.runtime.onMessage.addListener(this.messageListener);
@@ -76,8 +79,6 @@ class PomodoroBackground {
       chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "local" && changes.settings) {
           this.state.settings = changes.settings.newValue;
-          // Only reset the timer if it's completely idle (not running AND not paused).
-          // A paused timer has a currentSessionTotalTime.
           if (!this.state.isRunning && !this.state.currentSessionTotalTime) {
             this.resetTimer();
           }
@@ -115,32 +116,38 @@ class PomodoroBackground {
         "targetCompletionTime", "lockInEndTime", "currentSessionTotalTime"
       ]);
 
-      if (result.currentMode) {
+      // Only process loaded data if it's not empty
+      if (result && result.currentMode) {
         const defaultSettings = this.state.settings;
         this.state = { ...this.state, ...result };
-        // Merge loaded settings with defaults to ensure new settings are not missing.
         this.state.settings = { ...defaultSettings, ...this.state.settings };
 
-        // Failsafe check for Lock-In Mode
         if (this.state.isLockedIn && this.state.lockInEndTime && Date.now() > this.state.lockInEndTime) {
-            console.log("Lock-in mode expired, disabling failsafe.");
             this.state.isLockedIn = false;
             this.state.lockedInSessions = 0;
             this.state.lockInEndTime = null;
         }
 
-        // If the timer was running, recalculate currentTime based on the targetCompletionTime.
         if (this.state.isRunning && this.state.targetCompletionTime) {
           const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
           this.state.currentTime = Math.max(0, remainingTime);
+          
           if (this.state.currentTime === 0) {
-            // This ensures that if the timer finished while the worker was inactive, it completes.
-            await this.handleTimerComplete();
+            // FIX: Wrapped this call in a try/catch. An error here was causing
+            // the entire load process to fail, triggering a reset to default settings.
+            try {
+              await this.handleTimerComplete();
+            } catch (completionError) {
+              console.error("Error handling a completed timer during state load:", completionError);
+              this.state.isRunning = false; 
+              this.state.targetCompletionTime = null;
+            }
           }
         }
       }
     } catch (error) {
-      console.error("Error loading state:", error);
+      console.error("Error loading state from storage:", error);
+      // If storage fails to load, initialize with default state to prevent crashes.
       await this.initializeDefaultState();
     }
   }
@@ -149,8 +156,7 @@ class PomodoroBackground {
   async saveState() {
     try {
       await chrome.storage.local.set({
-        ...this.state,
-        lastActiveTime: Date.now(),
+        ...this.state
       });
     } catch (error) {
       console.error("Error saving state:", error);
@@ -255,31 +261,25 @@ class PomodoroBackground {
   }
 
   // Handles messages from other parts of the extension.
-  async handleMessage(message, sender, sendResponse) {
+  async handleMessage(message, sender) {
     await this.initializationPromise;
-    try {
-      switch (message.type) {
+
+    switch (message.type) {
         case "GET_STATE":
-          sendResponse({ state: this.state });
-          break;
+            return { state: this.state };
         case "SETTINGS_UPDATED":
-          await this.updateSettings(message.settings);
-          sendResponse({ success: true });
-          break;
+            await this.updateSettings(message.settings);
+            return { success: true };
         case "START_TIMER":
-          await this.startTimer();
-          sendResponse({ success: true });
-          break;
+            await this.startTimer();
+            return { success: true };
         case "START_TIMER_LOCKED":
           this.state.isLockedIn = true;
           const numSessions = message.sessions || this.state.settings.sessionsUntilLongBreak;
           this.state.lockedInSessions = numSessions;
-
-          // Calculate lock-in end time for failsafe
           let totalDurationInSeconds = 0;
           const { focusTime, shortBreak, longBreak, sessionsUntilLongBreak } = this.state.settings;
           let sessionCycle = this.state.sessionCount;
-
           totalDurationInSeconds += numSessions * focusTime * 60;
           for (let i = 0; i < numSessions - 1; i++) {
             if (sessionCycle % sessionsUntilLongBreak === 0) {
@@ -290,96 +290,59 @@ class PomodoroBackground {
             sessionCycle++;
           }
           this.state.lockInEndTime = Date.now() + totalDurationInSeconds * 1000;
-
           await this.startTimer();
-          sendResponse({ success: true });
-          break;
+          return { success: true };
         case "PAUSE_TIMER":
-          await this.pauseTimer();
-          sendResponse({ success: true });
-          break;
+            await this.pauseTimer();
+            return { success: true };
         case "RESET_TIMER":
-          await this.resetTimer();
-          sendResponse({ success: true });
-          break;
+            await this.resetTimer();
+            return { success: true };
         case "SKIP_BREAK":
-          await this.skipBreak();
-          sendResponse({ success: true });
-          break;
+            await this.skipBreak();
+            return { success: true };
         case "TEST_NOTIFICATION":
-          await this.showNotification();
-          sendResponse({ success: true });
-          break;
+            await this.showNotification();
+            return { success: true };
         case "TEST_SOUND":
-          await this.playSound(message.soundType);
-          sendResponse({ success: true });
-          break;
-        case "ADD_BLOCKED_WEBSITE":
-          await this.addBlockedWebsite(message.website);
-          sendResponse({ success: true });
-          break;
-        case "REMOVE_BLOCKED_WEBSITE":
-          await this.removeBlockedWebsite(message.website);
-          sendResponse({ success: true });
-          break;
-        case "GET_BLOCKED_WEBSITES":
-          sendResponse({ websites: this.state.blockedWebsites });
-          break;
+            await this.playSound(message.soundType);
+            return { success: true };
         case "ADD_TODO":
-          const newTodo = {
-            id: Date.now(),
-            text: message.todo.text,
-            completed: false,
-            createdAt: new Date().toISOString()
-          };
-          if (!this.state.todos) this.state.todos = [];
-          this.state.todos.push(newTodo);
-          await this.saveState();
-          this.broadcastUpdate(); // Broadcast the change to all parts of the extension
-          sendResponse({ success: true, todos: this.state.todos });
-          break;
-
-        case "TOGGLE_TODO":
-          const todoToToggle = this.state.todos.find(t => t.id === message.todoId);
-          if (todoToToggle) {
-            todoToToggle.completed = !todoToToggle.completed;
-            todoToToggle.completedAt = todoToToggle.completed ? new Date().toISOString() : null;
+            const newTodo = { id: Date.now(), text: message.todo.text, completed: false, createdAt: new Date().toISOString() };
+            if (!this.state.todos) this.state.todos = [];
+            this.state.todos.push(newTodo);
             await this.saveState();
             this.broadcastUpdate();
-          }
-          sendResponse({ success: true, todos: this.state.todos });
-          break;
-
+            return { success: true, todos: this.state.todos };
+        case "TOGGLE_TODO":
+            const todoToToggle = this.state.todos.find(t => t.id === message.todoId);
+            if (todoToToggle) {
+                todoToToggle.completed = !todoToToggle.completed;
+                todoToToggle.completedAt = todoToToggle.completed ? new Date().toISOString() : null;
+                await this.saveState();
+                this.broadcastUpdate();
+            }
+            return { success: true, todos: this.state.todos };
         case "DELETE_TODO":
-          this.state.todos = this.state.todos.filter(t => t.id !== message.todoId);
-          await this.saveState();
-          this.broadcastUpdate();
-          sendResponse({ success: true, todos: this.state.todos });
-          break;
+            this.state.todos = this.state.todos.filter(t => t.id !== message.todoId);
+            await this.saveState();
+            this.broadcastUpdate();
+            return { success: true, todos: this.state.todos };
         case "GET_TODOS":
-          sendResponse({ todos: this.state.todos });
-          break;
+            return { todos: this.state.todos };
         case "WEBSITE_LISTS_UPDATED":
-          this.state.allowedWebsites = message.allowlist || [];
-          this.state.blockedWebsites = message.blocklist || [];
-          this.saveState();
-          this.broadcastUpdate();
-          sendResponse({ success: true });
-          break;
+            this.state.allowedWebsites = message.allowlist || [];
+            this.state.blockedWebsites = message.blocklist || [];
+            await this.saveState();
+            this.broadcastUpdate();
+            return { success: true };
         case "CHECK_WEBSITE_BLOCKED":
-          sendResponse(this.isUrlBlocked(message.url));
-          break;
+            return this.isUrlBlocked(message.url);
         case "CLOSE_CURRENT_TAB":
-          if (sender.tab) {
-            chrome.tabs.remove(sender.tab.id);
-          }
-          break;
+            if (sender.tab) chrome.tabs.remove(sender.tab.id);
+            return { success: true };
         default:
-          sendResponse({ error: "Unknown message type" });
-      }
-    } catch (error) {
-      console.error("Error handling message:", error);
-      sendResponse({ error: error.message });
+            return { error: "Unknown message type" };
     }
   }
 
@@ -391,10 +354,7 @@ class PomodoroBackground {
       const previousSettings = { ...this.state.settings };
       this.state.settings = updatedSettings;
 
-      // If the timer is not running, update its duration to reflect the new settings for the current mode.
       if (!this.state.isRunning) {
-          // Only update currentTime if a session is not already paused.
-          // If currentSessionTotalTime is set, a session was started and paused, so we preserve its state.
           if (!this.state.currentSessionTotalTime) {
               const timeMap = {
                   focus: this.state.settings.focusTime * 60,
