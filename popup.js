@@ -61,7 +61,6 @@ class PomodoroPopup {
         const minutes = Math.floor(currentTime / 60);
         const seconds = currentTime % 60;
         this.elements.timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        // The progress circle is now handled entirely by CSS.
     }
 
     initializeEventListeners() {
@@ -125,21 +124,34 @@ class PomodoroPopup {
         this.elements.todoList?.addEventListener("click", (e) => this.handleTodoAction(e));
     }
 
+    async getStateWithRetry(retries = 3, delay = 100) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
+                if (response && response.state) {
+                    return response.state;
+                }
+            } catch (error) {
+                if (i === retries - 1) throw error;
+                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            }
+        }
+        throw new Error("Failed to get state from background script after multiple retries.");
+    }
+
     async loadState() {
         try {
-            const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
-            if (response && response.state) {
-                this.state = response.state;
-                if (this.state.isRunning && this.state.targetCompletionTime) {
-                    const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
-                    this.state.currentTime = Math.max(0, remainingTime);
-                }
-                await this.updateTotalSessions();
-                this.updateDisplay();
-                this.renderTodos();
+            const state = await this.getStateWithRetry();
+            this.state = state;
+            if (this.state.isRunning && this.state.targetCompletionTime) {
+                const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
+                this.state.currentTime = Math.max(0, remainingTime);
             }
+            await this.updateTotalSessions();
+            this.updateDisplay();
+            this.renderTodos();
         } catch (error) {
-            console.error("Error loading state:", error);
+            console.error("Error loading state after retries:", error);
             this.initializeDefaultState();
             this.updateDisplay();
             this.renderTodos();
@@ -158,6 +170,7 @@ class PomodoroPopup {
         },
         todos: [],
       };
+      this.totalSessions = 0;
     }
 
     async updateTotalSessions() {
@@ -286,4 +299,3 @@ document.addEventListener("DOMContentLoaded", () => {
 window.addEventListener("beforeunload", () => {
     if (pomodoroPopup) pomodoroPopup.destroy();
 });
-

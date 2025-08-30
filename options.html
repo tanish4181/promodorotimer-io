@@ -3,582 +3,284 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pomodoro Timer Settings</title>
+  <title>FlowLock Settings</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
   <div class="container">
-    <!-- Header - Dashboard Style -->
     <header class="header">
       <div class="header-content">
-        <div class="header-icon"></div>
         <div class="header-text">
           <h1>Settings</h1>
-          <p>Configure your Pomodoro timer and boost your productivity</p>
+          <p>Configure your FlowLock timer and boost your productivity</p>
         </div>
       </div>
       <div class="header-stats">
         <div class="stat-item">
           <div class="stat-value" id="header-focus-time">25</div>
-          <div class="stat-label">FOCUS TIME</div>
+          <div class="stat-label">FOCUS MIN</div>
         </div>
         <div class="stat-item">
           <div class="stat-value" id="header-break-time">5</div>
-          <div class="stat-label">BREAK TIME</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">100%</div>
-          <div class="stat-label">SETTINGS SAVED</div>
+          <div class="stat-label">BREAK MIN</div>
         </div>
       </div>
     </header>
 
-    <!-- Lock-In Mode Banner -->
     <div id="lock-in-banner" class="banner" style="display: none;">
       🔒 Lock-In Mode is active. Website blocking settings are temporarily disabled.
     </div>
 
-    <!-- Navigation Tabs - Centered -->
     <div class="nav-container">
       <nav class="nav-tabs">
-        <button class="nav-tab active" data-tab="timer">
-          <span></span> Timer
-        </button>
-        <button class="nav-tab" data-tab="breaks">
-          <span></span> Breaks
-        </button>
-        <button class="nav-tab" data-tab="blocking">
-          <span></span> Blocking
-        </button>
-        <button class="nav-tab" data-tab="youtube">
-          <span></span> YouTube
-        </button>
-        <button class="nav-tab" data-tab="notifications">
-          <span></span> Alerts
-        </button>
-        <button class="nav-tab" data-tab="data">
-          <span></span> Data
-        </button>
+        <button class="nav-tab active" data-tab="timer">Timer</button>
+        <button class="nav-tab" data-tab="breaks">Breaks</button>
+        <button class="nav-tab" data-tab="blocking">Blocking</button>
+        <button class="nav-tab" data-tab="youtube">YouTube</button>
+        <button class="nav-tab" data-tab="notifications">Alerts</button>
+        <button class="nav-tab" data-tab="data">Data</button>
       </nav>
     </div>
 
-    <!-- Timer Settings Tab -->
+    <!-- Timer Settings -->
     <div class="tab-content active" id="timer">
-      <div class="tab-content-wrapper">
         <div class="settings-grid two-column">
-          <!-- Timer Duration Card -->
           <div class="settings-card">
-            <div class="card-header">
-              <h3> Timer Duration</h3>
-              <p>Configure your work and break durations</p>
+            <div class="card-header"><h3>Timer Duration</h3></div>
+            <div class="setting-group">
+              <label class="setting-label" for="focus-time">Focus Session</label>
+              <div class="input-group"><input type="number" id="focus-time" min="1" max="120"><span class="input-suffix">minutes</span></div>
             </div>
-            
-            <div class="setting-group number-setting">
-              <label class="setting-label" for="focus-time">Focus Session Duration</label>
-              <div class="input-group">
-                <input type="number" id="focus-time" min="1" max="120" value="25">
-                <span class="input-suffix">minutes</span>
-              </div>
+            <div class="setting-group">
+              <label class="setting-label" for="short-break">Short Break</label>
+              <div class="input-group"><input type="number" id="short-break" min="1" max="30"><span class="input-suffix">minutes</span></div>
             </div>
-            
-            <div class="setting-group number-setting">
-              <label class="setting-label" for="short-break">Short Break Duration</label>
-              <div class="input-group">
-                <input type="number" id="short-break" min="1" max="30" value="5">
-                <span class="input-suffix">minutes</span>
-              </div>
+            <div class="setting-group">
+              <label class="setting-label" for="long-break">Long Break</label>
+              <div class="input-group"><input type="number" id="long-break" min="5" max="60"><span class="input-suffix">minutes</span></div>
             </div>
-            
-            <div class="setting-group number-setting">
-              <label class="setting-label" for="long-break">Long Break Duration</label>
-              <div class="input-group">
-                <input type="number" id="long-break" min="5" max="60" value="15">
-                <span class="input-suffix">minutes</span>
-              </div>
-            </div>
-            
-            <div class="setting-group number-setting">
-              <label class="setting-label" for="sessions-until-long-break">Sessions Until Long Break</label>
-              <div class="input-group">
-                <input type="number" id="sessions-until-long-break" min="2" max="10" value="4">
-                <span class="input-suffix">sessions</span>
-              </div>
+            <div class="setting-group">
+              <label class="setting-label" for="sessions-until-long-break">Sessions for Long Break</label>
+              <div class="input-group"><input type="number" id="sessions-until-long-break" min="2" max="10"><span class="input-suffix">sessions</span></div>
             </div>
           </div>
-
-          <!-- Automation Card -->
           <div class="settings-card">
-            <div class="card-header">
-              <h3>Automation</h3>
-              <p>Control automatic timer behavior</p>
-            </div>
-            
-
+            <div class="card-header"><h3>Automation</h3></div>
             <div class="setting-group">
               <label class="toggle-setting" for="auto-start-breaks">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Auto-start breaks</div>
-                  <div class="toggle-description">Automatically start break timers when focus sessions end</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="auto-start-breaks" checked>
-                  <span class="toggle-slider"></span>
-                </div>
+                <div class="toggle-text-content"><div class="toggle-text">Auto-start Breaks</div><div class="toggle-description">Automatically start breaks when focus sessions end.</div></div>
+                <div class="toggle-switch"><input type="checkbox" id="auto-start-breaks"><span class="toggle-slider"></span></div>
               </label>
             </div>
-            
             <div class="setting-group">
               <label class="toggle-setting" for="auto-start-pomodoros">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Auto-start focus sessions</div>
-                  <div class="toggle-description">Automatically start focus sessions when breaks end</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="auto-start-pomodoros">
-                  <span class="toggle-slider"></span>
-                </div>
+                <div class="toggle-text-content"><div class="toggle-text">Auto-start Focus Sessions</div><div class="toggle-description">Automatically start focus sessions when breaks end.</div></div>
+                <div class="toggle-switch"><input type="checkbox" id="auto-start-pomodoros"><span class="toggle-slider"></span></div>
               </label>
             </div>
           </div>
         </div>
-      </div>
     </div>
 
-    <!-- Break Settings Tab -->
+    <!-- Break Settings -->
     <div class="tab-content" id="breaks">
-        <div class="tab-content-wrapper">
-            <div class="settings-grid two-column">
-                <div class="settings-card">
-                    <div class="card-header">
-                        <h3>General Break Settings</h3>
-                        <p>Core options for your breaks</p>
-                    </div>
-
-                    <div class="setting-group">
-                        <label class="toggle-setting" for="enforce-breaks">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Enforce Breaks</div>
-                                <div class="toggle-description">Master switch for all break-related features.</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="enforce-breaks" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="setting-group">
-                        <label class="toggle-setting" for="pause-youtube-breaks">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Pause YouTube videos</div>
-                                <div class="toggle-description">Automatically pauses any playing YouTube videos.</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="pause-youtube-breaks" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
+        <div class="settings-grid two-column">
+            <div class="settings-card">
+                <div class="card-header"><h3>Break Enforcement</h3></div>
+                <div class="setting-group">
+                  <label class="toggle-setting" for="enforce-breaks">
+                    <div class="toggle-text-content"><div class="toggle-text">Enforce Breaks</div><div class="toggle-description">Master switch for break overlay and video pausing.</div></div>
+                    <div class="toggle-switch"><input type="checkbox" id="enforce-breaks"><span class="toggle-slider"></span></div>
+                  </label>
                 </div>
-
-                <div class="settings-card">
-                    <div class="card-header">
-                        <h3>Break Overlay Options</h3>
-                        <p>Customize the full-screen break reminder</p>
-                    </div>
-                    <div class="setting-group sub-setting">
-                        <label class="toggle-setting" for="break-countdown">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Show countdown on overlay</div>
-                                <div class="toggle-description">Shows a timer for the remaining break time.</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="break-countdown" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="setting-group sub-setting">
-                        <label class="toggle-setting" for="next-session-info">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Show next session info</div>
-                                <div class="toggle-description">Displays details about the upcoming focus session.</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="next-session-info" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="setting-group sub-setting">
-                        <label class="toggle-setting" for="break-block-all">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">
-                                    Block all websites
-                                    <span class="tooltip" data-tooltip="Requires 'Enable Website Blocking' on the Blocking tab. This option will block all websites during your break.">?</span>
-                                </div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="break-block-all">
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="setting-group sub-setting">
-                        <label class="toggle-setting" for="break-use-allowlist">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">
-                                    Use allowlist during breaks
-                                    <span class="tooltip" data-tooltip="Requires 'Enable Website Blocking' on the Blocking tab. Only websites on your allowlist will be accessible during breaks.">?</span>
-                                </div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="break-use-allowlist" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
+                <div class="setting-group">
+                  <label class="toggle-setting" for="pause-youtube-breaks">
+                    <div class="toggle-text-content"><div class="toggle-text">Pause YouTube Videos</div><div class="toggle-description">Automatically pause YouTube videos when a break starts.</div></div>
+                    <div class="toggle-switch"><input type="checkbox" id="pause-youtube-breaks"><span class="toggle-slider"></span></div>
+                  </label>
+                </div>
+            </div>
+            <div class="settings-card">
+                <div class="card-header"><h3>Break Behavior</h3></div>
+                <div class="setting-group">
+                  <label class="toggle-setting" for="break-countdown">
+                    <div class="toggle-text-content"><div class="toggle-text">Show Countdown on Overlay</div><div class="toggle-description">Display remaining break time.</div></div>
+                    <div class="toggle-switch"><input type="checkbox" id="break-countdown"><span class="toggle-slider"></span></div>
+                  </label>
+                </div>
+                <div class="setting-group">
+                  <label class="toggle-setting" for="next-session-info">
+                    <div class="toggle-text-content"><div class="toggle-text">Show Next Session Info</div><div class="toggle-description">Display details about the upcoming focus session.</div></div>
+                    <div class="toggle-switch"><input type="checkbox" id="next-session-info"><span class="toggle-slider"></span></div>
+                  </label>
+                </div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="break-block-all">
+                        <div class="toggle-text-content"><div class="toggle-text">Block All Websites During Break</div><div class="toggle-description">Overrides allowlist for a complete disconnect.</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="break-block-all"><span class="toggle-slider"></span></div>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="break-use-allowlist">
+                        <div class="toggle-text-content"><div class="toggle-text">Block All Except Allowlist During Break</div><div class="toggle-description">Only allow access to your essential sites.</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="break-use-allowlist"><span class="toggle-slider"></span></div>
+                    </label>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Website Blocking Tab -->
+    
+    <!-- Blocking Settings -->
     <div class="tab-content" id="blocking">
-      <div class="tab-content-wrapper">
-        <div class="settings-grid two-column">
-          <!-- Website Blocking Settings Card -->
-          <div class="settings-card full-width">
-            <div class="card-header">
-              <h3>Website Blocking Settings</h3>
-              <p>Control which websites are blocked during different modes</p>
+        <div class="settings-grid">
+            <div class="settings-card">
+                <div class="card-header"><h3>Website Blocking</h3></div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="website-blocking">
+                        <div class="toggle-text-content"><div class="toggle-text">Enable Website Blocking</div><div class="toggle-description">Block distracting sites based on timer state and your lists.</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="website-blocking"><span class="toggle-slider"></span></div>
+                    </label>
+                </div>
             </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="website-blocking">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Enable website blocking</div>
-                  <div class="toggle-description">Block distracting websites based on timer state</div>
-                </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="website-blocking" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-              </label>
-            </div>
-          </div>
-        
-          <!-- Allowlist Management Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>Allowlist (Always Accessible)</h3>
-              <p>These websites are always accessible during focus mode</p>
-            </div>
-            
-            <div class="setting-group">
-              <div class="website-input-group">
-                <input type="text" id="allowlist-input" class="website-input" 
-                       placeholder="e.g., docs.google.com">
-                <button id="add-allowlist-btn" class="add-website-btn">Add</button>
-              </div>
-              
-              <div class="website-list-container">
-                <div id="allowlist-container" class="website-list">
-                  <!-- Allowlist items will be populated here -->
-                </div>
-                <div id="allowlist-empty" class="website-list-empty" style="display: none;">
-                  <p>No websites in allowlist</p>
-                  <p style="font-size: 12px; margin-top: 8px;">Add essential websites here</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Blocklist Management Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>Blocklist (Block When Idle)</h3>
-              <p>These websites are blocked when the timer is not running</p>
-            </div>
-            
-            <div class="setting-group">
-              <div class="website-input-group">
-                <input type="text" id="blocklist-input" class="website-input" 
-                       placeholder="e.g., facebook.com">
-                <button id="add-blocklist-btn" class="add-website-btn">Add</button>
-              </div>
-              
-              <div class="website-list-container">
-                <div id="blocklist-container" class="website-list">
-                  <!-- Blocklist items will be populated here -->
-                </div>
-                <div id="blocklist-empty" class="website-list-empty" style="display: none;">
-                  <p>No websites in blocklist</p>
-                  <p style="font-size: 12px; margin-top: 8px;">Add distracting websites here</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Blocking Logic Explanation Card -->
-          <div class="settings-card full-width">
-            <div class="card-header">
-              <h3>ℹ️ How Website Blocking Works</h3>
-            </div>
-            
-            <div class="logic-explanation">
-              <div class="logic-step">
-                <div class="logic-step-icon"></div>
-                <div class="logic-step-content">
-                  <strong>Focus Mode (Timer Running):</strong><br>
-                  Only allowlist websites are accessible. Everything else is blocked.
-                </div>
-              </div>
-              
-              <div class="logic-step">
-                <div class="logic-step-icon"></div>
-                <div class="logic-step-content">
-                  <strong>Break Mode (Timer Running):</strong><br>
-                  Behavior depends on your settings in the Breaks tab.
-                </div>
-              </div>
-              
-              <div class="logic-step">
-                <div class="logic-step-icon"></div>
-                <div class="logic-step-content">
-                  <strong>Idle Mode (Timer Off):</strong><br>
-                  Only blocklist websites are blocked. Everything else is accessible.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- YouTube Settings Tab -->
-    <div class="tab-content" id="youtube">
-        <div class="tab-content-wrapper">
             <div class="settings-grid two-column">
                 <div class="settings-card">
-                    <div class="card-header">
-                        <h3>YouTube Distraction Control</h3>
-                        <p>Customize what to hide on YouTube</p>
-                    </div>
-                    <div class="setting-group">
-                        <label class="toggle-setting" for="hide-distractions">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Hide Distractions</div>
-                                <div class="toggle-description">Master switch for all YouTube distraction features.</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="hide-distractions" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="setting-group sub-setting">
-                        <label class="toggle-setting" for="hide-youtube-comments">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Hide comments</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="hide-youtube-comments" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="setting-group sub-setting">
-                        <label class="toggle-setting" for="hide-youtube-recommendations">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Hide recommendations</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="hide-youtube-recommendations" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="setting-group sub-setting">
-                        <label class="toggle-setting" for="hide-youtube-shorts">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Hide YouTube Shorts</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="hide-youtube-shorts" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
+                    <div class="card-header"><h3>Allowlist (Always Accessible)</h3></div>
+                    <div class="website-input-group"><input type="text" id="allowlist-input" placeholder="e.g., docs.google.com"><button id="add-allowlist-btn">Add</button></div>
+                    <div class="website-list-container"><div id="allowlist-container" class="website-list"></div></div>
+                    <div id="allowlist-empty" class="website-list-empty" style="display: none;"><p>No websites in allowlist.</p></div>
                 </div>
-
                 <div class="settings-card">
-                    <div class="card-header">
-                        <h3>YouTube Behavior</h3>
-                        <p>Other YouTube-related settings</p>
-                    </div>
-                    <div class="setting-group">
-                        <label class="setting-label" for="youtube-distraction-mode">Distraction blocking mode</label>
-                        <div class="input-group">
-                            <div class="select-wrapper">
-                                <select id="youtube-distraction-mode" class="styled-select">
-                                    <option value="focus">Only when focus timer is running</option>
-                                    <option value="always">Always</option>
-                                    <option value="off">Never</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="setting-group">
-                        <label class="toggle-setting" for="focus-indicator">
-                            <div class="toggle-text-content">
-                                <div class="toggle-text">Focus mode indicator</div>
-                                <div class="toggle-description">Show focus indicator on websites.</div>
-                            </div>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="focus-indicator" checked>
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
+                    <div class="card-header"><h3>Blocklist (Blocked When Idle)</h3></div>
+                    <div class="website-input-group"><input type="text" id="blocklist-input" placeholder="e.g., facebook.com"><button id="add-blocklist-btn">Add</button></div>
+                    <div class="website-list-container"><div id="blocklist-container" class="website-list"></div></div>
+                    <div id="blocklist-empty" class="website-list-empty" style="display: none;"><p>No websites in blocklist.</p></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Notifications Tab -->
+    <!-- YouTube Settings -->
+    <div class="tab-content" id="youtube">
+        <div class="settings-grid two-column">
+            <div class="settings-card">
+                <div class="card-header"><h3>YouTube Distractions</h3></div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="hide-distractions">
+                        <div class="toggle-text-content"><div class="toggle-text">Hide Distractions</div><div class="toggle-description">Master switch for hiding comments, shorts, etc.</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="hide-distractions"><span class="toggle-slider"></span></div>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="hide-youtube-comments">
+                        <div class="toggle-text-content"><div class="toggle-text">Hide Comments</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="hide-youtube-comments"><span class="toggle-slider"></span></div>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="hide-youtube-recommendations">
+                        <div class="toggle-text-content"><div class="toggle-text">Hide Recommendations</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="hide-youtube-recommendations"><span class="toggle-slider"></span></div>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="hide-youtube-shorts">
+                        <div class="toggle-text-content"><div class="toggle-text">Hide YouTube Shorts</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="hide-youtube-shorts"><span class="toggle-slider"></span></div>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-card">
+                <div class="card-header"><h3>YouTube Behavior</h3></div>
+                <div class="setting-group">
+                    <label class="setting-label" for="youtube-distraction-mode">Distraction Blocking Mode</label>
+                    <div class="select-wrapper">
+                        <select id="youtube-distraction-mode" class="styled-select">
+                            <option value="focus">Only during focus timer</option>
+                            <option value="always">Always</option>
+                            <option value="off">Never</option>
+                        </select>
+                    </div>
+                </div>
+                 <div class="setting-group">
+                    <label class="toggle-setting" for="focus-indicator">
+                        <div class="toggle-text-content"><div class="toggle-text">Focus Mode Indicator</div><div class="toggle-description">Show a subtle indicator on websites during focus.</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="focus-indicator"><span class="toggle-slider"></span></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
     <div class="tab-content" id="notifications">
-      <div class="tab-content-wrapper">
         <div class="settings-grid two-column">
-          <!-- Notifications Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>Notifications & Sounds</h3>
-              <p>Manage how you get alerted</p>
-            </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="notifications">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Desktop notifications</div>
-                  <div class="toggle-description">Show desktop notifications when timers complete</div>
+            <div class="settings-card">
+                <div class="card-header"><h3>Alerts</h3></div>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="notifications">
+                        <div class="toggle-text-content"><div class="toggle-text">Desktop Notifications</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="notifications"><span class="toggle-slider"></span></div>
+                    </label>
                 </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="notifications" checked>
-                  <span class="toggle-slider"></span>
+                <div class="setting-group">
+                    <label class="toggle-setting" for="sounds">
+                        <div class="toggle-text-content"><div class="toggle-text">Sound Alerts</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="sounds"><span class="toggle-slider"></span></div>
+                    </label>
                 </div>
-              </label>
-            </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="sounds">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Sound alerts</div>
-                  <div class="toggle-description">Play sound alerts when timers complete</div>
+                 <div class="setting-group">
+                    <label class="setting-label" for="sound-type">Sound Type</label>
+                    <div class="select-wrapper">
+                        <select id="sound-type" class="styled-select">
+                            <option value="ding">Ding</option>
+                            <option value="chime">Chime</option>
+                            <option value="bell">Bell</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="sounds" checked>
-                  <span class="toggle-slider"></span>
+            </div>
+             <div class="settings-card">
+                <div class="card-header"><h3>Test Alerts</h3></div>
+                <div class="btn-group">
+                    <button id="test-notification" class="btn btn-secondary">Test Notification</button>
+                    <button id="test-sound" class="btn btn-primary">Test Sound</button>
                 </div>
-              </label>
             </div>
-
-            <div class="setting-group number-setting">
-              <label class="setting-label" for="sound-type">Sound type</label>
-              <div class="input-group">
-                <div class="select-wrapper">
-                  <select id="sound-type" class="styled-select">
-                    <option value="ding">Ding</option>
-                    <option value="chime">Chime</option>
-                    <option value="bell">Bell</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-card">
-             <div class="card-header">
-                <h3>Test Alerts</h3>
-                <p>Preview your notification and sound settings</p>
-            </div>
-             <div class="setting-group">
-              <div class="btn-group">
-                <button id="test-notification" class="btn btn-secondary">Test Notification</button>
-                <button id="test-sound" class="btn btn-primary">Test Sound</button>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
-
-    <!-- Data & Privacy Tab -->
+    
+    <!-- Data -->
     <div class="tab-content" id="data">
-      <div class="tab-content-wrapper">
         <div class="settings-grid two-column">
-          <!-- Data Management Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>Data Management</h3>
-              <p>Manage your data and statistics</p>
-            </div>
-            
-            <div class="setting-group">
-              <label class="toggle-setting" for="collect-stats">
-                <div class="toggle-text-content">
-                  <div class="toggle-text">Collect statistics</div>
-                  <div class="toggle-description">Track your productivity statistics locally</div>
+            <div class="settings-card">
+                <div class="card-header"><h3>Data Management</h3></div>
+                 <div class="setting-group">
+                    <label class="toggle-setting" for="collect-stats">
+                        <div class="toggle-text-content"><div class="toggle-text">Collect Statistics</div><div class="toggle-description">Track productivity stats locally on your device.</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="collect-stats"><span class="toggle-slider"></span></div>
+                    </label>
                 </div>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="collect-stats" checked>
-                  <span class="toggle-slider"></span>
+                <div class="btn-group">
+                    <button id="export-data" class="btn btn-secondary">Export Data</button>
+                    <button id="view-stats" class="btn btn-primary">View Statistics</button>
                 </div>
-              </label>
+                 <div class="btn-group">
+                    <button id="reset-defaults" class="btn btn-secondary">Reset Defaults</button>
+                    <button id="clear-data" class="btn btn-danger">Clear All Data</button>
+                </div>
             </div>
-            
-            <div class="setting-group">
-              <div class="btn-group">
-                <button id="export-data" class="btn btn-secondary">📥 Export Data</button>
-                <button id="view-stats" class="btn btn-primary">📊 View Statistics</button>
-                <button id="reset-defaults" class="btn btn-secondary">🔄 Reset Defaults</button>
-                <button id="clear-data" class="btn btn-danger">🗑️ Clear All Data</button>
-              </div>
+            <div class="settings-card">
+                <div class="card-header"><h3>About</h3></div>
+                <div class="about-content">
+                    <div class="about-item"><strong>Version:</strong> <span id="ext-version">1.0.5</span></div>
+                    <div class="about-item"><strong>Storage Used:</strong> <span id="storage-usage">...</span></div>
+                </div>
             </div>
-          </div>
-
-          <!-- About Card -->
-          <div class="settings-card">
-            <div class="card-header">
-              <h3>About</h3>
-              <p>Extension information and version details</p>
-            </div>
-            
-            <div class="about-content">
-              <div class="about-item">
-                <strong>Version:</strong> <span>1.0.0</span>
-              </div>
-              <div class="about-item">
-                <strong>Developer:</strong> <span>Tanish Sharma</span>
-              </div>
-              <div class="about-item">
-                <strong>Last Updated:</strong> <span>August 2025</span>
-              </div>
-              <div class="about-item">
-                <strong>Storage Used:</strong> <span id="storage-usage">Calculating...</span>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
 
-    <!-- Save Status -->
-    <div class="save-status" id="save-status">
-      <span class="status-text">Settings saved automatically</span>
-    </div>
-
+    <div class="save-status" id="save-status">Settings saved automatically</div>
   </div>
-
   <script src="options.js"></script>
 </body>
 </html>

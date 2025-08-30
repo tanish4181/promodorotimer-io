@@ -53,15 +53,11 @@ class PomodoroBackground {
   // Initializes the background script by loading the state and setting up listeners.
   async initialize() {
     try {
-      // Try to load saved state first. loadState has its own error handling.
       await this.loadState();
-      
-      // Validate state integrity after loading.
       this.validateState();
 
       // Listen for messages from other parts of the extension.
       this.messageListener = (message, sender, sendResponse) => {
-        // Wrap the async handler to ensure sendResponse is always called.
         (async () => {
             try {
                 const response = await this.handleMessage(message, sender);
@@ -75,7 +71,6 @@ class PomodoroBackground {
       };
       chrome.runtime.onMessage.addListener(this.messageListener);
 
-      // Listen for changes to the settings in storage.
       chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "local" && changes.settings) {
           this.state.settings = changes.settings.newValue;
@@ -86,14 +81,12 @@ class PomodoroBackground {
         }
       });
 
-      // Listen for the timer alarms.
       chrome.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === this.alarmName + "_tick") {
           this.handleTimerTick();
         }
       });
 
-      // Handle extension lifecycle events.
       chrome.runtime.onStartup.addListener(() => this.loadState());
       chrome.runtime.onInstalled.addListener((details) => {
         if (details.reason === 'install') {
@@ -116,7 +109,6 @@ class PomodoroBackground {
         "targetCompletionTime", "lockInEndTime", "currentSessionTotalTime"
       ]);
 
-      // Only process loaded data if it's not empty
       if (result && result.currentMode) {
         const defaultSettings = this.state.settings;
         this.state = { ...this.state, ...result };
@@ -133,8 +125,6 @@ class PomodoroBackground {
           this.state.currentTime = Math.max(0, remainingTime);
           
           if (this.state.currentTime === 0) {
-            // FIX: Wrapped this call in a try/catch. An error here was causing
-            // the entire load process to fail, triggering a reset to default settings.
             try {
               await this.handleTimerComplete();
             } catch (completionError) {
@@ -147,51 +137,41 @@ class PomodoroBackground {
       }
     } catch (error) {
       console.error("Error loading state from storage:", error);
-      // If storage fails to load, initialize with default state to prevent crashes.
       await this.initializeDefaultState();
     }
   }
 
-  // Saves the current state to local storage.
   async saveState() {
     try {
-      await chrome.storage.local.set({
-        ...this.state
-      });
+      await chrome.storage.local.set({ ...this.state });
     } catch (error) {
       console.error("Error saving state:", error);
     }
   }
 
-    // Validates the state structure and values
-    validateState() {
-        const requiredProperties = {
-            currentTime: 25 * 60,
-            isRunning: false,
-            currentMode: "focus",
-            sessionCount: 1,
-            settings: {
-                focusTime: 25,
-                shortBreak: 5,
-                longBreak: 15,
-                sessionsUntilLongBreak: 4,
-            }
-        };
-
-        this.state = this.deepMerge(requiredProperties, this.state || {});
-
-        if (!this.state.settings) {
-            this.state.settings = requiredProperties.settings;
+  validateState() {
+    const requiredProperties = {
+        currentTime: 25 * 60,
+        isRunning: false,
+        currentMode: "focus",
+        sessionCount: 1,
+        settings: {
+            focusTime: 25,
+            shortBreak: 5,
+            longBreak: 15,
+            sessionsUntilLongBreak: 4,
         }
-
-        this.state.settings.focusTime = this.validateNumber(this.state.settings.focusTime, 25, 1, 120);
-        this.state.settings.shortBreak = this.validateNumber(this.state.settings.shortBreak, 5, 1, 30);
-        this.state.settings.longBreak = this.validateNumber(this.state.settings.longBreak, 15, 1, 60);
-        this.state.settings.sessionsUntilLongBreak = this.validateNumber(this.state.settings.sessionsUntilLongBreak, 4, 1, 10);
-
-        this.saveState();
+    };
+    this.state = this.deepMerge(requiredProperties, this.state || {});
+    if (!this.state.settings) {
+        this.state.settings = requiredProperties.settings;
     }
-
+    this.state.settings.focusTime = this.validateNumber(this.state.settings.focusTime, 25, 1, 120);
+    this.state.settings.shortBreak = this.validateNumber(this.state.settings.shortBreak, 5, 1, 30);
+    this.state.settings.longBreak = this.validateNumber(this.state.settings.longBreak, 15, 1, 60);
+    this.state.settings.sessionsUntilLongBreak = this.validateNumber(this.state.settings.sessionsUntilLongBreak, 4, 1, 10);
+    this.saveState();
+  }
 
   validateNumber(value, defaultValue, min, max) {
     const num = parseInt(value);
@@ -213,7 +193,6 @@ class PomodoroBackground {
     return result;
   }
 
-  // Initializes the default state of the extension.
   async initializeDefaultState() {
     this.state = {
       currentTime: 25 * 60,
@@ -224,46 +203,21 @@ class PomodoroBackground {
       targetCompletionTime: null,
       currentSessionTotalTime: null,
       settings: {
-        focusTime: 25,
-        shortBreak: 5,
-        longBreak: 15,
-        sessionsUntilLongBreak: 4,
-        autoStartBreaks: true,
-        autoStartPomodoros: false,
-        notifications: true,
-        sounds: true,
-        soundType: "ding",
-        breakReminders: true,
-        enforceBreaks: true,
-        youtubeIntegration: true,
-        youtubeDistractionMode: "focus",
-        breakOverlay: true,
-        breakCountdown: true,
-        nextSessionInfo: true,
-        focusOverlay: false,
-        hideDistractions: true,
-        focusIndicator: true,
-        websiteBlocking: true,
-        breakBlockAll: false,
-        breakUseAllowlist: true,
-        hideYoutubeComments: false,
-        hideYoutubeRecommendations: false,
-        hideYoutubeShorts: false,
-        pauseYoutubeBreaks: true,
+        focusTime: 25, shortBreak: 5, longBreak: 15, sessionsUntilLongBreak: 4,
+        autoStartBreaks: true, autoStartPomodoros: false, notifications: true, sounds: true, soundType: "ding",
+        breakReminders: true, enforceBreaks: true, youtubeIntegration: true, youtubeDistractionMode: "focus",
+        breakOverlay: true, breakCountdown: true, nextSessionInfo: true, focusOverlay: false, hideDistractions: true,
+        focusIndicator: true, websiteBlocking: true, breakBlockAll: false, breakUseAllowlist: true,
+        hideYoutubeComments: false, hideYoutubeRecommendations: false, hideYoutubeShorts: false, pauseYoutubeBreaks: true,
         collectStats: true,
       },
-      blockedWebsites: [],
-      allowedWebsites: [],
-      todos: [],
-      nextSessionInfo: null,
+      blockedWebsites: [], allowedWebsites: [], todos: [], nextSessionInfo: null,
     };
     await this.saveState();
   }
 
-  // Handles messages from other parts of the extension.
   async handleMessage(message, sender) {
     await this.initializationPromise;
-
     switch (message.type) {
         case "GET_STATE":
             return { state: this.state };
@@ -346,7 +300,6 @@ class PomodoroBackground {
     }
   }
 
-  // Updates the settings and broadcasts the changes.
   async updateSettings(newSettings) {
     try {
       const validatedSettings = this.validateSettings(newSettings);
@@ -376,9 +329,7 @@ class PomodoroBackground {
               settings: updatedSettings,
               previousSettings
             });
-          } catch (error) {
-            // Ignore errors for tabs that don't have content scripts
-          }
+          } catch (error) { /* Ignore */ }
         });
       });
 
@@ -392,98 +343,58 @@ class PomodoroBackground {
 
   validateSettings(settings) {
     const validated = {};
-    
-    if ('focusTime' in settings) {
-      validated.focusTime = Math.max(1, Math.min(120, parseInt(settings.focusTime) || 25));
-    }
-    if ('shortBreak' in settings) {
-      validated.shortBreak = Math.max(1, Math.min(30, parseInt(settings.shortBreak) || 5));
-    }
-    if ('longBreak' in settings) {
-      validated.longBreak = Math.max(1, Math.min(60, parseInt(settings.longBreak) || 15));
-    }
-    if ('sessionsUntilLongBreak' in settings) {
-      validated.sessionsUntilLongBreak = Math.max(1, Math.min(10, parseInt(settings.sessionsUntilLongBreak) || 4));
-    }
-
-    const booleanSettings = [
-      'autoStartBreaks', 'autoStartPomodoros', 'notifications', 'sounds',
-      'enforceBreaks', 'youtubeIntegration', 'websiteBlocking', 'collectStats',
-      'breakCountdown', 'nextSessionInfo', 'hideDistractions', 'focusIndicator',
-      'breakBlockAll', 'breakUseAllowlist', 'hideYoutubeComments', 
-      'hideYoutubeRecommendations', 'hideYoutubeShorts', 'pauseYoutubeBreaks'
-    ];
-    
+    if ('focusTime' in settings) validated.focusTime = Math.max(1, Math.min(120, parseInt(settings.focusTime) || 25));
+    if ('shortBreak' in settings) validated.shortBreak = Math.max(1, Math.min(30, parseInt(settings.shortBreak) || 5));
+    if ('longBreak' in settings) validated.longBreak = Math.max(1, Math.min(60, parseInt(settings.longBreak) || 15));
+    if ('sessionsUntilLongBreak' in settings) validated.sessionsUntilLongBreak = Math.max(1, Math.min(10, parseInt(settings.sessionsUntilLongBreak) || 4));
+    const booleanSettings = ['autoStartBreaks', 'autoStartPomodoros', 'notifications', 'sounds', 'enforceBreaks', 'youtubeIntegration', 'websiteBlocking', 'collectStats', 'breakCountdown', 'nextSessionInfo', 'hideDistractions', 'focusIndicator', 'breakBlockAll', 'breakUseAllowlist', 'hideYoutubeComments', 'hideYoutubeRecommendations', 'hideYoutubeShorts', 'pauseYoutubeBreaks'];
     booleanSettings.forEach(setting => {
-      if (setting in settings) {
-        validated[setting] = Boolean(settings[setting]);
-      }
+      if (setting in settings) validated[setting] = Boolean(settings[setting]);
     });
-
     return validated;
   }
 
-  // Starts the timer.
   async startTimer() {
     this.state.isRunning = true;
     this.state.currentSessionTotalTime = this.state.currentTime;
     const remainingMilliseconds = this.state.currentTime * 1000;
     this.state.targetCompletionTime = Date.now() + remainingMilliseconds;
-    
-    // Periodic alarm every second for more accurate updates
-    chrome.alarms.create(this.alarmName + "_tick", { 
-      periodInMinutes: 1 / 60 
-    });
-
+    chrome.alarms.create(this.alarmName + "_tick", { periodInMinutes: 1 / 60 });
     if (this.state.settings.youtubeIntegration && this.state.currentMode === "focus") {
       this.notifyContentScripts({ type: "TIMER_STARTED" });
     }
-
     await this.saveState();
     this.broadcastUpdate();
   }
 
-  // Pauses the timer.
   async pauseTimer() {
     if (this.state.isLockedIn) return;
-
     if (this.state.targetCompletionTime) {
       const remainingTime = Math.round((this.state.targetCompletionTime - Date.now()) / 1000);
       this.state.currentTime = Math.max(0, remainingTime);
     }
-
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName + "_tick");
     this.state.targetCompletionTime = null;
-
     if (this.state.settings.youtubeIntegration) {
       this.notifyContentScripts({ type: "TIMER_PAUSED" });
     }
-
     await this.saveState();
     this.broadcastUpdate();
   }
 
-  // Resets the timer to the beginning of the current mode.
   async resetTimer() {
     if (this.state.isLockedIn) return;
     this.state.isRunning = false;
     chrome.alarms.clear(this.alarmName + "_tick");
     this.state.targetCompletionTime = null;
     this.state.currentSessionTotalTime = null;
-
-    const timeMap = {
-      focus: this.state.settings.focusTime * 60,
-      shortBreak: this.state.settings.shortBreak * 60,
-      longBreak: this.state.settings.longBreak * 60,
-    };
+    const timeMap = { focus: this.state.settings.focusTime * 60, shortBreak: this.state.settings.shortBreak * 60, longBreak: this.state.settings.longBreak * 60 };
     this.state.currentTime = timeMap[this.state.currentMode];
-
     await this.saveState();
     this.broadcastUpdate();
   }
 
-  // Skips the current break and starts the next focus session.
   async skipBreak() {
     if (this.state.isLockedIn) return;
     this.state.currentMode = "focus";
@@ -492,29 +403,22 @@ class PomodoroBackground {
     this.state.targetCompletionTime = null;
     this.state.currentSessionTotalTime = null;
     this.state.nextSessionInfo = null;
-
     this.notifyContentScripts({ type: "BREAK_SKIPPED" });
-
     await this.saveState();
     this.broadcastUpdate();
   }
 
-  // Called by the alarm to update the timer every second.
   async handleTimerTick() {
     try {
       if (!this.state.isRunning || !this.state.targetCompletionTime) {
         await chrome.alarms.clear(this.alarmName + "_tick");
         return;
       }
-
       const now = Date.now();
       const targetTime = this.state.targetCompletionTime;
-      
       const remainingTime = Math.round((targetTime - now) / 1000);
       this.state.currentTime = Math.max(0, remainingTime);
-      
       await this.broadcastUpdate();
-
       if (this.state.currentTime <= 0) {
         await chrome.alarms.clear(this.alarmName + "_tick");
         await this.handleTimerComplete();
@@ -523,79 +427,86 @@ class PomodoroBackground {
       console.error('Error in timer tick:', error);
     }
   }
-
+  
+  // =================================================================
+  // == START: REDESIGNED Lock-In Logic ==
+  // =================================================================
   async handleTimerComplete() {
+    // 1. Always stop the timer and clear the alarm
     this.state.isRunning = false;
     this.state.currentTime = 0;
     this.state.targetCompletionTime = null;
     this.state.currentSessionTotalTime = null;
     await chrome.alarms.clear(this.alarmName + "_tick");
-    let lockInJustCompleted = false;
 
+    // 2. Play notifications and sounds
     if (this.state.settings.notifications) {
         await this.showNotification();
     }
-
     if (this.state.settings.sounds) {
-        try {
-            await this.playSound();
-        } catch (e) {
-            console.error("Error playing sound:", e);
-        }
+        await this.playSound();
     }
 
-    if (this.state.currentMode === "focus") {
+    // 3. Handle the special case where a locked-in focus session ends
+    if (this.state.currentMode === "focus" && this.state.isLockedIn) {
         await this.recordSession();
 
-        if (this.state.isLockedIn) {
-            const sessionsRemaining = this.state.lockedInSessions - 1;
-            const isStillLockedIn = sessionsRemaining > 0;
+        const sessionsRemaining = Math.max(0, (Number(this.state.lockedInSessions) || 0) - 1);
+        this.state.lockedInSessions = sessionsRemaining;
 
-            this.state.lockedInSessions = sessionsRemaining;
-            this.state.isLockedIn = isStillLockedIn;
-
-            if (!isStillLockedIn) {
-                this.state.lockInEndTime = null;
-                lockInJustCompleted = true;
-            }
+        // If that was the LAST session, end the lock-in period
+        if (sessionsRemaining === 0) {
+            this.state.isLockedIn = false;
+            this.state.lockInEndTime = null;
+            
+            await this.switchToNextMode(); // Switch to the break
+            
+            // IMPORTANT: Save the new state and update UI, then exit.
+            // This prevents the auto-start logic below from running.
             await this.saveState();
+            this.broadcastUpdate();
+            return; // Exit here to ensure the timer STOPS.
         }
     }
 
+    // 4. Handle all other (normal) timer completions
+    if (this.state.currentMode === "focus") {
+        // This check is now only for non-locked-in sessions, as the locked-in
+        // case is handled above. This prevents double-counting.
+        if (!this.state.isLockedIn) {
+            await this.recordSession();
+        }
+    }
+    
     await this.switchToNextMode();
 
-    if (this.shouldAutoStart() && !lockInJustCompleted) {
+    // 5. Check for auto-start only in normal cases
+    if (this.shouldAutoStart()) {
         setTimeout(() => this.startTimer(), 1000);
     }
 
+    // 6. Final save and update for normal completions
     await this.saveState();
     this.broadcastUpdate();
   }
-
+  // =================================================================
+  // == END: REDESIGNED Lock-In Logic ==
+  // =================================================================
 
   async switchToNextMode() {
     this.state.isRunning = false;
     this.state.currentTime = 0;
     this.state.targetCompletionTime = null;
     this.state.currentSessionTotalTime = null;
-
     if (this.state.currentMode === "focus") {
-      const isLongBreak =
-        this.state.sessionCount % this.state.settings.sessionsUntilLongBreak ===
-        0;
-
+      const isLongBreak = this.state.sessionCount % this.state.settings.sessionsUntilLongBreak === 0;
       this.state.currentMode = isLongBreak ? "longBreak" : "shortBreak";
-      this.state.currentTime = isLongBreak
-        ? this.state.settings.longBreak * 60
-        : this.state.settings.shortBreak * 60;
-
+      this.state.currentTime = isLongBreak ? this.state.settings.longBreak * 60 : this.state.settings.shortBreak * 60;
       this.state.sessionCount++;
       this.state.nextSessionInfo = this.getNextSessionInfo();
-
       if (this.state.settings.pauseYoutubeBreaks) {
         this.notifyContentScripts({ type: "PAUSE_ALL_YOUTUBE_TABS" });
       }
-
     } else {
       this.state.currentMode = "focus";
       this.state.currentTime = this.state.settings.focusTime * 60;
@@ -604,258 +515,100 @@ class PomodoroBackground {
   }
 
   getNextSessionInfo() {
-    const isLongBreak =
-      this.state.sessionCount % this.state.settings.sessionsUntilLongBreak ===
-      0;
-    const sessionsUntilLongBreak =
-      this.state.settings.sessionsUntilLongBreak -
-      (this.state.sessionCount % this.state.settings.sessionsUntilLongBreak);
-
-    return {
-      nextMode: "focus",
-      nextDuration: this.state.settings.focusTime,
-      sessionsUntilLongBreak: sessionsUntilLongBreak,
-      isLongBreak: isLongBreak,
-    };
+    const isLongBreak = this.state.sessionCount % this.state.settings.sessionsUntilLongBreak === 0;
+    const sessionsUntilLongBreak = this.state.settings.sessionsUntilLongBreak - (this.state.sessionCount % this.state.settings.sessionsUntilLongBreak);
+    return { nextMode: "focus", nextDuration: this.state.settings.focusTime, sessionsUntilLongBreak: sessionsUntilLongBreak, isLongBreak: isLongBreak };
   }
 
   shouldAutoStart() {
-    return (
-      (this.state.currentMode === "focus" &&
-        this.state.settings.autoStartPomodoros) ||
-      ((this.state.currentMode === "shortBreak" ||
-        this.state.currentMode === "longBreak") &&
-        this.state.settings.autoStartBreaks)
-    );
+    return ((this.state.currentMode === "focus" && this.state.settings.autoStartPomodoros) || ((this.state.currentMode === "shortBreak" || this.state.currentMode === "longBreak") && this.state.settings.autoStartBreaks));
   }
 
   async showNotification() {
-    if (!this.state.settings.notifications) {
-      return;
-    }
-
+    if (!this.state.settings.notifications) return;
     try {
-      const permission = await chrome.permissions.contains({
-        permissions: ['notifications']
-      });
-
-      if (!permission) {
-        console.warn('Notification permission not granted');
-        this.state.settings.notifications = false;
-        await this.saveState();
-        return;
-      }
-
-      const messages = {
-        focus: "Time for a break! You've completed a focus session.",
-        shortBreak: "Break time is over! Ready to focus?",
-        longBreak: "Long break complete! Time to get back to work.",
-      };
-
+      const permission = await chrome.permissions.contains({ permissions: ['notifications'] });
+      if (!permission) { this.state.settings.notifications = false; await this.saveState(); return; }
+      const messages = { focus: "Time for a break! You've completed a focus session.", shortBreak: "Break time is over! Ready to focus?", longBreak: "Long break complete! Time to get back to work." };
       const message = messages[this.state.currentMode] || "Timer completed!";
-
       await chrome.notifications.clear('pomodoroNotification');
-
-      await chrome.notifications.create('pomodoroNotification', {
-        type: "basic",
-        iconUrl: "icons/icon128.png",
-        title: "Pomodoro Timer",
-        message: message,
-        priority: 2,
-        requireInteraction: false,
-        silent: false
-      });
-
-    } catch (error) {
-      console.error("Error handling notification:", error);
-      this.state.settings.notifications = false;
-      await this.saveState();
-    }
+      await chrome.notifications.create('pomodoroNotification', { type: "basic", iconUrl: "icons/icon128.png", title: "Pomodoro Timer", message: message, priority: 2, requireInteraction: false, silent: false });
+    } catch (error) { console.error("Error handling notification:", error); this.state.settings.notifications = false; await this.saveState(); }
   }
 
   async ensureOffscreenDocument() {
     if (await chrome.offscreen.hasDocument?.()) return;
-    try {
-      await chrome.offscreen.createDocument({
-        url: 'offscreen.html',
-        reasons: ['AUDIO_PLAYBACK'],
-        justification: 'Play short completion sounds when timers finish.'
-      });
-    } catch (e) {
-      // Ignore if it already exists or offscreen unsupported
-    }
+    try { await chrome.offscreen.createDocument({ url: 'offscreen.html', reasons: ['AUDIO_PLAYBACK'], justification: 'Play short completion sounds when timers finish.' }); } catch (e) { /* Ignore */ }
   }
 
   async playSound(soundOverride) {
     try {
       await this.ensureOffscreenDocument();
-      const sound = soundOverride || this.state.settings.soundType || 'ding'
+      const sound = soundOverride || this.state.settings.soundType || 'ding';
       await chrome.runtime.sendMessage({ type: 'PLAY_SOUND', sound });
-    } catch (e) {
-      console.error('[v0] playSound failed:', e);
-    }
+    } catch (e) { console.error('[v0] playSound failed:', e); }
   }
 
   async recordSession() {
     if (!this.state.settings.collectStats) return;
-
     const today = new Date().toISOString().split("T")[0];
-
     try {
       const result = await chrome.storage.local.get("dailyStats");
       const dailyStats = result.dailyStats || {};
-
-      if (!dailyStats[today]) {
-        dailyStats[today] = {
-          focusSessions: 0,
-          focusTime: 0,
-          breakTime: 0,
-        };
-      }
-
+      if (!dailyStats[today]) { dailyStats[today] = { focusSessions: 0, focusTime: 0, breakTime: 0 }; }
       dailyStats[today].focusSessions++;
       dailyStats[today].focusTime += this.state.settings.focusTime;
-
       await chrome.storage.local.set({ dailyStats });
-      try {
-        chrome.runtime.sendMessage({ type: "STATS_UPDATED" });
-      } catch (e) {
-        // ignore if stats page not open
-      }
-    } catch (error) {
-      console.error("[v0] Error recording session:", error);
-    }
-  }
-
-  async addBlockedWebsite(website) {
-    if (!this.state.blockedWebsites.includes(website)) {
-      this.state.blockedWebsites.push(website);
-      await this.saveState();
-    }
-  }
-
-  async removeBlockedWebsite(website) {
-    this.state.blockedWebsites = this.state.blockedWebsites.filter(
-      (w) => w !== website
-    );
-    await this.saveState();
+      try { chrome.runtime.sendMessage({ type: "STATS_UPDATED" }); } catch (e) { /* ignore */ }
+    } catch (error) { console.error("[v0] Error recording session:", error); }
   }
 
   _isUrlInList(url, list) {
-    if (!url || !list || !Array.isArray(list) || list.length === 0) {
-      return false;
-    }
-
+    if (!url || !list || !Array.isArray(list) || list.length === 0) return false;
     try {
-      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
-        return false;
-      }
-
+      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://')) return false;
       const currentUrl = new URL(url);
-      
-      if (!currentUrl.hostname) {
-        return false;
-      }
-
+      if (!currentUrl.hostname) return false;
       const normalizedHostname = currentUrl.hostname.toLowerCase();
       const normalizedPathname = currentUrl.pathname.toLowerCase().replace(/\/$/, "");
       const currentUrlStr = `${normalizedHostname}${normalizedPathname}`;
-
       return list.some(pattern => {
-        if (typeof pattern !== 'string' || !pattern.trim()) {
-          return false;
-        }
-
+        if (typeof pattern !== 'string' || !pattern.trim()) return false;
         const lowerCasePattern = pattern.toLowerCase().trim();
-        
-        if (lowerCasePattern.startsWith('*.')) {
-          const domain = lowerCasePattern.slice(2);
-          return normalizedHostname.endsWith(domain);
-        }
-
-        if (!lowerCasePattern.includes('/')) {
-          return normalizedHostname === lowerCasePattern || 
-                 normalizedHostname.endsWith(`.${lowerCasePattern}`);
-        }
-
+        if (lowerCasePattern.startsWith('*.')) { const domain = lowerCasePattern.slice(2); return normalizedHostname.endsWith(domain); }
+        if (!lowerCasePattern.includes('/')) return normalizedHostname === lowerCasePattern || normalizedHostname.endsWith(`.${lowerCasePattern}`);
         return currentUrlStr.startsWith(lowerCasePattern);
       });
-    } catch (error) {
-      console.error(`Invalid URL format for blocking check: ${url}`, error);
-      return false;
-    }
+    } catch (error) { console.error(`Invalid URL format for blocking check: ${url}`, error); return false; }
   }
 
   isUrlBlocked(url) {
-    if (!this.state.settings.websiteBlocking) {
-      return { blocked: false };
-    }
-
+    if (!this.state.settings.websiteBlocking) return { blocked: false };
     const { isRunning, currentMode } = this.state;
     const isBreak = currentMode === 'shortBreak' || currentMode === 'longBreak';
-
-    if (isRunning && isBreak) {
-        return { blocked: false };
-    }
-
-    if (this._isUrlInList(url, this.state.allowedWebsites)) {
-      return { blocked: false };
-    }
-
-    if (isRunning && currentMode === 'focus') {
-      return { blocked: true, reason: 'focus' };
-    }
-
-    if (!isRunning) {
-      if (this._isUrlInList(url, this.state.blockedWebsites)) {
-        return { blocked: true, reason: 'blocklist' };
-      }
-    }
-
+    if (isRunning && isBreak) return { blocked: false };
+    if (this._isUrlInList(url, this.state.allowedWebsites)) return { blocked: false };
+    if (isRunning && currentMode === 'focus') return { blocked: true, reason: 'focus' };
+    if (!isRunning) { if (this._isUrlInList(url, this.state.blockedWebsites)) return { blocked: true, reason: 'blocklist' }; }
     return { blocked: false };
   }
 
   broadcastUpdate() {
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
-        try {
-          chrome.tabs.sendMessage(tab.id, {
-            type: "TIMER_UPDATE",
-            state: this.state,
-          });
-        } catch (error) {
-          // Ignore errors
-        }
+        try { chrome.tabs.sendMessage(tab.id, { type: "TIMER_UPDATE", state: this.state }); } catch (error) { /* Ignore */ }
       });
     });
-
-    try {
-      chrome.runtime.sendMessage({
-        type: "TIMER_UPDATE",
-        state: this.state,
-      });
-    } catch (error) {
-      // Popup might not be open
-    }
+    try { chrome.runtime.sendMessage({ type: "TIMER_UPDATE", state: this.state }); } catch (error) { /* Popup might not be open */ }
   }
 
   async notifyContentScripts(message) {
     try {
-      const tabs = await chrome.tabs.query({
-        url: ["https://www.youtube.com/*", "https://youtube.com/*"],
-      });
-
+      const tabs = await chrome.tabs.query({ url: ["https://www.youtube.com/*", "https://youtube.com/*"] });
       for (const tab of tabs) {
-        try {
-          chrome.tabs.sendMessage(tab.id, message);
-        } catch (error) {
-          // ignore
-        }
+        try { chrome.tabs.sendMessage(tab.id, message); } catch (error) { /* ignore */ }
       }
-    } catch (error) {
-      console.error("Error notifying content scripts:", error);
-    }
+    } catch (error) { console.error("Error notifying content scripts:", error); }
   }
 }
 new PomodoroBackground();
-

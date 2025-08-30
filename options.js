@@ -290,13 +290,18 @@ class ModernPomodoroOptions {
         };
 
         try {
+            // Save to local storage directly from the options page
+            await chrome.storage.local.set({ settings: newSettings });
+    
+            // Also send a message to the background script to update its state in real-time
             await this.sendMessageToBackground({ type: "SETTINGS_UPDATED", settings: newSettings });
+    
             this.currentSettings = newSettings;
             this.updateHeaderStats();
             this.showStatus("Settings saved successfully", "success");
         } catch (error) {
             console.error("[v0] Error saving settings:", error);
-            this.showStatus("Error saving settings. The background service may be inactive. Please try again.", "error");
+            this.showStatus("Error saving settings. Please try again.", "error");
         }
     }
 
@@ -358,7 +363,10 @@ class ModernPomodoroOptions {
     if (!container) return;
     container.innerHTML = "";
     if (targetList.length === 0) {
-      if (emptyElement) { emptyElement.style.display = "block"; container.appendChild(emptyElement.cloneNode(true)); }
+      if (emptyElement) {
+        emptyElement.style.display = "block";
+        container.innerHTML = emptyElement.outerHTML;
+      }
       return;
     }
     if (emptyElement) emptyElement.style.display = "none";
@@ -366,7 +374,7 @@ class ModernPomodoroOptions {
       const item = document.createElement("div");
       item.className = "website-item";
       item.setAttribute("data-index", index);
-      item.innerHTML = `<div class="website-name" title="${website}">${website}</div><div class="website-actions"><button class.website-remove-btn" title="Remove ${website}" data-website="${website}">×</button></div>`;
+      item.innerHTML = `<div class="website-name" title="${website}">${website}</div><div class="website-actions"><button class="website-remove-btn" title="Remove ${website}" data-website="${website}">×</button></div>`;
       const removeBtn = item.querySelector(".website-remove-btn");
       removeBtn.addEventListener("click", (e) => {
         e.preventDefault(); e.stopPropagation();
@@ -412,15 +420,24 @@ class ModernPomodoroOptions {
 
   async saveWebsiteLists() {
     try {
+      // Save directly to storage from the options page
+      await chrome.storage.local.set({
+          allowedWebsites: this.allowlist,
+          blockedWebsites: this.blocklist
+      });
+
+      // Notify the background script if it's active
       await this.sendMessageToBackground({
         type: "WEBSITE_LISTS_UPDATED",
         allowlist: this.allowlist,
         blocklist: this.blocklist
       });
+      this.showStatus("Website lists saved", "success");
     } catch (error) {
       console.error("[v0] Error saving website lists:", error);
+      this.showStatus("Error saving website lists", "error");
     }
-  }
+}
 
   updateHeaderStats() {
     if (this.elements.headerFocusTime) this.elements.headerFocusTime.textContent = this.elements.focusTime?.value || 25;
